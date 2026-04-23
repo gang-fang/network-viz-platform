@@ -1,0 +1,30 @@
+# Local data — never ship with the package
+data/
+
+# Tests and test tooling
+backend/tests/
+backend/jest.config.js
+Doc/testing-summary.md
+
+# Editor / AI-agent local config
+.claude/
+.cursor/
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+logs/
+*.log
+
+# Test coverage
+coverage/
+
+# Local environment file (ship only .env.example)
+.env
+
+# OS artifacts
+.DS_Store
+Thumbs.db

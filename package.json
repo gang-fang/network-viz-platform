@@ -1,0 +1,42 @@
+{
+  "name": "network-viz-platform",
+  "version": "1.0.0",
+  "description": "Advanced network visualization platform with D3.js, clustering, and zero-redundancy architecture",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/entrypoint.js",
+    "start:serve": "START_MODE=serve node backend/entrypoint.js",
+    "start:ingest-and-serve": "START_MODE=ingest-and-serve node backend/entrypoint.js",
+    "ingest": "START_MODE=ingest node backend/entrypoint.js",
+    "dev": "nodemon backend/entrypoint.js",
+    "configure:attrs": "node backend/scripts/configureAttrs.js",
+    "test": "npm run test:backend",
+    "test:backend": "jest --config backend/jest.config.js"
+  },
+  "keywords": [
+    "network",
+    "visualization",
+    "d3",
+    "graph"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.8.2",
+    "chokidar": "^4.0.3",
+    "cors": "^2.8.5",
+    "csv-parse": "^5.5.2",
+    "dotenv": "^16.4.7",
+    "express": "^4.18.2",
+    "morgan": "^1.10.0",
+    "sqlite3": "^5.1.7",
+    "winston": "^3.10.0"
+  },
+  "devDependencies": {
+    "d3": "^7.9.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.9",
+    "supertest": "^6.3.4"
+  }
+}

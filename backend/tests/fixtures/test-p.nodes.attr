@@ -1,0 +1,3 @@
+node_id,NCBI_txID,NH_ID,NH_Size,reserved_int1,reserved_int2,reserved_float1,reserved_float2,reserved_string
+node4,511145,NH101,0.4,7,8,7.7,8.8,"E.coli node"
+node5,224308,NH102,0.6,9,10,9.9,10.1,"B.subtilis node" 

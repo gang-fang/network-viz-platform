@@ -1,0 +1,10 @@
+source,target
+node1,missing-weight
+incomplete-row
+,node2
+node3,
+,validNode,0.9
+validNode,,0.5
+nodeA,nodeB,notanum
+nodeC,nodeD,Infinity
+nodeE,nodeF,1abc

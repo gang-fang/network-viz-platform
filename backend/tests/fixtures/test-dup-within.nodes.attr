@@ -1,0 +1,4 @@
+node_id,NCBI_txID,NH_ID,NH_Size,,,,,
+DUPNODE1,9606,e.1.1.0,5,,,,,
+UNIQUE001,9606,e.1.2.0,3,,,,,
+DUPNODE1,10090,e.1.3.0,7,,,,,

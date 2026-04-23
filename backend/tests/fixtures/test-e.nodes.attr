@@ -1,0 +1,4 @@
+node_id,NCBI_txID,NH_ID,NH_Size,reserved_int1,reserved_int2,reserved_float1,reserved_float2,reserved_string
+node1,9606,NH001,0.9,1,2,1.1,2.2,"Human node"
+node2,10090,NH002,0.7,3,4,3.3,4.4,"Mouse node"
+node3,9031,NH003,0.5,5,6,5.5,6.6,"Chicken node" 

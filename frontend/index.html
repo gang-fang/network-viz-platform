@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular Network Viz</title>
+    <link rel="stylesheet" href="css/styles.css?v=6">
+    <script src="/vendor/d3.min.js"></script>
+
+    <!-- Core Scripts -->
+    <script src="js/core/graph.js?v=7"></script>
+    <script src="js/core/graph-view.js?v=7"></script>
+    <script src="js/core/state.js?v=7"></script>
+    <script src="js/core/module-system.js?v=7"></script>
+    <script src="js/adapters/d3-adapter.js?v=7"></script>
+
+    <!-- Modules -->
+    <script src="js/config/modules.js?v=7"></script>
+    <script src="js/modules/species-selector.js?v=7"></script>
+    <script src="js/modules/search-highlight.js?v=7"></script>
+    <script src="js/modules/clear-highlights.js?v=7"></script>
+    <script src="js/modules/uniprot-tooltip.js?v=7"></script>
+    <script src="js/modules/export-panel.js?v=7"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div id="control-panel" class="panel">
+            <h3>Controls</h3>
+            <div class="control-group">
+                <label for="network-select">Select Network:</label>
+                <div style="display: flex; gap: 5px;">
+                    <select id="network-select" style="flex-grow: 1;">
+                        <option value="">Loading...</option>
+                    </select>
+                    <button id="refresh-btn" title="Refresh List">↻</button>
+                </div>
+            </div>
+            <button id="load-btn" disabled>Load Network</button>
+            <div id="info" class="status-text"></div>
+            <hr class="separator" style="margin-top: 3rem;">
+
+            <!-- Module Controls Container -->
+            <div id="module-controls-container"></div>
+
+            <hr class="separator">
+
+        </div>
+
+        <div id="network-container" style="position: relative; width: 100%; height: 800px;">
+            <div id="cy" style="width: 100%; height: 100%;"></div>
+
+            <!-- Export Mode Controls -->
+            <div id="export-controls"
+                style="position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 10;">
+                <button id="select-mode-btn" class="icon-btn" title="Select Nodes">★</button>
+                <button id="export-btn" class="icon-btn" title="Export" disabled>➡</button>
+            </div>
+
+            <!-- Zoom Controls -->
+            <div id="zoom-controls"
+                style="position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 5px;">
+                <button id="expand-all-btn" style="width: 30px; height: 30px; cursor: pointer;"
+                    title="Expand All">☀️</button>
+                <button id="collapse-all-btn" style="width: 30px; height: 30px; cursor: pointer;"
+                    title="Collapse All">🌙</button>
+                <button id="zoom-in" style="width: 30px; height: 30px; cursor: pointer;">+</button>
+                <button id="zoom-out" style="width: 30px; height: 30px; cursor: pointer;">-</button>
+                <button id="zoom-reset" style="width: 30px; height: 30px; cursor: pointer;"
+                    title="Reset Layout">⟲</button>
+            </div>
+        </div>
+
+        <!-- Right Panel for Export -->
+        <div id="right-panel" class="panel">
+            <h3>Export & Analysis</h3>
+            <div id="export-content">
+                <p class="placeholder-text">Select nodes to export data.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Script -->
+    <script src="js/app.js?v=6"></script>
+</body>
+
+</html>
