@@ -7,7 +7,6 @@ const ExportPanelModule = {
 
     init(context) {
         this.context = context;
-        this.appState = context.appState || window.appState;
 
         this.selectModeBtn = document.getElementById('select-mode-btn');
         this.exportBtn = document.getElementById('export-btn');
@@ -24,8 +23,8 @@ const ExportPanelModule = {
     setupListeners() {
         // Button Clicks
         this.selectModeBtn.addEventListener('click', () => {
-            const newMode = !this.appState.selectionMode;
-            this.appState.setSelectionMode(newMode);
+            const newMode = !this.context.isSelectionModeEnabled();
+            this.context.setSelectionMode(newMode);
         });
 
         this.exportBtn.addEventListener('click', () => {
@@ -45,7 +44,7 @@ const ExportPanelModule = {
     updateButtonStates(enabled) {
         if (enabled) {
             this.selectModeBtn.classList.add('active');
-            this.updateExportButtonState(Array.from(this.appState.selectedNodes));
+            this.updateExportButtonState(this.context.getSelectedNodeIds());
         } else {
             this.selectModeBtn.classList.remove('active');
             this.exportBtn.disabled = true;
@@ -53,7 +52,7 @@ const ExportPanelModule = {
     },
 
     updateExportButtonState(selectedIds) {
-        if (this.appState.selectionMode && selectedIds && selectedIds.length > 0) {
+        if (this.context.isSelectionModeEnabled() && selectedIds && selectedIds.length > 0) {
             this.exportBtn.disabled = false;
         } else {
             this.exportBtn.disabled = true;
@@ -61,11 +60,11 @@ const ExportPanelModule = {
     },
 
     exportData() {
-        const selectedIds = Array.from(this.appState.selectedNodes);
+        const selectedIds = this.context.getSelectedNodeIds();
         if (selectedIds.length === 0) return;
 
         // Use viewGraph because it contains the currently visible nodes (including Clusters)
-        const graph = this.appState.viewGraph;
+        const graph = this.context.getViewGraph();
         const nhNodes = [];
         const proteinNodes = [];
 
@@ -89,13 +88,14 @@ const ExportPanelModule = {
         if (nhNodes.length > 0) {
             const sectionId = 'nh-section';
             const existingIds = this.getExistingIds(sectionId, 'NH');
-            const coreGraph = this.context.getGraph();
             let content = '';
             let addedCount = 0;
 
             nhNodes.forEach(nh => {
                 if (!existingIds.has(nh.id)) {
-                    const members = coreGraph.getClusterMembers(nh.id);
+                    const members = this.context.getVisibleClusterMembers
+                        ? this.context.getVisibleClusterMembers(nh.id)
+                        : this.context.getGraph().getClusterMembers(nh.id);
                     // CSV Format: ID,"ACs"
                     content += `${nh.id},"${members.join(', ')}"\n`;
                     addedCount++;

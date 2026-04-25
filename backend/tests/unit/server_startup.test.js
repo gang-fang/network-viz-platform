@@ -34,6 +34,11 @@ jest.mock('../../controllers/uniprotController', () => ({
   })
 }));
 
+jest.mock('../../controllers/subnetworkController', () => ({
+  getSubnetworkLimits: jest.fn(),
+  createSubnetwork: jest.fn()
+}));
+
 describe('Server Startup Tests', () => {
   let app;
   let server;
@@ -94,20 +99,17 @@ describe('Server Startup Tests', () => {
     // Check that we have some routes
     expect(routes.length).toBeGreaterThan(0);
     
-    // Verify specific routes exist
-    expect(routes).toContain('/');
-    
     // Check API routes by examining middleware
     const apiRoutes = app._router.stack
       .filter(layer => layer.name === 'router')
-      .some(layer => {
-        // Check if any path in handle.stack contains 'networks' or 'api'
-        if (layer.regexp && layer.regexp.toString().includes('api')) {
-          return true;
-        }
-        return false;
-      });
-    
-    expect(apiRoutes).toBe(true);
+      .map(layer => String(layer.regexp));
+
+    expect(apiRoutes.some(prefix => prefix.includes('\\/api\\/networks'))).toBe(true);
+    expect(apiRoutes.some(prefix => prefix.includes('\\/api\\/subnetworks'))).toBe(true);
+
+    const hasStaticMiddleware = app._router.stack.some(
+      layer => layer.name === 'serveStatic'
+    );
+    expect(hasStaticMiddleware).toBe(true);
   });
 });

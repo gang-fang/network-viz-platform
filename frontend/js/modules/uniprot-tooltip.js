@@ -145,8 +145,9 @@ const UniprotTooltipModule = {
     async processClusterHover(clusterId) {
         this.renderLoading("Cluster Info");
 
-        const graph = this.context.getGraph();
-        const members = graph.getClusterMembers(clusterId);
+        const members = this.context.getVisibleClusterMembers
+            ? this.context.getVisibleClusterMembers(clusterId)
+            : this.context.getGraph().getClusterMembers(clusterId);
         if (members.length === 0) {
             this.renderClusterContent({ error: "Empty Cluster" });
             return;

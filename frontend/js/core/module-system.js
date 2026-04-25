@@ -34,7 +34,22 @@ class ModuleSystem {
 
             // Allow modules to inspect the graph (read-only mostly, or via specific methods)
             getGraph: () => this.appState.graph,
+            getViewGraph: () => this.appState.viewGraph,
             getCurrentNetwork: () => this.appState.currentNetwork,
+            getVisibleProteinIds: () => this.appState.getVisibleProteinIds(),
+            getHiddenProteinIds: () => this.appState.getHiddenProteinIds(),
+            getHiddenEdgeIds: () => this.appState.getHiddenEdgeIds(),
+            getHiddenEdgeWeightRanges: () => this.appState.getHiddenEdgeWeightRanges(),
+            getHiddenEdgeEditPayload: () => this.appState.getHiddenEdgeEditPayload(),
+            getVisibleClusterMembers: (clusterId) => this.appState.getVisibleClusterMembers(clusterId),
+            getHighlightedProteinIds: () => this.appState.getHighlightedProteinIds(),
+            getEditStats: () => this.appState.getEditStats(),
+            getSelectedNodeIds: () => Array.from(this.appState.selectedNodes),
+            getSelectedNodeCount: () => this.appState.selectedNodes.size,
+            isSelectionModeEnabled: () => this.appState.selectionMode,
+            setSelectionMode: (enabled) => this.appState.setSelectionMode(enabled),
+            getSpeciesNames: () => ModuleSystem.getSpeciesNames(),
+            getSpeciesTree: () => ModuleSystem.getSpeciesTree(),
 
             // Allow modules to add attributes to nodes/edges
             updateNodeAttribute: (nodeId, key, value) => {
@@ -65,10 +80,39 @@ class ModuleSystem {
             removeHighlightLayer: (layerId) => this.appState.removeHighlightLayer(layerId),
             clearHighlightLayers: () => this.appState.clearHighlightLayers(),
             hideNodes: (ids) => this.appState.hideNodes(ids),
-            showNodes: (ids) => this.appState.showNodes(ids)
+            showNodes: (ids) => this.appState.showNodes(ids),
+            showAllNodes: () => this.appState.showAllNodes(),
+            showAllEdges: () => this.appState.showAllEdges(),
+            showAllEdits: () => this.appState.showAllEdits(),
+            hideEdgesByWeightBelow: (threshold) => this.appState.hideEdgesByWeightBelow(threshold),
+            showEdgesByWeightBelow: (threshold) => this.appState.showEdgesByWeightBelow(threshold)
         };
     }
 }
+
+ModuleSystem.speciesNamesPromise = null;
+ModuleSystem.getSpeciesNames = function () {
+    if (!ModuleSystem.speciesNamesPromise) {
+        ModuleSystem.speciesNamesPromise = fetch('/api/species-names').then(res => {
+            if (!res.ok) throw new Error("Failed to fetch species names");
+            return res.json();
+        });
+    }
+    return ModuleSystem.speciesNamesPromise;
+};
+
+ModuleSystem.speciesTreePromise = null;
+ModuleSystem.getSpeciesTree = function () {
+    if (!ModuleSystem.speciesTreePromise) {
+        ModuleSystem.speciesTreePromise = fetch('/api/species-tree').then(async res => {
+            if (res.status === 404) return null;
+            if (!res.ok) throw new Error(`Failed to fetch species tree (${res.status})`);
+            const payload = await res.json();
+            return payload.tree || null;
+        });
+    }
+    return ModuleSystem.speciesTreePromise;
+};
 
 // Export
 if (typeof module !== 'undefined' && module.exports) {

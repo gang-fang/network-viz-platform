@@ -7,6 +7,7 @@ const ModuleConfig = {
     activeModules: [
         'search-highlight',
         'species-selector',
+        'network-editor',
         'clear-highlights',
         'uniprot-tooltip',
         'export-panel'

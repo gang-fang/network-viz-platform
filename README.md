@@ -111,6 +111,7 @@ All paths are configurable via environment variables (see Configuration below).
 | Directory | Env var | File format |
 |---|---|---|
 | `data/networks/` | `DATA_PATH` | `*.csv` — one edge per line: `node1,node2,weight` |
+| `data/indexes/` | `INDEXES_PATH` | Preprocessed graph index triplets such as `eu.adj.bin`, `eu.adj.index.bin`, `eu.node_ids.tsv` |
 | `data/nodes_attr/` | `NODE_ATTRIBUTES_PATH` | `*.nodes.attr` — comma-separated, with a header row: `node_id`, `NCBI_txID`, `NH_ID`, `NH_Size`, … |
 | `data/NCBI_txID/NCBI_txID.csv` | `SPECIES_PATH` | Two columns: `ncbi_txid,species_name` |
 
@@ -123,9 +124,14 @@ Copy `.env.example` to `.env` and override as needed. Key variables:
 | `START_MODE` | `serve` | `serve` · `ingest` · `ingest-and-serve` |
 | `DB_PATH` | `./data/network_viz.db` | SQLite file path — point to a volume mount in Docker |
 | `DATA_PATH` | `./data/networks` | Directory containing network CSV files |
+| `INDEXES_PATH` | `./data/indexes` | Directory containing preprocessed extraction indexes |
 | `NODE_ATTRIBUTES_PATH` | `./data/nodes_attr` | Directory containing `.nodes.attr` files |
 | `NODE_ATTRIBUTE_FILES` | *(required)* | Comma-separated list of `.nodes.attr` filenames to ingest, e.g. `e.nodes.attr,p.nodes.attr` |
 | `SPECIES_PATH` | `./data/NCBI_txID/NCBI_txID.csv` | NCBI taxonomy mapping CSV |
+| `PYTHON_COMMAND` | `python3` | Python executable used for subnetwork extraction |
+| `SUBNETWORK_SCRIPT_PATH` | `./tools/extract_subnetwork.py` | Extraction CLI path |
+| `SUBNETWORK_JOB_TEMP_PATH` | `./data/tmp/subnetwork-jobs` | Controlled temp directory for extraction jobs |
+| `SUBNETWORK_TIMEOUT_MS` | `120000` | Extraction timeout in milliseconds |
 | `FILE_WATCH_ENABLED` | `true` | Set to `false` to disable hot-reload of data files |
 | `PORT` | `3000` | HTTP port |
 | `CORS_ORIGIN` | `*` | Allowed origin — restrict in production |
@@ -139,6 +145,8 @@ Copy `.env.example` to `.env` and override as needed. Key variables:
 | `GET /api/networks/:filename` | Fetch nodes and edges for a network |
 | `POST /api/networks/search` | Find nodes by UniProt accession |
 | `POST /api/networks/search-species` | Find nodes by NCBI taxonomy ID |
+| `GET /api/subnetworks/limits` | Return client-facing extraction limits and available discovered indexes |
+| `POST /api/subnetworks` | Run `tools/extract_subnetwork.py`, write a generated CSV to `data/networks`, and return a `/viewer.html?network=...` link |
 | `GET /api/species-names` | NCBI taxonomy ID → species name mappings |
 | `GET /api/uniprot/:accession` | UniProt protein data |
 

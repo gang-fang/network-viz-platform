@@ -29,6 +29,11 @@ function createSchema(db) {
               source TEXT,
               attributes_json TEXT,
               PRIMARY KEY (id, source)
+            )`);
+            db.run(`CREATE TABLE IF NOT EXISTS network_nodes (
+              source TEXT NOT NULL,
+              node_id TEXT NOT NULL,
+              PRIMARY KEY (source, node_id)
             )`, (err) => (err ? reject(err) : resolve()));
         });
     });
@@ -69,8 +74,9 @@ describe('getNetworkData — integration tests (real SQLite)', () => {
     });
 
     beforeEach(async () => {
-        await dbRun(testDb, 'DELETE FROM nodes');
+        await dbRun(testDb, 'DELETE FROM network_nodes');
         await dbRun(testDb, 'DELETE FROM edges');
+        await dbRun(testDb, 'DELETE FROM nodes');
     });
 
     test('throws "Network not found" for an unknown source so the route returns 404', async () => {
@@ -91,6 +97,20 @@ describe('getNetworkData — integration tests (real SQLite)', () => {
         expect(nodeIds).toEqual(['A', 'B']);
         expect(result.elements.edges).toHaveLength(1);
         expect(result.elements.edges[0].data.weight).toBe(0.9);
+    });
+
+    test('returns isolated network members registered in network_nodes', async () => {
+        await dbRun(testDb,
+            `INSERT INTO nodes (id, kind, attributes_json) VALUES ('A', 'protein', '{}')`
+        );
+        await dbRun(testDb,
+            `INSERT INTO network_nodes (source, node_id) VALUES ('isolated.csv', 'A')`
+        );
+
+        const result = await getNetworkData('isolated.csv');
+
+        expect(result.elements.nodes.map(n => n.data.id)).toEqual(['A']);
+        expect(result.elements.edges).toHaveLength(0);
     });
 });
 
@@ -121,8 +141,9 @@ describe('searchProteins — integration tests (real SQLite)', () => {
     });
 
     beforeEach(async () => {
-        await dbRun(testDb, 'DELETE FROM nodes');
+        await dbRun(testDb, 'DELETE FROM network_nodes');
         await dbRun(testDb, 'DELETE FROM edges');
+        await dbRun(testDb, 'DELETE FROM nodes');
     });
 
     test('returns a match only for accessions present in the requested network', async () => {
@@ -196,8 +217,9 @@ describe('searchBySpecies — integration tests (real SQLite)', () => {
     });
 
     beforeEach(async () => {
-        await dbRun(testDb, 'DELETE FROM nodes');
+        await dbRun(testDb, 'DELETE FROM network_nodes');
         await dbRun(testDb, 'DELETE FROM edges');
+        await dbRun(testDb, 'DELETE FROM nodes');
     });
 
     test('returns only species matches from the requested network', async () => {

@@ -11,6 +11,8 @@ const NETWORKS_DIR = config.dataPath;
 const BATCH_SIZE = 10000;
 
 const ATTR_COLUMNS = ['node_id', 'NCBI_txID', 'NH_ID', 'NH_Size', 'reserved1', 'reserved2', 'reserved3', 'reserved4', 'reserved5'];
+let networkIngestQueue = Promise.resolve();
+let networkIngestRunId = 0;
 
 // Promisify DB run
 const dbRun = util.promisify(db.run.bind(db));
@@ -284,7 +286,7 @@ async function ingestSingleNodeAttributeFile(filename, filePath) {
     logger.info(`Finished processing ${filename}: ${count} records`);
 }
 
-async function ingestNetworks(specificFile = null) {
+async function ingestNetworksInternal(specificFile = null) {
     if (!fs.existsSync(NETWORKS_DIR)) {
         logger.warn(`Networks directory not found: ${NETWORKS_DIR}`);
         return;
@@ -309,8 +311,10 @@ async function ingestNetworks(specificFile = null) {
         }));
 
         let count = 0;
+        const runId = ++networkIngestRunId;
         const stmt = db.prepare(`INSERT INTO edges (id, node1, node2, weight, source, attributes_json) VALUES (?, ?, ?, ?, ?, ?)`);
         const nodeStmt = db.prepare(`INSERT OR IGNORE INTO nodes (id, kind, attributes_json) VALUES (?, ?, ?)`);
+        const networkNodeStmt = db.prepare(`INSERT OR IGNORE INTO network_nodes (source, node_id) VALUES (?, ?)`);
 
         try {
             await dbRun('BEGIN TRANSACTION');
@@ -318,11 +322,12 @@ async function ingestNetworks(specificFile = null) {
             // Clear all existing edges for this source so that rows removed from
             // the CSV are not left behind (reconcile before replay).
             await dbRun('DELETE FROM edges WHERE source = ?', [file]);
+            await dbRun('DELETE FROM network_nodes WHERE source = ?', [file]);
 
             // Use SAVEPOINTs for batch memory management so the outer transaction
             // is never committed mid-file. A failure at any point rolls back the
             // entire source (delete + all inserts), preserving the prior DB state.
-            const SP = `net_batch_${file.replace(/\W/g, '_')}`;
+            const SP = `net_batch_${file.replace(/\W/g, '_')}_${runId}`;
             await dbRun(`SAVEPOINT "${SP}"`);
 
             for await (const record of parser) {
@@ -345,9 +350,15 @@ async function ingestNetworks(specificFile = null) {
                         if (err) return reject(err);
                         nodeStmt.run(v, 'protein', '{}', (err) => {
                             if (err) return reject(err);
-                            stmt.run(id, u, v, weight, file, '{}', (err) => {
+                            networkNodeStmt.run(file, u, (err) => {
                                 if (err) return reject(err);
-                                resolve();
+                                networkNodeStmt.run(file, v, (err) => {
+                                    if (err) return reject(err);
+                                    stmt.run(id, u, v, weight, file, '{}', (err) => {
+                                        if (err) return reject(err);
+                                        resolve();
+                                    });
+                                });
                             });
                         });
                     });
@@ -370,15 +381,27 @@ async function ingestNetworks(specificFile = null) {
         } finally {
             stmt.finalize();
             nodeStmt.finalize();
+            networkNodeStmt.finalize();
         }
     }
+}
+
+async function ingestNetworks(specificFile = null) {
+    // Keep the queue chain alive after failures so later ingestion requests still run.
+    const run = networkIngestQueue.then(() => ingestNetworksInternal(specificFile));
+    networkIngestQueue = run.catch(() => {});
+    return run;
 }
 
 async function cleanupOrphans() {
     logger.info('Checking for orphan networks...');
     try {
         const rows = await new Promise((resolve, reject) => {
-            db.all('SELECT DISTINCT source FROM edges', (err, rows) => {
+            db.all(`
+                SELECT source FROM edges
+                UNION
+                SELECT source FROM network_nodes
+            `, (err, rows) => {
                 if (err) reject(err);
                 else resolve(rows);
             });
@@ -392,6 +415,12 @@ async function cleanupOrphans() {
                 logger.warn(`Orphan network detected: ${source}. Removing from database...`);
                 await new Promise((resolve, reject) => {
                     db.run('DELETE FROM edges WHERE source = ?', [source], (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    });
+                });
+                await new Promise((resolve, reject) => {
+                    db.run('DELETE FROM network_nodes WHERE source = ?', [source], (err) => {
                         if (err) reject(err);
                         else resolve();
                     });

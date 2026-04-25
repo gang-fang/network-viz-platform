@@ -1,6 +1,7 @@
 const db = require('../config/database');
 const logger = require('../utils/logger');
 const util = require('util');
+const networkEditService = require('../services/networkEditService');
 
 // Promisify DB methods
 const dbAll = util.promisify(db.all.bind(db));
@@ -12,7 +13,12 @@ const dbAll = util.promisify(db.all.bind(db));
 async function listNetworks() {
   try {
     logger.info('Listing networks from database');
-    const rows = await dbAll("SELECT DISTINCT source FROM edges WHERE source IS NOT NULL");
+    const rows = await dbAll(`
+      SELECT source FROM edges WHERE source IS NOT NULL
+      UNION
+      SELECT source FROM network_nodes WHERE source IS NOT NULL
+      ORDER BY source
+    `);
     return rows.map(row => row.source);
   } catch (err) {
     logger.error(`Error listing networks: ${err.message}`);
@@ -79,17 +85,23 @@ async function getNetworkData(filename) {
       [filename]
     );
 
-    if (edges.length === 0) {
-      throw new Error(`Network not found: ${filename}`);
-    }
-
-    // Fetch nodes involved in these edges
-    // We can optimize this by doing a JOIN or just collecting IDs
+    // Fetch explicitly registered network members, then include all edge endpoints
+    // as a fallback for databases that predate the network_nodes table.
     const nodeIds = new Set();
+    const networkNodeRows = await dbAll(
+      "SELECT node_id FROM network_nodes WHERE source = ?",
+      [filename]
+    );
+    networkNodeRows.forEach(row => nodeIds.add(row.node_id));
+
     edges.forEach(e => {
       nodeIds.add(e.node1);
       nodeIds.add(e.node2);
     });
+
+    if (nodeIds.size === 0) {
+      throw new Error(`Network not found: ${filename}`);
+    }
 
     // Fetch node attributes
     // We use the helper function but we need to format it for the response
@@ -147,17 +159,20 @@ async function searchProteins(networkName, accessions) {
     // that accessions present in a different ingested network are not returned.
     const placeholders = accessions.map(() => '?').join(',');
     const query = `
+      WITH scoped_nodes(id) AS (
+        SELECT node_id FROM network_nodes WHERE source = ?
+        UNION
+        SELECT node1 FROM edges WHERE source = ?
+        UNION
+        SELECT node2 FROM edges WHERE source = ?
+      )
       SELECT id, attributes_json
       FROM nodes
       WHERE id IN (${placeholders})
-        AND id IN (
-          SELECT node1 FROM edges WHERE source = ?
-          UNION
-          SELECT node2 FROM edges WHERE source = ?
-        )
+        AND id IN (SELECT id FROM scoped_nodes)
     `;
 
-    const rows = await dbAll(query, [...accessions, networkName, networkName]);
+    const rows = await dbAll(query, [networkName, networkName, networkName, ...accessions]);
 
     const matches = rows.map(row => {
       let nhId = null;
@@ -192,7 +207,9 @@ async function searchBySpecies(networkName, speciesIds) {
 
     const placeholders = speciesIds.map(() => '?').join(',');
     const query = `
-      WITH network_nodes(id) AS (
+      WITH scoped_nodes(id) AS (
+        SELECT node_id FROM network_nodes WHERE source = ?
+        UNION
         SELECT node1 FROM edges WHERE source = ?
         UNION
         SELECT node2 FROM edges WHERE source = ?
@@ -201,11 +218,11 @@ async function searchBySpecies(networkName, speciesIds) {
         n.id,
         json_extract(n.attributes_json, '$.NH_ID') AS nh_id
       FROM nodes n
-      INNER JOIN network_nodes nn ON nn.id = n.id
+      INNER JOIN scoped_nodes nn ON nn.id = n.id
       WHERE CAST(json_extract(n.attributes_json, '$.NCBI_txID') AS TEXT) IN (${placeholders})
     `;
 
-    const rows = await dbAll(query, [networkName, networkName, ...speciesIds.map(String)]);
+    const rows = await dbAll(query, [networkName, networkName, networkName, ...speciesIds.map(String)]);
     const matches = rows.map(row => ({
       id: row.id,
       nh_id: row.nh_id
@@ -223,5 +240,6 @@ module.exports = {
   listNetworks,
   getNetworkData,
   searchProteins,
-  searchBySpecies
+  searchBySpecies,
+  createEditedNetwork: networkEditService.createEditedNetwork
 };

@@ -3,22 +3,67 @@ const path = require('path');
 const logger = require('../utils/logger');
 const config = require('../config/config');
 const { ingestNodeAttributes, ingestNetworks } = require('../scripts/ingestData');
+const speciesTreeRoute = require('../routes/species-tree');
 
 const NETWORKS_DIR = config.dataPath;
 const NODES_ATTR_DIR = config.nodeAttributesPath;
+const TAXON_TREE_PATH = path.resolve(config.taxonTreePath);
+const TAXON_NAMES_PATH = path.resolve(config.taxonNamesPath);
 
 class FileWatcher {
     constructor() {
         this.watcher = null;
+        this.suppressedNetworkIngests = new Map();
+    }
+
+    pruneExpiredSuppressions(now = Date.now()) {
+        for (const [key, suppression] of this.suppressedNetworkIngests) {
+            if (now > suppression.expiresAt || suppression.remainingEvents <= 0) {
+                this.suppressedNetworkIngests.delete(key);
+            }
+        }
+    }
+
+    suppressNetworkIngest(
+        filename,
+        {
+            ttlMs = config.networkEdit?.watcherSuppressMs || 300000,
+            eventCount = config.networkEdit?.watcherSuppressEvents || 3,
+        } = {}
+    ) {
+        this.pruneExpiredSuppressions();
+        const key = path.basename(filename).toLowerCase();
+        this.suppressedNetworkIngests.set(key, {
+            expiresAt: Date.now() + ttlMs,
+            remainingEvents: eventCount,
+        });
+    }
+
+    shouldSuppressNetworkIngest(filename) {
+        const now = Date.now();
+        this.pruneExpiredSuppressions(now);
+
+        const key = path.basename(filename).toLowerCase();
+        const suppression = this.suppressedNetworkIngests.get(key);
+        if (!suppression) return false;
+
+        suppression.remainingEvents -= 1;
+        if (suppression.remainingEvents <= 0) {
+            this.suppressedNetworkIngests.delete(key);
+        }
+
+        return true;
     }
 
     initialize() {
         logger.info('Initializing File Watcher Service...');
-        logger.info(`FileWatcher: Watching directories:\n - ${NETWORKS_DIR}\n - ${NODES_ATTR_DIR}`);
+        logger.info(`FileWatcher: Watching directories/files:\n - ${NETWORKS_DIR}\n - ${NODES_ATTR_DIR}\n - ${TAXON_TREE_PATH}\n - ${TAXON_NAMES_PATH}`);
 
         this.watcher = chokidar.watch([
             NETWORKS_DIR,
-            NODES_ATTR_DIR
+            NODES_ATTR_DIR,
+            TAXON_TREE_PATH,
+            TAXON_NAMES_PATH,
         ], {
             persistent: true,
             ignoreInitial: true,
@@ -41,12 +86,21 @@ class FileWatcher {
 
     async handleFileChange(filePath, eventType) {
         const filename = path.basename(filePath);
+        const resolvedPath = path.resolve(filePath);
         logger.info(`File ${eventType}: ${filename}.`);
 
         try {
-            if (filename.endsWith('.csv')) {
+            if (resolvedPath === TAXON_TREE_PATH || resolvedPath === TAXON_NAMES_PATH) {
+                speciesTreeRoute.invalidateCache();
+                logger.info(`Species tree cache invalidated after taxonomy file ${eventType}: ${filename}`);
+            } else if (filename.endsWith('.csv')) {
+                if (this.shouldSuppressNetworkIngest(filename)) {
+                    logger.info(`Skipping watcher-triggered ingest for internally saved network ${filename}`);
+                    return;
+                }
                 logger.info(`Triggering network ingestion for ${filename}...`);
                 await ingestNetworks(filename);
+                speciesTreeRoute.invalidateCache();
                 logger.info(`Successfully updated network database for ${filename}`);
             } else if (filename.endsWith('.nodes.attr')) {
                 const configured = config.nodeAttributeFiles;
@@ -61,6 +115,7 @@ class FileWatcher {
                 // the full selection, not just the changed file in isolation.
                 logger.info(`Triggering attribute re-ingestion for configured set: [${configured.join(', ')}]`);
                 await ingestNodeAttributes(configured);
+                speciesTreeRoute.invalidateCache();
                 logger.info(`Successfully updated attribute database for configured set`);
             }
         } catch (error) {
@@ -70,16 +125,29 @@ class FileWatcher {
 
     async handleFileRemove(filePath) {
         const filename = path.basename(filePath);
+        const resolvedPath = path.resolve(filePath);
         logger.info(`File removed: ${filename}.`);
 
         try {
-            if (filename.endsWith('.csv')) {
+            if (resolvedPath === TAXON_TREE_PATH || resolvedPath === TAXON_NAMES_PATH) {
+                speciesTreeRoute.invalidateCache();
+                logger.warn(`Species taxonomy file removed: ${filename}. Tree cache invalidated.`);
+            } else if (filename.endsWith('.csv')) {
                 const db = require('../config/database');
-                // Delete edges associated with this source
-                db.run('DELETE FROM edges WHERE source = ?', [filename], (err) => {
-                    if (err) logger.error(`Error deleting network ${filename}:`, err);
-                    else logger.info(`Successfully removed network ${filename} from database.`);
-                });
+                const util = require('util');
+                const dbRun = util.promisify(db.run.bind(db));
+
+                try {
+                    await dbRun('BEGIN TRANSACTION');
+                    await dbRun('DELETE FROM network_nodes WHERE source = ?', [filename]);
+                    await dbRun('DELETE FROM edges WHERE source = ?', [filename]);
+                    await dbRun('COMMIT');
+                    speciesTreeRoute.invalidateCache();
+                    logger.info(`Successfully removed network ${filename} from database.`);
+                } catch (err) {
+                    await dbRun('ROLLBACK').catch(() => {});
+                    logger.error(`Error deleting network ${filename}:`, err);
+                }
             } else if (filename.endsWith('.nodes.attr')) {
                 const configured = config.nodeAttributeFiles;
                 if (configured.includes(filename)) {

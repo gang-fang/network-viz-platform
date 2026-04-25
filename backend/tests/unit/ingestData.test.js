@@ -197,30 +197,63 @@ describe('ingestNodeAttributes argument validation', () => {
     });
 });
 
-// ─── File watcher attr-file filtering ─────────────────────────────────────────
+// ─── File watcher event handling ──────────────────────────────────────────────
 
-describe('FileWatcher attr-file filtering', () => {
+describe('FileWatcher event handling', () => {
     let FileWatcher;
     let mockIngestNodeAttributes;
+    let mockIngestNetworks;
+    let mockInvalidateSpeciesTree;
     let mockLogger;
+    let mockDbRun;
 
     beforeEach(() => {
         jest.resetModules();
 
         mockIngestNodeAttributes = jest.fn().mockResolvedValue(undefined);
+        mockIngestNetworks = jest.fn().mockResolvedValue(undefined);
+        mockInvalidateSpeciesTree = jest.fn();
+        mockDbRun = jest.fn((sql, params, callback) => {
+            if (typeof params === 'function') callback = params;
+            if (callback) callback(null);
+        });
         mockLogger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
 
         jest.mock('../../scripts/ingestData', () => ({
             ingestNodeAttributes: mockIngestNodeAttributes,
-            ingestNetworks: jest.fn().mockResolvedValue(undefined),
+            ingestNetworks: mockIngestNetworks,
+        }));
+
+        jest.mock('../../routes/species-tree', () => ({
+            invalidateCache: mockInvalidateSpeciesTree,
         }));
 
         jest.mock('../../utils/logger', () => mockLogger);
 
+        jest.mock('../../config/database', () => ({
+            run: mockDbRun,
+        }));
+
+        jest.mock('util', () => {
+            const real = jest.requireActual('util');
+            return {
+                ...real,
+                promisify: (fn) => (...args) => new Promise((resolve, reject) => {
+                    fn(...args, (err, result) => err ? reject(err) : resolve(result));
+                }),
+            };
+        });
+
         jest.mock('../../config/config', () => ({
             dataPath: '/mock/networks',
             nodeAttributesPath: '/mock/nodes_attr',
+            taxonTreePath: '/mock/taxonomy/commontree.txt',
+            taxonNamesPath: '/mock/taxonomy/NCBI_txID.csv',
             nodeAttributeFiles: ['e.nodes.attr'],
+            networkEdit: {
+                watcherSuppressMs: 30000,
+                watcherSuppressEvents: 3,
+            },
         }));
 
         jest.mock('chokidar', () => ({
@@ -245,5 +278,78 @@ describe('FileWatcher attr-file filtering', () => {
     test('triggers full configured-set re-ingestion when a configured file changes', async () => {
         await FileWatcher.handleFileChange('/mock/nodes_attr/e.nodes.attr', 'changed');
         expect(mockIngestNodeAttributes).toHaveBeenCalledWith(['e.nodes.attr']);
+        expect(mockInvalidateSpeciesTree).toHaveBeenCalledTimes(1);
+    });
+
+    test('suppresses watcher ingestion for internally saved edited network files', async () => {
+        FileWatcher.suppressNetworkIngest('edited.csv');
+
+        await FileWatcher.handleFileChange('/mock/networks/edited.csv', 'added');
+
+        expect(mockIngestNetworks).not.toHaveBeenCalled();
+        expect(mockInvalidateSpeciesTree).not.toHaveBeenCalled();
+        expect(mockLogger.info).toHaveBeenCalledWith(
+            expect.stringContaining('Skipping watcher-triggered ingest')
+        );
+    });
+
+    test('suppresses only the configured number of edited-network watcher events', async () => {
+        FileWatcher.suppressNetworkIngest('edited.csv', { eventCount: 2, ttlMs: 30000 });
+
+        await FileWatcher.handleFileChange('/mock/networks/edited.csv', 'added');
+        await FileWatcher.handleFileChange('/mock/networks/edited.csv', 'changed');
+        await FileWatcher.handleFileChange('/mock/networks/edited.csv', 'changed');
+
+        expect(mockIngestNetworks).toHaveBeenCalledTimes(1);
+        expect(mockIngestNetworks).toHaveBeenCalledWith('edited.csv');
+        expect(mockInvalidateSpeciesTree).toHaveBeenCalledTimes(1);
+    });
+
+    test('invalidates the species tree cache when taxonomy source files change', async () => {
+        await FileWatcher.handleFileChange('/mock/taxonomy/commontree.txt', 'changed');
+        await FileWatcher.handleFileChange('/mock/taxonomy/NCBI_txID.csv', 'changed');
+
+        expect(mockIngestNetworks).not.toHaveBeenCalled();
+        expect(mockIngestNodeAttributes).not.toHaveBeenCalled();
+        expect(mockInvalidateSpeciesTree).toHaveBeenCalledTimes(2);
+    });
+
+    test('does not invalidate the species tree cache when network ingest fails', async () => {
+        mockIngestNetworks.mockRejectedValueOnce(new Error('ingest failed'));
+
+        await FileWatcher.handleFileChange('/mock/networks/broken.csv', 'changed');
+
+        expect(mockInvalidateSpeciesTree).not.toHaveBeenCalled();
+        expect(mockLogger.error).toHaveBeenCalled();
+    });
+
+    test('invalidates the species tree cache when a network csv is removed', async () => {
+        await FileWatcher.handleFileRemove('/mock/networks/removed.csv');
+
+        expect(mockInvalidateSpeciesTree).toHaveBeenCalledTimes(1);
+        expect(mockDbRun).toHaveBeenCalledWith('BEGIN TRANSACTION', expect.any(Function));
+        expect(mockDbRun).toHaveBeenCalledWith('DELETE FROM network_nodes WHERE source = ?', ['removed.csv'], expect.any(Function));
+        expect(mockDbRun).toHaveBeenCalledWith('DELETE FROM edges WHERE source = ?', ['removed.csv'], expect.any(Function));
+        expect(mockDbRun).toHaveBeenCalledWith('COMMIT', expect.any(Function));
+    });
+
+    test('rolls back csv removal failures without invalidating the species tree cache', async () => {
+        mockDbRun.mockImplementation((sql, params, callback) => {
+            if (typeof params === 'function') callback = params;
+            if (sql === 'DELETE FROM edges WHERE source = ?') {
+                callback(new Error('delete failed'));
+                return;
+            }
+            if (callback) callback(null);
+        });
+
+        await FileWatcher.handleFileRemove('/mock/networks/broken-remove.csv');
+
+        expect(mockInvalidateSpeciesTree).not.toHaveBeenCalled();
+        expect(mockDbRun).toHaveBeenCalledWith('ROLLBACK', expect.any(Function));
+        expect(mockLogger.error).toHaveBeenCalledWith(
+            'Error deleting network broken-remove.csv:',
+            expect.any(Error)
+        );
     });
 });

@@ -36,6 +36,12 @@ function createSchema(db) {
               PRIMARY KEY (id, source),
               FOREIGN KEY(node1) REFERENCES nodes(id),
               FOREIGN KEY(node2) REFERENCES nodes(id)
+            )`);
+            db.run(`CREATE TABLE IF NOT EXISTS network_nodes (
+              source TEXT NOT NULL,
+              node_id TEXT NOT NULL,
+              PRIMARY KEY (source, node_id),
+              FOREIGN KEY(node_id) REFERENCES nodes(id)
             )`, (err) => (err ? reject(err) : resolve()));
         });
     });
@@ -86,8 +92,9 @@ describe('Attribute ingestion — integration tests (real SQLite)', () => {
     });
 
     beforeEach(async () => {
-        await dbRun(testDb, 'DELETE FROM nodes');
+        await dbRun(testDb, 'DELETE FROM network_nodes');
         await dbRun(testDb, 'DELETE FROM edges');
+        await dbRun(testDb, 'DELETE FROM nodes');
     });
 
     // ── Legacy null-source rows ───────────────────────────────────────────────
@@ -260,6 +267,7 @@ describe('ingestNetworks — integration tests (real SQLite)', () => {
     });
 
     beforeEach(async () => {
+        await dbRun(testDb, 'DELETE FROM network_nodes');
         await dbRun(testDb, 'DELETE FROM edges');
         await dbRun(testDb, 'DELETE FROM nodes');
     });
@@ -269,6 +277,8 @@ describe('ingestNetworks — integration tests (real SQLite)', () => {
         await ingestNetworks('test-network.csv');
         const firstEdges = await dbAll(testDb, `SELECT id FROM edges WHERE source = 'test-network.csv'`);
         expect(firstEdges.length).toBe(5);
+        const firstMembers = await dbAll(testDb, `SELECT node_id FROM network_nodes WHERE source = 'test-network.csv'`);
+        expect(firstMembers.length).toBeGreaterThan(0);
 
         // Manually add a phantom edge that is not in the CSV
         await dbRun(testDb,
@@ -296,6 +306,16 @@ describe('ingestNetworks — integration tests (real SQLite)', () => {
         } finally {
             await dbRun(testDb, 'PRAGMA foreign_keys = OFF');
         }
+    });
+
+    test('serializes concurrent ingests of the same source file', async () => {
+        await expect(Promise.all([
+            ingestNetworks('test-network.csv'),
+            ingestNetworks('test-network.csv'),
+        ])).resolves.toHaveLength(2);
+
+        const edges = await dbAll(testDb, `SELECT id FROM edges WHERE source = 'test-network.csv'`);
+        expect(edges).toHaveLength(5);
     });
 
     test('rolls back all edges for a source on mid-write failure', async () => {

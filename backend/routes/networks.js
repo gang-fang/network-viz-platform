@@ -9,6 +9,8 @@ const {
 } = require('../utils/requestValidation');
 
 const MAX_SEARCH_ITEMS = 500;
+const MAX_EDIT_HIDDEN_NODES = 200000;
+const MAX_EDIT_HIDDEN_EDGES = 20000;
 
 /**
  * @route   GET /api/networks
@@ -69,6 +71,44 @@ router.post('/search-species', async (req, res) => {
   } catch (err) {
     logger.error(`Error searching proteins by species: ${err.message}`);
     res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * @route   POST /api/networks/edited
+ * @desc    Save the current edited network as a new reusable network
+ * @access  Public
+ */
+router.post('/edited', async (req, res, next) => {
+  try {
+    const { source, name, hiddenNodeIds = [], hiddenEdgeIds = [], hiddenEdgeWeightRanges = [] } = req.body;
+    const validationError =
+      validateString(source, 'source') ||
+      validateString(name, 'name') ||
+      validateStringArray(hiddenNodeIds, 'hiddenNodeIds', MAX_EDIT_HIDDEN_NODES) ||
+      validateStringArray(hiddenEdgeIds, 'hiddenEdgeIds', MAX_EDIT_HIDDEN_EDGES);
+
+    if (validationError) return sendValidationError(res, validationError);
+
+    logger.info(`Saving edited network from ${source} as ${name}`);
+    const result = await networkController.createEditedNetwork({
+      source,
+      name,
+      hiddenNodeIds,
+      hiddenEdgeIds,
+      hiddenEdgeWeightRanges,
+    });
+    res.status(201).json(result);
+  } catch (err) {
+    if (err && err.status) {
+      logger.warn(`Edited network save rejected: ${err.message}`);
+      return res.status(err.status).json({
+        error: err.message,
+        ...(err.details || {}),
+      });
+    }
+    logger.error(`Error saving edited network: ${err.message}`);
+    next(err);
   }
 });
 

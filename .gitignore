@@ -17,6 +17,7 @@ data/**/*.db-*
 
 # Generated graph indexes / temporary processing output
 tmp/
+data/tmp/
 *.adj.bin
 *.adj.index.bin
 *.node_ids.tsv

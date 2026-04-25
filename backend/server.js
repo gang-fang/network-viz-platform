@@ -6,9 +6,11 @@ const config = require('./config/config');
 const logger = require('./utils/logger');
 
 // Import routes
-const networksRouter = require('./routes/networks');
-const uniprotRouter = require('./routes/uniprot');
-const speciesRouter = require('./routes/species');
+const networksRouter     = require('./routes/networks');
+const subnetworksRouter  = require('./routes/subnetworks');
+const uniprotRouter      = require('./routes/uniprot');
+const speciesRouter      = require('./routes/species');
+const speciesTreeRouter  = require('./routes/species-tree');
 
 // Initialize express app
 const app = express();
@@ -31,20 +33,11 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-app.use('/api/networks', networksRouter);
-app.use('/api/uniprot', uniprotRouter);
+app.use('/api/networks',      networksRouter);
+app.use('/api/subnetworks',   subnetworksRouter);
+app.use('/api/uniprot',       uniprotRouter);
 app.use('/api/species-names', speciesRouter);
-
-// Root route for API testing - this needs to be before static file serving
-app.get('/', (req, res, next) => {
-  // Check if the request is expecting JSON (like in tests)
-  const acceptsJson = req.accepts('json');
-  if (acceptsJson) {
-    return res.status(200).send('Network Visualization Platform API');
-  }
-  // For browser requests or HTML accepts, pass to next handler (static files)
-  next();
-});
+app.use('/api/species-tree',  speciesTreeRouter);
 
 // Static files - after API routes
 app.use(express.static(path.join(__dirname, '../frontend')));
@@ -62,36 +55,30 @@ app.use((err, req, res, next) => {
 if (process.env.NODE_ENV !== 'test') {
   const startServer = (port) => {
     return new Promise((resolve, reject) => {
-      // Create server instance but don't start listening yet
       const server = app.listen(port)
         .on('error', (err) => {
           if (err.code === 'EADDRINUSE') {
             logger.warn(`Port ${port} is already in use, trying next port...`);
             server.close();
-            // Try the next port
             resolve(false);
           } else {
-            // For other errors, reject with the error
             reject(err);
           }
         })
         .on('listening', () => {
-          // Successfully bound to this port
           resolve(true);
         });
     });
   };
 
-  // Try to start server with port from config, or find available port
   const findAvailablePort = async () => {
     let PORT = config.port || 3000;
-    const MAX_PORT_ATTEMPTS = 10; // Try up to 10 ports before giving up
+    const MAX_PORT_ATTEMPTS = 10;
 
     for (let attempt = 0; attempt < MAX_PORT_ATTEMPTS; attempt++) {
       try {
         const success = await startServer(PORT);
         if (success) {
-          // Port was available and server started
           const memUsage = process.memoryUsage();
           logger.info(`✅ Server running on port ${PORT}`);
           logger.info(`🔗 Access the app at http://localhost:${PORT}`);
@@ -99,7 +86,6 @@ if (process.env.NODE_ENV !== 'test') {
           logger.info(`📁 Data path: ${config.dataPath}`);
           logger.info(`💾 Memory usage: RSS ${Math.round(memUsage.rss / 1024 / 1024)}MB, Heap ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
 
-          // Display in console with highlighting for better visibility
           console.log('\x1b[36m%s\x1b[0m', `\n╔════════════════════════════════════════════════════════╗`);
           console.log('\x1b[36m%s\x1b[0m', `║                                                        ║`);
           console.log('\x1b[36m%s\x1b[0m', `║  SJI Network Visualization Platform                    ║`);
@@ -111,7 +97,6 @@ if (process.env.NODE_ENV !== 'test') {
 
           return true;
         }
-        // If we get here, the port was unavailable, try the next one
         PORT++;
       } catch (error) {
         logger.error(`Error starting server: ${error.message}`);
@@ -119,12 +104,10 @@ if (process.env.NODE_ENV !== 'test') {
       }
     }
 
-    // If we tried MAX_PORT_ATTEMPTS ports and none worked
     logger.error(`Could not find available port after ${MAX_PORT_ATTEMPTS} attempts`);
     return false;
   };
 
-  // Start server on available port
   findAvailablePort().catch(err => {
     logger.error(`Failed to start server: ${err.message}`);
     process.exit(1);

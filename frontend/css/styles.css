@@ -22,6 +22,16 @@ body {
     background-color: #1a1a1a;
 }
 
+.nav-link {
+    color: #74c0fc;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.nav-link:hover {
+    text-decoration: underline;
+}
+
 /* Panel Styles */
 .panel {
     background: #1e1e1e;
@@ -81,6 +91,27 @@ body {
     position: relative;
     background-color: #1e1e1e;
     flex-grow: 1;
+}
+
+.layout-status {
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 12;
+    padding: 8px 14px;
+    border: 1px solid rgba(116, 192, 252, 0.45);
+    border-radius: 999px;
+    background: rgba(12, 21, 30, 0.88);
+    color: #d8ecff;
+    font-size: 0.9rem;
+    letter-spacing: 0.01em;
+    pointer-events: none;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+}
+
+.layout-status[hidden] {
+    display: none;
 }
 
 /* D3.js Visualization Styles */
@@ -458,9 +489,10 @@ input[type="range"] {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     z-index: 100;
     min-width: 250px;
-    max-width: 400px;
+    max-width: min(90vw, 760px);
     max-height: 80vh;
-    overflow-y: auto;
+    overflow: auto;
+    resize: both;
     transform: translate(-50%, -50%);
     top: 50%;
     left: 50%;
@@ -482,6 +514,96 @@ input[type="range"] {
 .floating-panel.dragging {
     opacity: 0.8;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.network-editor-panel {
+    width: 630px;
+    max-width: min(90vw, 760px);
+    color: #1f2933;
+}
+
+.network-editor-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.network-editor-stats {
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: #eef5ff;
+    color: #1f4e79;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.network-editor-section {
+    border: 1px solid #e1e5ea;
+    border-radius: 6px;
+    padding: 10px;
+    background: #fff;
+}
+
+.network-editor-section h4 {
+    margin: 0 0 8px;
+    color: #202a33;
+    font-size: 0.95rem;
+}
+
+.network-editor-help {
+    margin-bottom: 8px;
+    color: #5f6f80;
+    font-size: 0.82rem;
+    line-height: 1.35;
+}
+
+.network-editor-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.network-editor-input,
+.network-editor-ids,
+.network-editor-species {
+    width: 100%;
+    border: 1px solid #cad2db;
+    border-radius: 4px;
+    background: #fff;
+    color: #202a33;
+    margin-bottom: 8px;
+}
+
+.network-editor-ids {
+    padding: 8px;
+    resize: vertical;
+}
+
+.network-editor-species {
+    min-height: 145px;
+}
+
+.network-editor-save {
+    background: #1f7a4d;
+}
+
+.network-editor-save:hover {
+    background: #17643e;
+}
+
+.network-editor-status {
+    min-height: 20px;
+    color: #1f7a4d;
+    font-size: 0.9rem;
+}
+
+.network-editor-status.error {
+    color: #c0392b;
+}
+
+.network-editor-status a {
+    color: #1d5f99;
+    font-weight: 600;
 }
 
 /* Panel header */

@@ -8,16 +8,37 @@ class GraphView {
      * Compute the visible nodes and edges.
      * @param {Graph} coreGraph - The full graph of proteins.
      * @param {Set} expandedClusters - Set of expanded NH IDs.
+     * @param {Set} hiddenNodeIds - Set of hidden core protein node IDs.
+     * @param {Set} hiddenEdgeIds - Set of hidden core edge IDs.
      * @returns {Object} { nodes: [], edges: [] }
      */
-    static compute(coreGraph, expandedClusters) {
+    static compute(coreGraph, expandedClusters, hiddenNodeIds = new Set(), hiddenEdgeIds = new Set()) {
         const visibleNodes = new Map();
         const visibleEdges = new Map();
+        const hiddenIds = new Set(Array.from(hiddenNodeIds || []).map(String));
+        const hiddenEdgeSet = new Set(Array.from(hiddenEdgeIds || []).map(String));
+        const visibleCoreNodes = new Map();
+        const visibleClusterMembers = new Map();
+
+        coreGraph.nodes.forEach(node => {
+            const nodeId = String(node.id);
+            if (hiddenIds.has(nodeId)) return;
+
+            visibleCoreNodes.set(nodeId, node);
+
+            if (node.NH_ID) {
+                const clusterId = String(node.NH_ID);
+                if (!visibleClusterMembers.has(clusterId)) {
+                    visibleClusterMembers.set(clusterId, []);
+                }
+                visibleClusterMembers.get(clusterId).push(nodeId);
+            }
+        });
 
         // Helper to find the representative ID for a node
         const getRepId = (nodeId) => {
-            const node = coreGraph.nodes.get(nodeId);
-            if (!node) return String(nodeId); // Should not happen
+            const node = visibleCoreNodes.get(String(nodeId));
+            if (!node) return null;
 
             const nhId = node.NH_ID;
             // If belongs to a cluster AND that cluster is NOT expanded -> Cluster is Rep
@@ -29,8 +50,9 @@ class GraphView {
         };
 
         // 1. Determine Visible Nodes
-        coreGraph.nodes.forEach(node => {
+        visibleCoreNodes.forEach(node => {
             const repId = getRepId(node.id);
+            if (!repId) return;
 
             if (!visibleNodes.has(repId)) {
                 if (repId === String(node.id)) {
@@ -42,7 +64,8 @@ class GraphView {
                         id: repId,
                         kind: 'nh',
                         label: repId,
-                        size: node.NH_Size || 10, // Use attribute from protein
+                        size: visibleClusterMembers.get(repId)?.length || 1,
+                        _memberIds: visibleClusterMembers.get(repId) || [],
                         _isCluster: true,
                         // Aggregate other attributes if needed
                     });
@@ -52,26 +75,34 @@ class GraphView {
 
         // 2. Aggregate Edges
         coreGraph.edges.forEach(edge => {
+            const edgeId = String(edge.id || Graph.getEdgeId(edge.source, edge.target));
+            if (hiddenEdgeSet.has(edgeId)) return;
+
+            if (hiddenIds.has(String(edge.source)) || hiddenIds.has(String(edge.target))) {
+                return;
+            }
+
             const uRep = getRepId(edge.source);
             const vRep = getRepId(edge.target);
 
-            if (uRep !== vRep) {
+            if (uRep && vRep && uRep !== vRep) {
                 // Canonical edge ID for the view
                 const viewEdgeId = Graph.getEdgeId(uRep, vRep);
+                const edgeWeight = Number(edge.weight) || 0;
 
                 if (!visibleEdges.has(viewEdgeId)) {
                     visibleEdges.set(viewEdgeId, {
                         id: viewEdgeId,
                         source: uRep,
                         target: vRep,
-                        weight: edge.weight,
+                        weight: edgeWeight,
                         count: 1,
                         _isAggregated: (uRep !== String(edge.source) || vRep !== String(edge.target))
                     });
                 } else {
                     // Accumulate weight
                     const existing = visibleEdges.get(viewEdgeId);
-                    existing.weight += edge.weight;
+                    existing.weight += edgeWeight;
                     existing.count += 1;
                 }
             }

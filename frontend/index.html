@@ -4,85 +4,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modular Network Viz</title>
-    <link rel="stylesheet" href="css/styles.css?v=6">
-    <script src="/vendor/d3.min.js"></script>
-
-    <!-- Core Scripts -->
-    <script src="js/core/graph.js?v=7"></script>
-    <script src="js/core/graph-view.js?v=7"></script>
-    <script src="js/core/state.js?v=7"></script>
-    <script src="js/core/module-system.js?v=7"></script>
-    <script src="js/adapters/d3-adapter.js?v=7"></script>
-
-    <!-- Modules -->
-    <script src="js/config/modules.js?v=7"></script>
-    <script src="js/modules/species-selector.js?v=7"></script>
-    <script src="js/modules/search-highlight.js?v=7"></script>
-    <script src="js/modules/clear-highlights.js?v=7"></script>
-    <script src="js/modules/uniprot-tooltip.js?v=7"></script>
-    <script src="js/modules/export-panel.js?v=7"></script>
+    <title>Build A Subnetwork</title>
+    <link rel="stylesheet" href="css/landing.css?v=1">
 </head>
 
 <body>
-    <div id="app">
-        <div id="control-panel" class="panel">
-            <h3>Controls</h3>
-            <div class="control-group">
-                <label for="network-select">Select Network:</label>
-                <div style="display: flex; gap: 5px;">
-                    <select id="network-select" style="flex-grow: 1;">
-                        <option value="">Loading...</option>
-                    </select>
-                    <button id="refresh-btn" title="Refresh List">↻</button>
+    <main class="landing-shell">
+        <section class="hero-panel">
+            <p class="eyebrow">Network Visualization Platform</p>
+            <h1>Extract a focused subnetwork before you open the viewer.</h1>
+            <p class="hero-copy">
+                Provide seed proteins, choose a subnetwork name, and the server will generate a network CSV
+                in <code>data/networks</code> using the preprocessed <code>eu</code> graph index.
+            </p>
+            <div class="hero-actions">
+                <a class="ghost-link" href="/viewer.html">Open existing networks in viewer</a>
+            </div>
+        </section>
+
+        <section class="form-panel">
+            <form id="subnetwork-form" novalidate>
+                <div class="field-grid">
+                    <label class="field">
+                        <span>Subnetwork name</span>
+                        <input id="subnetwork-name" name="name" type="text" placeholder="newsub" required>
+                        <small id="name-help">Letters, numbers, <code>_</code>, <code>-</code>, and <code>.</code> only. <code>.csv</code> is added automatically.</small>
+                    </label>
+
+                    <label id="graph-index-field" class="field">
+                        <span>Graph index</span>
+                        <select id="graph-index" name="index">
+                            <option value="eu" selected>eu</option>
+                        </select>
+                        <small id="index-help">Only whitelisted graph indexes are accepted by the backend.</small>
+                    </label>
+
+                    <label class="field">
+                        <span>Max nodes</span>
+                        <input id="max-nodes" name="maxNodes" type="number" min="1" value="500">
+                        <small id="max-nodes-help">Used as <code>--max_nodes</code> when the Python process runs.</small>
+                    </label>
                 </div>
-            </div>
-            <button id="load-btn" disabled>Load Network</button>
-            <div id="info" class="status-text"></div>
-            <hr class="separator" style="margin-top: 3rem;">
 
-            <!-- Module Controls Container -->
-            <div id="module-controls-container"></div>
+                <label class="field field-block">
+                    <span>Seed proteins</span>
+                    <textarea id="seed-input" name="seeds" rows="10" placeholder="A0A2I3TW31&#10;A0A2I3TW32&#10;A0A2I3TW33" required></textarea>
+                    <small id="seed-help">Separate identifiers with new lines, spaces, commas, or semicolons.</small>
+                </label>
 
-            <hr class="separator">
+                <div class="form-footer">
+                    <div id="seed-meta" class="seed-meta">0 identifiers parsed</div>
+                    <button id="submit-btn" type="submit">Extract Subnetwork</button>
+                </div>
+            </form>
 
-        </div>
+            <section id="result-panel" class="result-panel hidden" aria-live="polite">
+                <div class="result-header">
+                    <h2 id="result-title">Result</h2>
+                    <a id="viewer-link" class="viewer-link hidden" href="/viewer.html">Open in viewer</a>
+                </div>
+                <p id="result-summary" class="result-summary"></p>
+                <div id="result-details" class="result-details"></div>
+            </section>
+        </section>
+    </main>
 
-        <div id="network-container" style="position: relative; width: 100%; height: 800px;">
-            <div id="cy" style="width: 100%; height: 100%;"></div>
-
-            <!-- Export Mode Controls -->
-            <div id="export-controls"
-                style="position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 10;">
-                <button id="select-mode-btn" class="icon-btn" title="Select Nodes">★</button>
-                <button id="export-btn" class="icon-btn" title="Export" disabled>➡</button>
-            </div>
-
-            <!-- Zoom Controls -->
-            <div id="zoom-controls"
-                style="position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 5px;">
-                <button id="expand-all-btn" style="width: 30px; height: 30px; cursor: pointer;"
-                    title="Expand All">☀️</button>
-                <button id="collapse-all-btn" style="width: 30px; height: 30px; cursor: pointer;"
-                    title="Collapse All">🌙</button>
-                <button id="zoom-in" style="width: 30px; height: 30px; cursor: pointer;">+</button>
-                <button id="zoom-out" style="width: 30px; height: 30px; cursor: pointer;">-</button>
-                <button id="zoom-reset" style="width: 30px; height: 30px; cursor: pointer;"
-                    title="Reset Layout">⟲</button>
-            </div>
-        </div>
-
-        <!-- Right Panel for Export -->
-        <div id="right-panel" class="panel">
-            <h3>Export & Analysis</h3>
-            <div id="export-content">
-                <p class="placeholder-text">Select nodes to export data.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main App Script -->
-    <script src="js/app.js?v=6"></script>
+    <script src="js/landing.js?v=1"></script>
 </body>
 
 </html>

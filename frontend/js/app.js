@@ -40,6 +40,7 @@ async function initApp() {
     const refreshBtn = document.getElementById('refresh-btn');
     const loadBtn = document.getElementById('load-btn');
     const infoDiv = document.getElementById('info');
+    const requestedNetwork = new URLSearchParams(window.location.search).get('network');
 
     // Zoom Controls
     const bindButton = (id, callback) => {
@@ -53,9 +54,52 @@ async function initApp() {
 
     bindButton('zoom-in', () => d3Adapter.zoomIn());
     bindButton('zoom-out', () => d3Adapter.zoomOut());
-    bindButton('zoom-reset', () => d3Adapter.resetZoom());
+    bindButton('zoom-reset', () => d3Adapter.resetLayout());
     bindButton('expand-all-btn', () => appState.expandAll());
     bindButton('collapse-all-btn', () => appState.collapseAll());
+
+    async function loadSelectedNetwork(filename) {
+        if (!filename) return;
+
+        try {
+            loadBtn.disabled = true;
+            loadBtn.textContent = "Loading...";
+            infoDiv.textContent = `Fetching ${filename}...`;
+
+            const response = await fetch(`/api/networks/${encodeURIComponent(filename)}`);
+            const data = await response.json();
+
+            if (data.error) throw new Error(data.error);
+
+            const nodes = [];
+            const edges = [];
+
+            data.elements.nodes.forEach(n => {
+                nodes.push({ id: n.data.id, ...n.data });
+            });
+
+            data.elements.edges.forEach(e => {
+                edges.push({
+                    id: e.data.id,
+                    source: e.data.source,
+                    target: e.data.target,
+                    weight: e.data.weight,
+                    ...e.data
+                });
+            });
+
+            infoDiv.textContent = `Loaded: ${nodes.length} nodes, ${edges.length} edges`;
+            appState.setGraphData(nodes, edges, filename);
+
+        } catch (err) {
+            console.error("Failed to load network:", err);
+            infoDiv.textContent = "Error: " + err.message;
+            alert("Failed to load network: " + err.message);
+        } finally {
+            loadBtn.disabled = false;
+            loadBtn.textContent = "Load Network";
+        }
+    }
 
     // Function to fetch networks
     async function loadNetworkList() {
@@ -83,6 +127,14 @@ async function initApp() {
                 option.textContent = net;
                 networkSelect.appendChild(option);
             });
+
+            if (requestedNetwork && networks.includes(requestedNetwork)) {
+                networkSelect.value = requestedNetwork;
+                loadBtn.disabled = false;
+                await loadSelectedNetwork(requestedNetwork);
+            } else if (requestedNetwork) {
+                infoDiv.textContent = `Requested network not found: ${requestedNetwork}`;
+            }
         } catch (err) {
             console.error("Failed to fetch networks list:", err);
             if (networkSelect) networkSelect.innerHTML = '<option value="">Error loading list</option>';
@@ -110,47 +162,7 @@ async function initApp() {
     if (loadBtn) {
         loadBtn.addEventListener('click', async () => {
             const filename = networkSelect.value;
-            if (!filename) return;
-
-            try {
-                loadBtn.disabled = true;
-                loadBtn.textContent = "Loading...";
-                infoDiv.textContent = `Fetching ${filename}...`;
-
-                const response = await fetch(`/api/networks/${filename}`);
-                const data = await response.json();
-
-                if (data.error) throw new Error(data.error);
-
-                // Convert to internal Graph format
-                const nodes = [];
-                const edges = [];
-
-                data.elements.nodes.forEach(n => {
-                    nodes.push({ id: n.data.id, ...n.data });
-                });
-
-                data.elements.edges.forEach(e => {
-                    edges.push({
-                        id: e.data.id,
-                        source: e.data.source,
-                        target: e.data.target,
-                        weight: e.data.weight,
-                        ...e.data
-                    });
-                });
-
-                infoDiv.textContent = `Loaded: ${nodes.length} nodes, ${edges.length} edges`;
-                appState.setGraphData(nodes, edges, filename);
-
-            } catch (err) {
-                console.error("Failed to load network:", err);
-                infoDiv.textContent = "Error: " + err.message;
-                alert("Failed to load network: " + err.message);
-            } finally {
-                loadBtn.disabled = false;
-                loadBtn.textContent = "Load Network";
-            }
+            await loadSelectedNetwork(filename);
         });
     }
 
