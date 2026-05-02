@@ -15,6 +15,7 @@ const ClearHighlightsModule = {
         btn.style.marginTop = "10px";
         btn.onclick = () => {
             this.context.clearHighlightLayers();
+            this.context.clearSelection();
         };
 
         context.addPanelControl(btn);

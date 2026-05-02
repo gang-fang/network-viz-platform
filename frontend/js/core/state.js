@@ -348,6 +348,24 @@ class AppState {
         return ids;
     }
 
+    getHiddenEdgeIdsAboveWeight(threshold) {
+        const cutoff = this.validateEdgeThreshold(threshold);
+
+        const ids = [];
+        this.graph.edges.forEach(edge => {
+            const weight = Number(edge.weight);
+            if (!Number.isFinite(weight) || weight <= cutoff) {
+                return;
+            }
+
+            const edgeId = String(edge.id);
+            if (this.hiddenEdges.has(edgeId) && this.isWeightHiddenByRanges(weight)) {
+                ids.push(edgeId);
+            }
+        });
+        return ids;
+    }
+
     hideEdgesByWeightBelow(threshold) {
         const cutoff = this.validateEdgeThreshold(threshold);
         const edgeIds = this.getEdgeIdsBelowWeight(threshold);
@@ -360,12 +378,12 @@ class AppState {
         };
     }
 
-    showEdgesByWeightBelow(threshold) {
+    showEdgesByWeightAbove(threshold) {
         const cutoff = this.validateEdgeThreshold(threshold);
-        const edgeIds = this.getEdgeIdsBelowWeight(threshold);
+        const edgeIds = this.getHiddenEdgeIdsAboveWeight(threshold);
         const before = this.hiddenEdges.size;
-        this.removeHiddenEdgeWeightRange(0, cutoff);
-        this.showEdgeIds(edgeIds, 'showEdgesByWeight', { preserveRanges: true });
+        this.removeHiddenEdgeWeightRange(cutoff, 1);
+        this.showEdgeIds(edgeIds, 'showEdgesByWeightAbove', { preserveRanges: true });
         return {
             matchedCount: edgeIds.length,
             changedCount: before - this.hiddenEdges.size
@@ -526,17 +544,12 @@ class AppState {
             .filter(id => !this.hiddenNodes.has(id));
     }
 
-    getHighlightedProteinIds() {
-        const ids = new Set();
-        for (const layer of this.highlightLayers.values()) {
-            (layer.matches || []).forEach(match => {
-                const id = String(match.id);
-                if (this.graph.nodes.has(id) && !this.hiddenNodes.has(id)) {
-                    ids.add(id);
-                }
-            });
-        }
-        return Array.from(ids);
+    getHighlightedNodeIds() {
+        return Array.from(this.nodeColors.keys()).filter(nodeId => {
+            const id = String(nodeId);
+            if (this.hiddenNodes.has(id)) return false;
+            return this.viewGraph.nodes.has(id);
+        });
     }
 
     getEditStats() {

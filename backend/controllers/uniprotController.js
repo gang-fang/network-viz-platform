@@ -8,6 +8,7 @@ const CACHE_MAX_ENTRIES = uniprotConfig.cacheMaxEntries || 1000;
 const BATCH_LIMIT = uniprotConfig.batchLimit || 100;
 const CONCURRENCY_LIMIT = uniprotConfig.concurrencyLimit || 5;
 const proteinCache = new Map();
+const availabilityCache = new Map();
 
 function getCachedProtein(accession) {
   const cached = proteinCache.get(accession);
@@ -34,6 +35,33 @@ function cacheProtein(accession, data) {
   while (proteinCache.size > CACHE_MAX_ENTRIES) {
     const oldestKey = proteinCache.keys().next().value;
     proteinCache.delete(oldestKey);
+  }
+}
+
+function getCachedAvailability(accession) {
+  const cached = availabilityCache.get(accession);
+  if (!cached) return null;
+
+  if (Date.now() - cached.cachedAt > CACHE_EXPIRY_MS) {
+    availabilityCache.delete(accession);
+    return null;
+  }
+
+  availabilityCache.delete(accession);
+  availabilityCache.set(accession, cached);
+  return cached.data;
+}
+
+function cacheAvailability(accession, data) {
+  if (availabilityCache.has(accession)) {
+    availabilityCache.delete(accession);
+  }
+
+  availabilityCache.set(accession, { data, cachedAt: Date.now() });
+
+  while (availabilityCache.size > CACHE_MAX_ENTRIES) {
+    const oldestKey = availabilityCache.keys().next().value;
+    availabilityCache.delete(oldestKey);
   }
 }
 
@@ -135,6 +163,50 @@ async function getProteinFields(accession, fields) {
   }
 }
 
+async function getProteinAvailability(accession) {
+  try {
+    const cached = getCachedAvailability(accession);
+    if (cached) return cached;
+
+    const url = `${config.uniprotApi.baseUrl}${accession}.json`;
+    logger.info(`Checking UniProt availability from: ${url}`);
+
+    const response = await axios.get(url, {
+      timeout: config.uniprotApi.timeout,
+      validateStatus: () => true,
+    });
+
+    const result = {
+      accession,
+      available: response.status === 200,
+    };
+
+    if (response.status === 200 || response.status === 400 || response.status === 404) {
+      cacheAvailability(accession, result);
+    } else {
+      logger.warn(`Skipping UniProt availability cache for ${accession}: upstream status ${response.status}`);
+    }
+    return result;
+  } catch (err) {
+    logger.error(`Error checking UniProt availability for ${accession}: ${err.message}`);
+    return {
+      accession,
+      available: false,
+    };
+  }
+}
+
+async function getBatchProteinAvailability(accessions) {
+  try {
+    validateAccessions(accessions);
+    return await mapWithConcurrency(accessions, CONCURRENCY_LIMIT, getProteinAvailability);
+  } catch (err) {
+    logger.error(`Error checking batch UniProt availability: ${err.message}`);
+    if (err.message.includes('accessions')) throw err;
+    throw new Error('Failed to check batch UniProt availability');
+  }
+}
+
 /**
  * Get proteins filtered by species taxonomy ID
  * @param {string} taxId - Taxonomy ID
@@ -164,6 +236,8 @@ module.exports = {
   getProteinData,
   getBatchProteinData,
   getProteinFields,
+  getProteinAvailability,
+  getBatchProteinAvailability,
   getProteinsBySpecies,
   validateAccessions,
 };

@@ -7,6 +7,7 @@ jest.mock('../../config/config', () => ({
   dataPath: '/mock/data/path',
   indexesPath: '/mock/data/indexes',
   nodeAttributesPath: '/mock/node/attributes',
+  exportsPath: '/mock/data/exports',
   subnetwork: {
     pythonCommand: 'python3',
     scriptPath: '/mock/tools/extract_subnetwork.py',
@@ -15,7 +16,7 @@ jest.mock('../../config/config', () => ({
     maxInputLength: 2000,
     maxNameLength: 80,
     defaultMaxNodes: 500,
-    maxNodesLimit: 2000,
+    maxNodesLimit: 2500,
     timeoutMs: 60000,
     maxConcurrentJobs: 2,
   },
@@ -33,7 +34,11 @@ jest.mock('../../utils/logger', () => ({
 }));
 
 jest.mock('../../controllers/uniprotController', () => ({
-  getProteinData: jest.fn()
+  getProteinData: jest.fn(),
+  getBatchProteinData: jest.fn(),
+  getProteinFields: jest.fn(),
+  getBatchProteinAvailability: jest.fn(),
+  getProteinsBySpecies: jest.fn(),
 }));
 
 jest.mock('../../controllers/subnetworkController', () => ({
@@ -46,6 +51,7 @@ jest.mock('../../controllers/networkController', () => ({
   getNetworkData: jest.fn(),
   searchProteins: jest.fn(),
   searchBySpecies: jest.fn(),
+  saveGroupExports: jest.fn(),
 }));
 
 describe('Server Tests', () => {

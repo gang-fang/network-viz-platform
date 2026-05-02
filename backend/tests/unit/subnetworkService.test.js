@@ -11,6 +11,14 @@ jest.mock('../../scripts/ingestData', () => ({
   ingestNetworks: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('../../config/database', () => ({
+  get: jest.fn(),
+}));
+
+jest.mock('../../services/fileWatcher', () => ({
+  suppressNetworkIngest: jest.fn(),
+}));
+
 jest.mock('../../utils/logger', () => ({
   info: jest.fn(),
   warn: jest.fn(),
@@ -31,7 +39,7 @@ jest.mock('../../config/config', () => ({
     maxInputLength: 2000,
     maxNameLength: 80,
     defaultMaxNodes: 500,
-    maxNodesLimit: 2000,
+    maxNodesLimit: 2500,
     timeoutMs: 1000,
     maxConcurrentJobs: 2,
   },
@@ -39,6 +47,8 @@ jest.mock('../../config/config', () => ({
 
 const { spawn } = require('child_process');
 const { ingestNetworks } = require('../../scripts/ingestData');
+const db = require('../../config/database');
+const fileWatcher = require('../../services/fileWatcher');
 const service = require('../../services/subnetworkService');
 const config = require('../../config/config');
 
@@ -69,6 +79,14 @@ describe('subnetworkService', () => {
     spawn.mockReset();
     ingestNetworks.mockReset();
     ingestNetworks.mockResolvedValue(undefined);
+    fileWatcher.suppressNetworkIngest.mockReset();
+    db.get.mockImplementation((sql, params, callback) => {
+      if (sql.includes('COUNT(*) AS count FROM edges')) {
+        callback(null, { count: 1 });
+        return;
+      }
+      callback(null, { count: 2 });
+    });
     originalTimeoutMs = config.subnetwork.timeoutMs;
     originalMaxConcurrentJobs = config.subnetwork.maxConcurrentJobs;
     fs.rmSync(mockTestRoot, { recursive: true, force: true });
@@ -123,16 +141,19 @@ describe('subnetworkService', () => {
 
     expect(result.network).toBe('generated.csv');
     expect(result.viewerUrl).toBe('/viewer.html?network=generated.csv');
+    expect(result.viewerReady).toBe(true);
+    expect(result.viewerStatusUrl).toBe('/api/networks/generated.csv/status');
     expect(result.edgeCount).toBe(1);
     expect(result.missingSeeds).toEqual(['MISSING1']);
     expect(result.resolvedSeedCount).toBe(1);
     expect(result.inputSeedCount).toBe(2);
     expect(result.elapsedMs).toBe(12);
     expect(fs.existsSync(path.join(config.dataPath, 'generated.csv'))).toBe(true);
+    expect(fileWatcher.suppressNetworkIngest).toHaveBeenCalledWith('generated.csv');
     expect(ingestNetworks).toHaveBeenCalledWith('generated.csv');
     expect(spawn).toHaveBeenCalledWith(
       'python3',
-      expect.arrayContaining(['--json', '--']),
+      expect.arrayContaining(['--json', '--stitch', '--']),
       expect.any(Object)
     );
   });
@@ -157,6 +178,7 @@ describe('subnetworkService', () => {
 
     expect(result.network).toBe('existing_1.csv');
     expect(result.viewerUrl).toBe('/viewer.html?network=existing_1.csv');
+    expect(result.viewerReady).toBe(true);
     expect(fs.existsSync(path.join(config.dataPath, 'existing.csv'))).toBe(true);
     expect(fs.existsSync(path.join(config.dataPath, 'existing_1.csv'))).toBe(true);
     expect(ingestNetworks).toHaveBeenCalledWith('existing_1.csv');
@@ -308,5 +330,47 @@ describe('subnetworkService', () => {
       seeds: ['P1'],
       name: 'timeout-network',
     })).rejects.toMatchObject({ status: 504 });
+  });
+
+  test('createSubnetwork marks the viewer as not ready when DB counts do not reach the generated edge count in time', async () => {
+    db.get.mockImplementation((sql, params, callback) => {
+      callback(null, { count: 0 });
+    });
+    config.subnetwork.timeoutMs = 60000;
+
+    spawn.mockImplementation((command, args) => {
+      const outputPath = args[args.indexOf('-o') + 1];
+      return createMockChildProcess({
+        stdout: '__SUBNET_JSON__ {"ok":true,"missingSeeds":[],"edgeCount":1,"resolvedSeedCount":1,"inputSeedCount":1,"selectedNodeCount":2,"emptySubnetwork":false,"elapsedMs":7}\n',
+        onSpawn: async () => {
+          await fs.promises.writeFile(outputPath, 'P1,P2,0.5\n');
+        },
+      });
+    });
+
+    const originalNow = Date.now;
+    const originalSetTimeout = global.setTimeout;
+    let now = 0;
+    Date.now = jest.fn(() => now);
+    global.setTimeout = jest.fn((callback, delay) => {
+      if (delay && delay < config.subnetwork.timeoutMs) {
+        now += delay;
+        callback();
+      }
+      return 1;
+    });
+
+    try {
+      const result = await service.createSubnetwork({
+        seeds: ['P1'],
+        name: 'slow-ready',
+      });
+
+      expect(result.viewerReady).toBe(false);
+      expect(result.viewerStatusUrl).toBe('/api/networks/slow-ready.csv/status');
+    } finally {
+      Date.now = originalNow;
+      global.setTimeout = originalSetTimeout;
+    }
   });
 });

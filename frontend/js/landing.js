@@ -1,19 +1,105 @@
 const DEFAULT_LIMITS = {
-    allowedIndexes: ['eu'],
+    allowedIndexes: ['ba', 'eu'],
     maxSeedCount: 10,
     maxInputLength: 2000,
     maxNameLength: 80,
     defaultMaxNodes: 500,
-    maxNodesLimit: 2000,
+    maxNodesLimit: 2500,
 };
 
 let currentLimits = { ...DEFAULT_LIMITS };
+let lastValidMaxNodesValue = String(DEFAULT_LIMITS.defaultMaxNodes);
+let hasUserEditedMaxNodes = false;
+let viewerReadyRequestId = 0;
+
+function getRecommendedMaxNodesCopy(limit) {
+    return `For smoother visualization, neighboring proteins are capped at ${limit.toLocaleString()}; 500–1,000 is recommended.`;
+}
+
+function formatMaxNodesLimit(limit) {
+    return Number(limit).toLocaleString();
+}
+
+function getDomainLabel(indexName) {
+    const normalized = String(indexName || '').trim().toLowerCase();
+    if (normalized === 'ba') return 'Bacteria';
+    if (normalized === 'eu') return 'Eukaryota';
+    // Fall back to the backend-provided code for any future domain additions.
+    return indexName;
+}
+
+function playWarningSound() {
+    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextCtor) return;
+
+    if (!playWarningSound.audioContext) {
+        playWarningSound.audioContext = new AudioContextCtor();
+    }
+
+    const audioContext = playWarningSound.audioContext;
+    if (audioContext.state === 'suspended') {
+        audioContext.resume().catch(() => {});
+    }
+
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const startTime = audioContext.currentTime;
+
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(880, startTime);
+    gainNode.gain.setValueAtTime(0.0001, startTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.06, startTime + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.12);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.start(startTime);
+    oscillator.stop(startTime + 0.12);
+}
 
 function parseSeeds(text) {
     return text
         .split(/[\s,;]+/)
         .map(token => token.trim())
         .filter(Boolean);
+}
+
+function buildViewerUrlWithSeeds(viewerUrl, seeds) {
+    if (!viewerUrl || !seeds.length) {
+        return viewerUrl;
+    }
+
+    const url = new URL(viewerUrl, window.location.origin);
+    url.searchParams.set('seeds', seeds.join(','));
+    return `${url.pathname}${url.search}`;
+}
+
+async function waitForViewerReady({ network, expectedEdgeCount, requestId, viewerStatusUrl }) {
+    const statusUrl = viewerStatusUrl || `/api/networks/${encodeURIComponent(network)}/status`;
+    const maxAttempts = 30;
+    const retryDelayMs = 500;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        if (requestId !== viewerReadyRequestId) {
+            return false;
+        }
+
+        try {
+            const response = await fetch(statusUrl, { cache: 'no-store' });
+            if (response.ok) {
+                const status = await response.json();
+                if (status.ready && status.edgeCount === expectedEdgeCount && status.nodeCount > 0) {
+                    return true;
+                }
+            }
+        } catch (_err) {
+            // Retry until timeout.
+        }
+
+        await new Promise(resolve => window.setTimeout(resolve, retryDelayMs));
+    }
+
+    return false;
 }
 
 function escapeHtml(value) {
@@ -58,6 +144,18 @@ function renderResult({ title, summary, detailsHtml, viewerUrl, isError = false 
     }
 }
 
+function setMaxNodesInlineError(message = '') {
+    const maxNodesInput = document.getElementById('max-nodes');
+    const maxNodesError = document.getElementById('max-nodes-error');
+    if (!maxNodesInput || !maxNodesError) return;
+
+    const hasError = Boolean(message);
+    maxNodesInput.classList.toggle('input-invalid', hasError);
+    maxNodesInput.setCustomValidity(message);
+    maxNodesError.textContent = message;
+    maxNodesError.classList.toggle('hidden', !hasError);
+}
+
 function setWorkingState(message) {
     renderResult({
         title: 'Working',
@@ -66,13 +164,19 @@ function setWorkingState(message) {
     });
 }
 
+function validateMaxNodesValue(maxNodes) {
+    const parsedMaxNodes = Number(maxNodes);
+    if (!Number.isInteger(parsedMaxNodes) || parsedMaxNodes < 1 || parsedMaxNodes > currentLimits.maxNodesLimit) {
+        return `Max neighbors must be an integer between 1 and ${formatMaxNodesLimit(currentLimits.maxNodesLimit)}.`;
+    }
+    return null;
+}
+
 function updateLimitsUi(limits) {
     currentLimits = { ...DEFAULT_LIMITS, ...limits };
 
     const nameInput = document.getElementById('subnetwork-name');
-    const seedInput = document.getElementById('seed-input');
     const maxNodesInput = document.getElementById('max-nodes');
-    const indexField = document.getElementById('graph-index-field');
     const indexInput = document.getElementById('graph-index');
     const seedHelp = document.getElementById('seed-help');
     const nameHelp = document.getElementById('name-help');
@@ -81,27 +185,27 @@ function updateLimitsUi(limits) {
     nameInput.maxLength = currentLimits.maxNameLength;
     maxNodesInput.min = '1';
     maxNodesInput.max = String(currentLimits.maxNodesLimit);
-    maxNodesInput.value = String(currentLimits.defaultMaxNodes);
+    if (!hasUserEditedMaxNodes) {
+        maxNodesInput.value = String(currentLimits.defaultMaxNodes);
+        lastValidMaxNodesValue = maxNodesInput.value;
+    }
 
     nameHelp.innerHTML =
         `Letters, numbers, <code>_</code>, <code>-</code>, and <code>.</code> only. ` +
         `<code>.csv</code> is added automatically. Maximum ${currentLimits.maxNameLength} characters.`;
     seedHelp.textContent =
-        `Separate identifiers with new lines, spaces, commas, or semicolons. ` +
-        `Maximum ${currentLimits.maxSeedCount} identifiers.`;
-    maxNodesHelp.innerHTML =
-        `Used as <code>--max_nodes</code> when the Python process runs. ` +
-        `Allowed range: 1-${currentLimits.maxNodesLimit}.`;
+        `Separate UniProt ACs with new lines, spaces, commas, or semicolons. ` +
+        `Maximum ${currentLimits.maxSeedCount} ACs.`;
+    maxNodesHelp.textContent = getRecommendedMaxNodesCopy(currentLimits.maxNodesLimit);
+    setMaxNodesInlineError('');
 
     indexInput.innerHTML = '';
     currentLimits.allowedIndexes.forEach(indexName => {
         const option = document.createElement('option');
         option.value = indexName;
-        option.textContent = indexName;
+        option.textContent = getDomainLabel(indexName);
         indexInput.appendChild(option);
     });
-
-    indexField.classList.toggle('hidden', currentLimits.allowedIndexes.length <= 1);
 }
 
 async function loadLimits() {
@@ -120,32 +224,70 @@ async function loadLimits() {
 
 function validateBeforeSubmit({ seeds, name, maxNodes }) {
     if (!name) {
-        return 'Subnetwork name is required.';
+        return { field: 'name', message: 'Subnetwork name is required.' };
     }
 
     if (name.length > currentLimits.maxNameLength) {
-        return `Subnetwork name must be ${currentLimits.maxNameLength} characters or fewer.`;
+        return { field: 'name', message: `Subnetwork name must be ${currentLimits.maxNameLength} characters or fewer.` };
     }
 
     if (seeds.length === 0) {
-        return 'At least one seed protein is required.';
+        return { field: 'seeds', message: 'At least one seed protein is required.' };
     }
 
     if (seeds.length > currentLimits.maxSeedCount) {
-        return `Seed input is limited to ${currentLimits.maxSeedCount} identifiers.`;
+        return { field: 'seeds', message: `Seed input is limited to ${currentLimits.maxSeedCount} identifiers.` };
     }
 
     const combinedLength = seeds.join('\n').length;
     if (combinedLength > currentLimits.maxInputLength) {
-        return `Seed input is limited to ${currentLimits.maxInputLength} characters.`;
+        return { field: 'seeds', message: `Seed input is limited to ${currentLimits.maxInputLength} characters.` };
     }
 
-    const parsedMaxNodes = Number(maxNodes);
-    if (!Number.isInteger(parsedMaxNodes) || parsedMaxNodes < 1 || parsedMaxNodes > currentLimits.maxNodesLimit) {
-        return `Max nodes must be an integer between 1 and ${currentLimits.maxNodesLimit}.`;
+    const maxNodesError = validateMaxNodesValue(maxNodes);
+    if (maxNodesError) {
+        return { field: 'maxNodes', message: maxNodesError };
     }
 
     return null;
+}
+
+function enforceMaxNodesLimit() {
+    const maxNodesInput = document.getElementById('max-nodes');
+    const rawValue = maxNodesInput.value.trim();
+
+    if (!rawValue) {
+        setMaxNodesInlineError('');
+        return;
+    }
+
+    const parsedValue = Number(rawValue);
+    if (!Number.isFinite(parsedValue)) {
+        setMaxNodesInlineError('Max neighbors must be a number.');
+        return;
+    }
+
+    if (Number.isInteger(parsedValue) && parsedValue >= 1 && parsedValue <= currentLimits.maxNodesLimit) {
+        lastValidMaxNodesValue = rawValue;
+        setMaxNodesInlineError('');
+        return;
+    }
+
+    if (parsedValue > currentLimits.maxNodesLimit) {
+        maxNodesInput.value = lastValidMaxNodesValue;
+        playWarningSound();
+        setMaxNodesInlineError(`Max neighbors cannot exceed ${formatMaxNodesLimit(currentLimits.maxNodesLimit)}.`);
+        return;
+    }
+
+    if (parsedValue < 1) {
+        setMaxNodesInlineError('Max neighbors must be at least 1.');
+        return;
+    }
+
+    if (!Number.isInteger(parsedValue)) {
+        setMaxNodesInlineError('Max neighbors must be a whole number.');
+    }
 }
 
 async function handleSubmit(event) {
@@ -158,6 +300,7 @@ async function handleSubmit(event) {
     const submitBtn = document.getElementById('submit-btn');
 
     const seeds = parseSeeds(seedInput.value);
+    const requestId = ++viewerReadyRequestId;
     const payload = {
         seeds,
         name: nameInput.value.trim(),
@@ -167,9 +310,12 @@ async function handleSubmit(event) {
 
     const validationError = validateBeforeSubmit(payload);
     if (validationError) {
+        if (validationError.field === 'maxNodes' && !maxNodesInput.validationMessage) {
+            setMaxNodesInlineError(validationError.message);
+        }
         renderResult({
             title: 'Validation error',
-            summary: validationError,
+            summary: validationError.message,
             detailsHtml: '',
             isError: true,
         });
@@ -208,11 +354,44 @@ async function handleSubmit(event) {
             return;
         }
 
+        const viewerUrl = buildViewerUrlWithSeeds(result.viewerUrl, seeds);
+        const summary = `${result.network} created with ${result.edgeCount} edges from ${result.inputSeedCount || 0} submitted seeds.`;
+
+        if (result.viewerReady === false) {
+            renderResult({
+                title: 'Finalizing network',
+                summary: `${summary} Preparing it for the viewer...`,
+                detailsHtml,
+            });
+
+            const isReady = await waitForViewerReady({
+                network: result.network,
+                expectedEdgeCount: result.edgeCount,
+                requestId,
+                viewerStatusUrl: result.viewerStatusUrl,
+            });
+
+            if (requestId !== viewerReadyRequestId) {
+                return;
+            }
+
+            renderResult({
+                title: isReady ? 'Subnetwork ready' : 'Viewer still finalizing',
+                summary: isReady
+                    ? summary
+                    : `${summary} The network file was generated, but the viewer is still preparing it. Please try opening it again from the network list in a moment.`,
+                detailsHtml,
+                viewerUrl: isReady ? viewerUrl : undefined,
+                isError: !isReady,
+            });
+            return;
+        }
+
         renderResult({
             title: 'Subnetwork ready',
-            summary: `${result.network} created with ${result.edgeCount} edges from ${result.inputSeedCount || 0} submitted seeds.`,
+            summary,
             detailsHtml,
-            viewerUrl: result.viewerUrl,
+            viewerUrl,
         });
     } catch (err) {
         renderResult({
@@ -238,9 +417,16 @@ function updateSeedMeta() {
 async function initLandingPage() {
     const form = document.getElementById('subnetwork-form');
     const seedInput = document.getElementById('seed-input');
+    const maxNodesInput = document.getElementById('max-nodes');
 
+    updateLimitsUi(DEFAULT_LIMITS);
     form.addEventListener('submit', handleSubmit);
     seedInput.addEventListener('input', updateSeedMeta);
+    maxNodesInput.addEventListener('input', () => {
+        hasUserEditedMaxNodes = true;
+        enforceMaxNodesLimit();
+    });
+    maxNodesInput.addEventListener('change', enforceMaxNodesLimit);
     updateSeedMeta();
     await loadLimits();
 }

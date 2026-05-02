@@ -2,9 +2,11 @@ const db = require('../config/database');
 const logger = require('../utils/logger');
 const util = require('util');
 const networkEditService = require('../services/networkEditService');
+const groupExportService = require('../services/groupExportService');
 
 // Promisify DB methods
 const dbAll = util.promisify(db.all.bind(db));
+const dbGet = util.promisify(db.get.bind(db));
 
 /**
  * List all available network files (sources)
@@ -145,6 +147,48 @@ async function getNetworkData(filename) {
   }
 }
 
+async function getNetworkStatus(filename) {
+  try {
+    logger.info(`Fetching network status for source: ${filename}`);
+
+    const edgeRow = await dbGet(
+      'SELECT COUNT(*) AS count FROM edges WHERE source = ?',
+      [filename]
+    );
+
+    const nodeRow = await dbGet(
+      `
+        SELECT COUNT(*) AS count
+        FROM (
+          SELECT node_id AS id FROM network_nodes WHERE source = ?
+          UNION
+          SELECT node1 AS id FROM edges WHERE source = ?
+          UNION
+          SELECT node2 AS id FROM edges WHERE source = ?
+        )
+      `,
+      [filename, filename, filename]
+    );
+
+    const edgeCount = edgeRow?.count || 0;
+    const nodeCount = nodeRow?.count || 0;
+
+    if (edgeCount === 0 && nodeCount === 0) {
+      throw new Error(`Network not found: ${filename}`);
+    }
+
+    return {
+      ready: edgeCount > 0,
+      edgeCount,
+      nodeCount,
+    };
+  } catch (err) {
+    if (err.message.startsWith('Network not found:')) throw err;
+    logger.error(`Error reading network status for ${filename}: ${err.message}`);
+    throw new Error(`Failed to read network status: ${filename}`);
+  }
+}
+
 /**
  * Search for proteins by Accession
  * @param {string} networkName - Network source file
@@ -239,7 +283,9 @@ async function searchBySpecies(networkName, speciesIds) {
 module.exports = {
   listNetworks,
   getNetworkData,
+  getNetworkStatus,
   searchProteins,
   searchBySpecies,
-  createEditedNetwork: networkEditService.createEditedNetwork
+  createEditedNetwork: networkEditService.createEditedNetwork,
+  saveGroupExports: groupExportService.saveGroupExports
 };

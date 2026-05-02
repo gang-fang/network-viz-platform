@@ -10,7 +10,6 @@ const SearchHighlightModule = {
 
     // UI Elements
     searchInput: null,
-    colorTrigger: null,
     colorPalette: null,
     colorCanvas: null,
     selectedColorPreview: null,
@@ -25,11 +24,14 @@ const SearchHighlightModule = {
         const container = document.createElement('div');
         container.className = "control-group";
         container.style.marginTop = "15px";
+        const defaultSearchValue = this.getDefaultSearchValueFromUrl();
 
         // Label
         const label = document.createElement('label');
         label.htmlFor = "search-input";
-        label.textContent = "Find Proteins (UniProt AC):";
+        label.textContent = "Highlight Proteins (UniProt AC):";
+        label.style.fontSize = "0.94rem";
+        label.style.whiteSpace = "nowrap";
         container.appendChild(label);
 
         // Controls Wrapper
@@ -51,6 +53,7 @@ const SearchHighlightModule = {
         this.searchInput.className = "control-input";
         this.searchInput.style.marginBottom = "0";
         this.searchInput.style.flexGrow = "1";
+        this.searchInput.value = defaultSearchValue;
         this.searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 this.performSearch();
@@ -86,6 +89,19 @@ const SearchHighlightModule = {
                 this.colorPalette.classList.add('hidden');
             }
         });
+    },
+
+    getDefaultSearchValueFromUrl() {
+        const seedsParam = new URLSearchParams(window.location.search).get('seeds');
+        if (!seedsParam) {
+            return '';
+        }
+
+        return seedsParam
+            .split(',')
+            .map(value => value.trim())
+            .filter(Boolean)
+            .join(', ');
     },
 
     createColorPalette() {

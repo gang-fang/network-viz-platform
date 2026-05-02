@@ -17,6 +17,7 @@ const config = {
 
   // Data paths
   dataPath:           process.env.DATA_PATH            || path.join(__dirname, '../../data/networks'),
+  exportsPath:        process.env.EXPORTS_PATH         || path.join(__dirname, '../../data/exports'),
   indexesPath:        process.env.INDEXES_PATH         || path.join(__dirname, '../../data/indexes'),
   nodeAttributesPath: process.env.NODE_ATTRIBUTES_PATH || path.join(__dirname, '../../data/nodes_attr'),
   tempDataPath:       process.env.TEMP_DATA_PATH       || path.join(__dirname, '../../data/tmp'),
@@ -73,7 +74,7 @@ const config = {
     maxInputLength:   parseInt(process.env.SUBNETWORK_MAX_INPUT_LENGTH,   10) || 2000,
     maxNameLength:    parseInt(process.env.SUBNETWORK_MAX_NAME_LENGTH,    10) || 80,
     defaultMaxNodes:  parseInt(process.env.SUBNETWORK_DEFAULT_MAX_NODES,  10) || 500,
-    maxNodesLimit:    parseInt(process.env.SUBNETWORK_MAX_NODES_LIMIT,    10) || 2000,
+    maxNodesLimit:    parseInt(process.env.SUBNETWORK_MAX_NODES_LIMIT,    10) || 2500,
     timeoutMs:        parseInt(process.env.SUBNETWORK_TIMEOUT_MS,         10) || 120000,
     maxConcurrentJobs: parseInt(process.env.SUBNETWORK_MAX_CONCURRENT_JOBS, 10) || 2,
   },

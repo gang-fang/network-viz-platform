@@ -1,6 +1,6 @@
 /**
  * UniProt Tooltip Module
- * Displays a rich tooltip with Protein Name and Organism when hovering over a node.
+ * Displays UniProt annotation when hovering over protein and cluster nodes.
  */
 class UniProtNotFound extends Error {
     constructor(acc) {
@@ -13,6 +13,9 @@ const UniprotTooltipModule = {
     id: "uniprot-tooltip",
     cache: new Map(), // Cache for UniProt data
     tooltipElement: null,
+    activeHoverKey: null,
+    hoverRequestToken: 0,
+    inflightSummaryRequests: new Map(),
 
     init(context) {
         this.context = context;
@@ -36,21 +39,29 @@ const UniprotTooltipModule = {
 
     handleNodeHover(event) {
         const { nodeId, data, x, y, type } = event;
+        const hoverKey = `${data._isCluster ? 'cluster' : 'protein'}:${nodeId}`;
 
         if (type === 'mouseout') {
+            this.activeHoverKey = null;
+            this.hoverRequestToken += 1;
             this.hideTooltip();
             return;
         }
 
-        // Only show for protein nodes (not clusters)
-        if (data._isCluster) {
-            this.showTooltip(x, y);
-            // Do NOT cache cluster results to allow random sampling on each hover
-            this.processClusterHover(nodeId);
+        this.showTooltip(x, y);
+
+        if (type === 'mousemove' && this.activeHoverKey === hoverKey) {
             return;
         }
 
-        this.showTooltip(x, y);
+        this.activeHoverKey = hoverKey;
+        const requestToken = ++this.hoverRequestToken;
+
+        if (data._isCluster) {
+            this.renderLoading("Cluster Info");
+            this.processClusterHover(nodeId, hoverKey, requestToken);
+            return;
+        }
 
         // Check cache
         if (this.cache.has(nodeId)) {
@@ -60,9 +71,7 @@ const UniprotTooltipModule = {
             this.fetchUniProtSummary(nodeId)
                 .then(info => {
                     this.cache.set(nodeId, info);
-                    // Only render if we are still hovering over the same node
-                    // (Simple check: is tooltip still visible? In a real app we might check current hovered ID)
-                    if (!this.tooltipElement.classList.contains('hidden')) {
+                    if (this.shouldRenderHoverResult(hoverKey, requestToken)) {
                         this.renderContent(info);
                     }
                 })
@@ -74,9 +83,20 @@ const UniprotTooltipModule = {
                         isNetworkError: isNetworkError
                     };
                     this.cache.set(nodeId, errorInfo);
-                    this.renderContent(errorInfo);
+                    if (this.shouldRenderHoverResult(hoverKey, requestToken)) {
+                        this.renderContent(errorInfo);
+                    }
                 });
         }
+    },
+
+    shouldRenderHoverResult(hoverKey, requestToken) {
+        return (
+            this.activeHoverKey === hoverKey &&
+            this.hoverRequestToken === requestToken &&
+            this.tooltipElement &&
+            !this.tooltipElement.classList.contains('hidden')
+        );
     },
 
     showTooltip(x, y) {
@@ -123,8 +143,38 @@ const UniprotTooltipModule = {
     },
 
     async fetchUniProtSummary(acc) {
-        const entry = await this._fetchUniProt(acc, 'protein_name,organism_name');
+        if (this.inflightSummaryRequests.has(acc)) {
+            return this.inflightSummaryRequests.get(acc);
+        }
 
+        const request = this._fetchUniProt(acc, 'protein_name,organism_name')
+            .then(entry => {
+                // protein_name: recommended full name if present
+                const proteinDescription = entry.proteinDescription || {};
+                const recommendedName = proteinDescription.recommendedName || {};
+                const fullName = recommendedName.fullName || {};
+                const proteinName = fullName.value || null;
+
+                // organism_name: scientific name
+                const organism = entry.organism || {};
+                const organismName = organism.scientificName || null;
+
+                return {
+                    accession: acc,
+                    protein_name: proteinName,
+                    organism_name: organismName,
+                };
+            })
+            .finally(() => {
+                this.inflightSummaryRequests.delete(acc);
+            });
+
+        this.inflightSummaryRequests.set(acc, request);
+        return request;
+    },
+
+    async fetchUniProtClusterAnnotation(acc) {
+        const entry = await this._fetchUniProt(acc, 'protein_name,organism_name,cc_function');
         // protein_name: recommended full name if present
         const proteinDescription = entry.proteinDescription || {};
         const recommendedName = proteinDescription.recommendedName || {};
@@ -135,21 +185,33 @@ const UniprotTooltipModule = {
         const organism = entry.organism || {};
         const organismName = organism.scientificName || null;
 
+        let ccFunction = null;
+        if (Array.isArray(entry.comments)) {
+            const functionTexts = entry.comments
+                .filter(comment => comment.commentType === 'FUNCTION')
+                .flatMap(comment => comment.texts || [])
+                .map(text => (text.value || '').trim())
+                .filter(Boolean);
+
+            if (functionTexts.length > 0) {
+                ccFunction = functionTexts.join(' ');
+            }
+        }
+
         return {
             accession: acc,
             protein_name: proteinName,
             organism_name: organismName,
+            cc_function: ccFunction,
         };
     },
 
-    async processClusterHover(clusterId) {
-        this.renderLoading("Cluster Info");
-
-        const members = this.context.getVisibleClusterMembers
-            ? this.context.getVisibleClusterMembers(clusterId)
-            : this.context.getGraph().getClusterMembers(clusterId);
+    async processClusterHover(clusterId, hoverKey, requestToken) {
+        const members = this.context.getVisibleClusterMembers(clusterId);
         if (members.length === 0) {
-            this.renderClusterContent({ error: "Empty Cluster" });
+            if (this.shouldRenderHoverResult(hoverKey, requestToken)) {
+                this.renderClusterContent({ error: "Empty Cluster" });
+            }
             return;
         }
 
@@ -163,29 +225,20 @@ const UniprotTooltipModule = {
         const maxAttempts = Math.min(5, shuffled.length);
 
         let networkErrors = 0;
-        let emptyResults = 0;
-
         for (let i = 0; i < maxAttempts; i++) {
             const acc = shuffled[i];
             try {
-                const info = await this.fetchUniProtFunction(acc);
+                const info = await this.fetchUniProtClusterAnnotation(acc);
 
-                if (info.cc_function) {
-                    // Success!
-                    const result = { cc_function: info.cc_function };
-                    // Do not cache for clusters
-                    if (!this.tooltipElement.classList.contains('hidden')) {
-                        this.renderClusterContent(result);
+                if (info.cc_function || info.protein_name || info.organism_name) {
+                    if (this.shouldRenderHoverResult(hoverKey, requestToken)) {
+                        this.renderClusterContent(info);
                     }
                     return;
-                } else {
-                    emptyResults++;
                 }
             } catch (err) {
                 console.warn(`[UniprotTooltip] Error fetching ${acc}:`, err);
-                if (err instanceof UniProtNotFound) {
-                    emptyResults++;
-                } else {
+                if (!(err instanceof UniProtNotFound)) {
                     networkErrors++;
                 }
             }
@@ -198,13 +251,10 @@ const UniprotTooltipModule = {
         }
 
         const errorResult = { error: finalError };
-        // Do not cache errors for clusters either, so user can retry by re-hovering
-        if (!this.tooltipElement.classList.contains('hidden')) {
+        if (this.shouldRenderHoverResult(hoverKey, requestToken)) {
             this.renderClusterContent(errorResult);
         }
     },
-
-
 
     renderClusterContent(info) {
         if (info.error) {
@@ -212,33 +262,20 @@ const UniprotTooltipModule = {
                 <div class="tooltip-row tooltip-error">${info.error}</div>
             `;
         } else {
-            this.tooltipElement.innerHTML = `
-                <div class="tooltip-row tooltip-function">${info.cc_function}</div>
-            `;
-        }
-    },
+            const rows = [];
+            const namePart = info.protein_name ? `: <span class="tooltip-name-text">${info.protein_name}</span>` : '';
+            rows.push(`<div class="tooltip-row tooltip-name"><span class="tooltip-acc">${info.accession}</span>${namePart}</div>`);
 
-    async fetchUniProtFunction(acc) {
-        const entry = await this._fetchUniProt(acc, 'cc_function');
-
-        // cc_function: concatenate all FUNCTION comment texts
-        let ccFunction = null;
-        if (Array.isArray(entry.comments)) {
-            const functionTexts = entry.comments
-                .filter(c => c.commentType === 'FUNCTION')
-                .flatMap(c => c.texts || [])
-                .map(t => (t.value || '').trim())
-                .filter(Boolean);
-
-            if (functionTexts.length > 0) {
-                ccFunction = functionTexts.join(' ');
+            if (info.organism_name) {
+                rows.push(`<div class="tooltip-row tooltip-organism">${info.organism_name}</div>`);
             }
-        }
 
-        return {
-            accession: acc,
-            cc_function: ccFunction,
-        };
+            if (info.cc_function) {
+                rows.push(`<div class="tooltip-row tooltip-function">${info.cc_function}</div>`);
+            }
+
+            this.tooltipElement.innerHTML = rows.join('');
+        }
     },
 
     async _fetchUniProt(acc, fields) {

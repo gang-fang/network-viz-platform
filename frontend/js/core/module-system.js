@@ -36,18 +36,20 @@ class ModuleSystem {
             getGraph: () => this.appState.graph,
             getViewGraph: () => this.appState.viewGraph,
             getCurrentNetwork: () => this.appState.currentNetwork,
+            getGraphRevision: () => this.appState.topologyRevision,
             getVisibleProteinIds: () => this.appState.getVisibleProteinIds(),
             getHiddenProteinIds: () => this.appState.getHiddenProteinIds(),
             getHiddenEdgeIds: () => this.appState.getHiddenEdgeIds(),
             getHiddenEdgeWeightRanges: () => this.appState.getHiddenEdgeWeightRanges(),
             getHiddenEdgeEditPayload: () => this.appState.getHiddenEdgeEditPayload(),
             getVisibleClusterMembers: (clusterId) => this.appState.getVisibleClusterMembers(clusterId),
-            getHighlightedProteinIds: () => this.appState.getHighlightedProteinIds(),
+            getHighlightedNodeIds: () => this.appState.getHighlightedNodeIds(),
             getEditStats: () => this.appState.getEditStats(),
             getSelectedNodeIds: () => Array.from(this.appState.selectedNodes),
             getSelectedNodeCount: () => this.appState.selectedNodes.size,
             isSelectionModeEnabled: () => this.appState.selectionMode,
             setSelectionMode: (enabled) => this.appState.setSelectionMode(enabled),
+            clearSelection: () => this.appState.clearSelection(),
             getSpeciesNames: () => ModuleSystem.getSpeciesNames(),
             getSpeciesTree: () => ModuleSystem.getSpeciesTree(),
 
@@ -85,7 +87,7 @@ class ModuleSystem {
             showAllEdges: () => this.appState.showAllEdges(),
             showAllEdits: () => this.appState.showAllEdits(),
             hideEdgesByWeightBelow: (threshold) => this.appState.hideEdgesByWeightBelow(threshold),
-            showEdgesByWeightBelow: (threshold) => this.appState.showEdgesByWeightBelow(threshold)
+            showEdgesByWeightAbove: (threshold) => this.appState.showEdgesByWeightAbove(threshold)
         };
     }
 }

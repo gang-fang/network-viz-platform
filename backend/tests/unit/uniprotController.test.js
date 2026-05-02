@@ -63,4 +63,44 @@ describe('uniprotController', () => {
     expect(second).toEqual({ accession: 'P1' });
     expect(axios.get).toHaveBeenCalledTimes(1);
   });
+
+  test('marks UniProt availability true only for HTTP 200 responses', async () => {
+    const { getBatchProteinAvailability } = require('../../controllers/uniprotController');
+    axios.get
+      .mockResolvedValueOnce({ status: 200 })
+      .mockResolvedValueOnce({ status: 404 })
+      .mockResolvedValueOnce({ status: 400 });
+
+    const result = await getBatchProteinAvailability(['P1', 'P2', 'P3']);
+
+    expect(result).toEqual([
+      { accession: 'P1', available: true },
+      { accession: 'P2', available: false },
+      { accession: 'P3', available: false },
+    ]);
+  });
+
+  test('caches UniProt availability checks within the configured expiry window', async () => {
+    const { getProteinAvailability } = require('../../controllers/uniprotController');
+    axios.get.mockResolvedValue({ status: 200 });
+
+    const first = await getProteinAvailability('P1');
+    const second = await getProteinAvailability('P1');
+
+    expect(first).toEqual({ accession: 'P1', available: true });
+    expect(second).toEqual({ accession: 'P1', available: true });
+    expect(axios.get).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not cache transient UniProt availability failures', async () => {
+    const { getProteinAvailability } = require('../../controllers/uniprotController');
+    axios.get.mockResolvedValue({ status: 503 });
+
+    const first = await getProteinAvailability('P1');
+    const second = await getProteinAvailability('P1');
+
+    expect(first).toEqual({ accession: 'P1', available: false });
+    expect(second).toEqual({ accession: 'P1', available: false });
+    expect(axios.get).toHaveBeenCalledTimes(2);
+  });
 });

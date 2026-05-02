@@ -113,6 +113,52 @@ router.post('/edited', async (req, res, next) => {
 });
 
 /**
+ * @route   POST /api/networks/group-exports
+ * @desc    Save grouped UniProt accession exports as .txt files
+ * @access  Public
+ */
+router.post('/group-exports', async (req, res, next) => {
+  try {
+    const { groups } = req.body || {};
+    logger.info(`Saving grouped UniProt exports (${Array.isArray(groups) ? groups.length : 0} groups)`);
+    const result = await networkController.saveGroupExports(groups);
+    res.status(201).json(result);
+  } catch (err) {
+    if (err && err.status) {
+      logger.warn(`Grouped export save rejected: ${err.message}`);
+      return res.status(err.status).json({
+        error: err.message,
+        ...(err.details || {}),
+      });
+    }
+    logger.error(`Error saving grouped exports: ${err.message}`);
+    next(err);
+  }
+});
+
+/**
+ * @route   GET /api/networks/:filename/status
+ * @desc    Get network readiness/counts for a specific file
+ * @access  Public
+ */
+router.get('/:filename/status', async (req, res, next) => {
+  try {
+    const { filename } = req.params;
+    logger.info(`Fetching network status for file: ${filename}`);
+    const status = await networkController.getNetworkStatus(filename);
+    res.json(status);
+  } catch (err) {
+    logger.error(`Error fetching network status: ${err.message}`);
+
+    if (err.message.includes('not found') || err.message.includes('ENOENT')) {
+      return res.status(404).json({ error: 'Network not found' });
+    }
+
+    next(err);
+  }
+});
+
+/**
  * @route   GET /api/networks/:filename
  * @desc    Get network data from a specific file
  * @access  Public

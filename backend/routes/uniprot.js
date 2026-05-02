@@ -48,6 +48,26 @@ router.post('/batch', async (req, res, next) => {
 });
 
 /**
+ * @route   POST /api/uniprot/availability
+ * @desc    Check whether UniProt accession numbers currently resolve to entries
+ * @access  Public
+ */
+router.post('/availability', async (req, res, next) => {
+  try {
+    const { accessions } = req.body;
+    const validationError = validateStringArray(accessions, 'accessions', MAX_UNIPROT_BATCH);
+    if (validationError) return sendValidationError(res, validationError);
+
+    logger.info(`Checking UniProt availability for ${accessions.length} accessions`);
+    const availability = await uniprotController.getBatchProteinAvailability(accessions);
+    res.json({ results: availability });
+  } catch (err) {
+    logger.error(`Error checking UniProt availability: ${err.message}`);
+    next(err);
+  }
+});
+
+/**
  * @route   GET /api/uniprot/:accession/fields
  * @desc    Get specific fields for a protein from UniProt
  * @access  Public

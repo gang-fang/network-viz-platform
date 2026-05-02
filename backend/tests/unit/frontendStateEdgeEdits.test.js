@@ -122,15 +122,15 @@ describe('AppState edge edit bookkeeping', () => {
     });
   });
 
-  test('range restore keeps remaining ranges consistent', () => {
+  test('range restore above threshold keeps remaining ranges consistent', () => {
     const state = createState();
 
     state.hideEdgesByWeightBelow(0.5);
-    state.showEdgesByWeightBelow(0.3);
+    state.showEdgesByWeightAbove(0.3);
 
     expect(state.getHiddenEdgeEditPayload()).toEqual({
       hiddenEdgeIds: [],
-      hiddenEdgeWeightRanges: [{ min: 0.3, max: 0.5 }],
+      hiddenEdgeWeightRanges: [{ min: 0, max: 0.3 }],
     });
   });
 });

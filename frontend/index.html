@@ -11,11 +11,10 @@
 <body>
     <main class="landing-shell">
         <section class="hero-panel">
-            <p class="eyebrow">Network Visualization Platform</p>
-            <h1>Extract a focused subnetwork before you open the viewer.</h1>
+            <p class="eyebrow">SJI Network Explorer</p>
+            <h1 class="hero-title-compact">Extract a focused subnetwork from the SJI network, select proteins of interest, and perform downstream analyses.</h1>
             <p class="hero-copy">
-                Provide seed proteins, choose a subnetwork name, and the server will generate a network CSV
-                in <code>data/networks</code> using the preprocessed <code>eu</code> graph index.
+                Enter seed proteins of interest and provide a subnetwork name. The server will then generate the corresponding network CSV file.
             </p>
             <div class="hero-actions">
                 <a class="ghost-link" href="/viewer.html">Open existing networks in viewer</a>
@@ -27,29 +26,30 @@
                 <div class="field-grid">
                     <label class="field">
                         <span>Subnetwork name</span>
-                        <input id="subnetwork-name" name="name" type="text" placeholder="newsub" required>
+                        <input id="subnetwork-name" name="name" type="text" placeholder="Enter subnetwork name" required>
                         <small id="name-help">Letters, numbers, <code>_</code>, <code>-</code>, and <code>.</code> only. <code>.csv</code> is added automatically.</small>
                     </label>
 
-                    <label id="graph-index-field" class="field">
-                        <span>Graph index</span>
+                    <label class="field">
+                        <span>Domain</span>
                         <select id="graph-index" name="index">
                             <option value="eu" selected>eu</option>
                         </select>
-                        <small id="index-help">Only whitelisted graph indexes are accepted by the backend.</small>
+                        <small id="index-help">Select the domain of your protein: Bacteria or Eukaryota.</small>
                     </label>
 
-                    <label class="field">
-                        <span>Max nodes</span>
+                    <label class="field field-max-neighbors">
+                        <span>Max neighbors</span>
                         <input id="max-nodes" name="maxNodes" type="number" min="1" value="500">
-                        <small id="max-nodes-help">Used as <code>--max_nodes</code> when the Python process runs.</small>
+                        <small id="max-nodes-help"></small>
+                        <small id="max-nodes-error" class="field-error hidden" aria-live="polite"></small>
                     </label>
                 </div>
 
                 <label class="field field-block">
                     <span>Seed proteins</span>
-                    <textarea id="seed-input" name="seeds" rows="10" placeholder="A0A2I3TW31&#10;A0A2I3TW32&#10;A0A2I3TW33" required></textarea>
-                    <small id="seed-help">Separate identifiers with new lines, spaces, commas, or semicolons.</small>
+                    <textarea id="seed-input" name="seeds" rows="10" placeholder="Enter one or more UniProt protein accessions, e.g., P12345, Q67890, A0A0H0PPY1." required></textarea>
+                    <small id="seed-help">Separate UniProt ACs with new lines, spaces, commas, or semicolons. Maximum 10 ACs.</small>
                 </label>
 
                 <div class="form-footer">
@@ -68,6 +68,10 @@
             </section>
         </section>
     </main>
+
+    <footer class="landing-footer">
+        <p>Copyright &copy; 2026 Gang Fang</p>
+    </footer>
 
     <script src="js/landing.js?v=1"></script>
 </body>

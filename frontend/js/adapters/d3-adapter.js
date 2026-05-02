@@ -24,6 +24,7 @@ const COMPONENT_EXTENT_TICKS_PER_SQRT_NODE = 4;
 const COMPONENT_EXTENT_MAX_TICKS = 120;
 const COMPONENT_SEED_BASE_RADIUS = 12;
 const COMPONENT_SEED_SPACING = 16;
+const DEFAULT_PROTEIN_NODE_RADIUS = 5;
 // Legacy floor on the collide radius. Keeping this at 15 preserves the tight
 // cluster-only layout that the simulation produced before collide became
 // size-aware; the viewport stays compact and "fit-to-view" lands at a sensible
@@ -31,6 +32,9 @@ const COMPONENT_SEED_SPACING = 16;
 // NODE_COLLISION_PADDING, but only when their geometric radius justifies it.
 const NODE_COLLISION_BASE_RADIUS = 15;
 const NODE_COLLISION_PADDING = 4;
+const HIGHLIGHT_PULSE_DURATION_MS = 1100;
+const HIGHLIGHT_PULSE_MIN_SCALE_DELTA = 0.05;
+const HIGHLIGHT_PULSE_MAX_SCALE = 4;
 const EXPANDED_GROUP_MIN_PROTEINS = 2;
 const EXPANDED_GROUP_PADDING = 28;
 const EXPANDED_GROUP_CLUSTER_MARGIN = 10;
@@ -62,13 +66,15 @@ class D3Adapter {
         this.g = null; // Main group
         this.layoutRunId = 0;
         this.layoutStatusEl = document.getElementById('layout-status');
-        this.pendingDragNode = null;
+        this.pendingDragRender = null;
         this.dragFrame = null;
-        this.currentDragId = null;
+        this.currentDragNodeId = null;
+        this.currentDragEdgeId = null;
         this.pinnedNodePositions = new Map();
         this.componentLayoutCache = { revision: null, width: null, height: null, centers: new Map() };
         this.componentMeasurementCache = { revision: null, radiusBySignature: new Map() };
         this.resizeTimer = null;
+        this.highlightPulseFrame = null;
 
         // D3 selections
         this.linkSelection = null;
@@ -197,6 +203,7 @@ class D3Adapter {
         // Basic D3 setup (simplified for now)
         this.zoomBehavior = d3.zoom().on("zoom", (event) => {
             this.g.attr("transform", event.transform);
+            this.scheduleHighlightPulseVisualUpdate();
         });
 
         this.svg = d3.select(this.container).append("svg")
@@ -218,7 +225,7 @@ class D3Adapter {
         this.simulation.stop();
 
         this.linkSelection = this.g.append("g").attr("class", "links").selectAll("g.link");
-        this.nodeSelection = this.g.append("g").attr("class", "nodes").selectAll("circle");
+        this.nodeSelection = this.g.append("g").attr("class", "nodes").selectAll("g.node");
 
         // Brush group (initially hidden/inactive)
         // Insert as first child so it's BEHIND the graph content (nodes/links)
@@ -250,8 +257,9 @@ class D3Adapter {
      * and update D3.
      */
     async updateVisualization(detail = {}) {
-        if (this.currentDragId) {
-            this.currentDragId = null;
+        if (this.currentDragNodeId || this.currentDragEdgeId) {
+            this.currentDragNodeId = null;
+            this.currentDragEdgeId = null;
             this.cancelPendingDragRender();
         }
 
@@ -316,6 +324,8 @@ class D3Adapter {
                     .on("drag", (event, d) => this.dragged(event, d))
                     .on("end", (event, d) => this.dragended(event, d)));
 
+            nodeEnter.append("g").attr("class", "node-visual");
+
         // Add title for hover - REMOVED for custom tooltip
         // nodeEnter.append("title")
         //     .text(d => d.id + (d._isCluster ? ` (Size: ${d.size})` : ""));
@@ -375,7 +385,11 @@ class D3Adapter {
             this.linkSelection.exit().remove();
 
             const linkEnter = this.linkSelection.enter().append("g")
-                .attr("class", "link");
+                .attr("class", "link")
+                .call(d3.drag()
+                    .on("start", (event, d) => this.edgestarted(event, d))
+                    .on("drag", (event, d) => this.edgedragged(event, d))
+                    .on("end", (event, d) => this.edgeended(event, d)));
 
             // Visible line
             linkEnter.append("line")
@@ -1261,7 +1275,86 @@ class D3Adapter {
             // Log scale is good for large variance
             return 7 + Math.log(d.size || 1) * 3;
         }
-        return 5;
+        return DEFAULT_PROTEIN_NODE_RADIUS;
+    }
+
+    getCurrentZoomScale() {
+        if (!this.svg || !this.svg.node()) {
+            return 1;
+        }
+        return d3.zoomTransform(this.svg.node()).k || 1;
+    }
+
+    getHighlightPulseScale(d, colors = this.appState.nodeColors.get(d.id)) {
+        if (d._isCluster || !colors || colors.length === 0) {
+            return null;
+        }
+
+        const visibleRadius = this.getNodeRadius(d) * this.getCurrentZoomScale();
+        if (!Number.isFinite(visibleRadius) || visibleRadius >= DEFAULT_PROTEIN_NODE_RADIUS) {
+            return null;
+        }
+
+        const targetScale = Math.min(
+            HIGHLIGHT_PULSE_MAX_SCALE,
+            DEFAULT_PROTEIN_NODE_RADIUS / visibleRadius
+        );
+        return targetScale > (1 + HIGHLIGHT_PULSE_MIN_SCALE_DELTA) ? targetScale : null;
+    }
+
+    scheduleHighlightPulseVisualUpdate() {
+        if (this.highlightPulseFrame) return;
+        this.highlightPulseFrame = requestAnimationFrame(() => {
+            this.highlightPulseFrame = null;
+            this.updateHighlightPulseVisuals();
+        });
+    }
+
+    syncHighlightPulse(visualGroup, d, colors = this.appState.nodeColors.get(d.id)) {
+        const pulseScale = this.getHighlightPulseScale(d, colors);
+        const pulseSelection = visualGroup.select("animateTransform.highlight-pulse");
+
+        if (!pulseScale) {
+            if (!pulseSelection.empty()) {
+                pulseSelection.remove();
+            }
+            visualGroup.attr("transform", null);
+            return;
+        }
+
+        const pulseValues = `1 1; ${pulseScale} ${pulseScale}; 1 1`;
+        const duration = `${HIGHLIGHT_PULSE_DURATION_MS}ms`;
+
+        if (!pulseSelection.empty()
+            && pulseSelection.attr("values") === pulseValues
+            && pulseSelection.attr("dur") === duration) {
+            return;
+        }
+
+        pulseSelection.remove();
+        visualGroup.attr("transform", null);
+        visualGroup
+            .append("animateTransform")
+            .attr("class", "highlight-pulse")
+            .attr("attributeName", "transform")
+            .attr("type", "scale")
+            .attr("values", pulseValues)
+            .attr("dur", duration)
+            .attr("repeatCount", "indefinite");
+    }
+
+    updateHighlightPulseVisuals() {
+        if (!this.nodeSelection) return;
+
+        this.nodeSelection.each((d, i, nodes) => {
+            const element = d3.select(nodes[i]);
+            const visualGroup = element.select(".node-visual");
+            if (visualGroup.empty()) return;
+            const pulseSelection = visualGroup.select("animateTransform.highlight-pulse");
+            const isHighlighted = this.appState.nodeColors.has(d.id);
+            if (pulseSelection.empty() && !isHighlighted) return;
+            this.syncHighlightPulse(visualGroup, d);
+        });
     }
 
     getCollisionRadius(d) {
@@ -1276,12 +1369,13 @@ class D3Adapter {
         if (!this.nodeSelection) return;
         this.nodeSelection.each((d, i, nodes) => {
             const element = d3.select(nodes[i]);
+            const visualGroup = element.select(".node-visual");
             const colors = this.appState.nodeColors.get(d.id);
             const r = this.getNodeRadius(d);
 
             // Remove old content
-            element.select("circle").remove();
-            element.selectAll("path.pie-slice").remove();
+            visualGroup.selectAll("circle").remove();
+            visualGroup.selectAll("path.pie-slice").remove();
 
             // Check if highlighted
             if (colors && colors.length > 0) {
@@ -1289,7 +1383,7 @@ class D3Adapter {
 
                 if (colors.length === 1) {
                     // Single Color -> Circle
-                    element.append("circle")
+                    visualGroup.append("circle")
                         .attr("r", r)
                         .attr("fill", colors[0])
                         .attr("stroke", "#fff")
@@ -1299,7 +1393,7 @@ class D3Adapter {
                     const pie = d3.pie().value(1).sort(null); // Equal slices
                     const arc = d3.arc().innerRadius(0).outerRadius(r);
 
-                    element.selectAll("path.pie-slice")
+                    visualGroup.selectAll("path.pie-slice")
                         .data(pie(colors))
                         .enter().append("path")
                         .attr("class", "pie-slice")
@@ -1309,7 +1403,7 @@ class D3Adapter {
                         .attr("stroke-width", 0.5);
 
                     // Add border circle to match single-color nodes
-                    element.append("circle")
+                    visualGroup.append("circle")
                         .attr("r", r)
                         .attr("fill", "none")
                         .attr("stroke", "#fff")
@@ -1318,10 +1412,12 @@ class D3Adapter {
             } else {
                 // Not highlighted -> Default Circle
                 element.classed("highlighted", false);
-                element.append("circle")
+                visualGroup.append("circle")
                     .attr("r", r)
                     .attr("fill", d._isCluster ? "#95a5a6" : "#3498db");
             }
+
+            this.syncHighlightPulse(visualGroup, d, colors);
         });
     }
 
@@ -1349,24 +1445,24 @@ class D3Adapter {
             .attr("transform", d => `translate(${d.x},${d.y})`);
     }
 
-    renderDraggedNode(node) {
-        if (!node || !this.nodeSelection || !this.linkSelection) return;
-        const nodeId = String(node.id);
-        this.updateNodePositions(this.nodeSelection.filter(d => String(d.id) === nodeId));
+    renderDraggedNodes(nodes) {
+        if (!nodes || nodes.length === 0 || !this.nodeSelection || !this.linkSelection) return;
+        const nodeIds = new Set(nodes.map(node => String(node.id)));
+        this.updateNodePositions(this.nodeSelection.filter(d => nodeIds.has(String(d.id))));
         this.updateLinkPositions(this.linkSelection.filter(edge => {
-            return this.getEdgeNodeId(edge.source) === nodeId || this.getEdgeNodeId(edge.target) === nodeId;
+            return nodeIds.has(this.getEdgeNodeId(edge.source)) || nodeIds.has(this.getEdgeNodeId(edge.target));
         }));
     }
 
-    scheduleDragRender(node) {
-        this.pendingDragNode = node;
+    scheduleDragRender(nodes) {
+        this.pendingDragRender = nodes;
         if (this.dragFrame) return;
 
         this.dragFrame = requestAnimationFrame(() => {
-            const pendingNode = this.pendingDragNode;
-            this.pendingDragNode = null;
+            const pendingNodes = this.pendingDragRender;
+            this.pendingDragRender = null;
             this.dragFrame = null;
-            this.renderDraggedNode(pendingNode);
+            this.renderDraggedNodes(pendingNodes);
         });
     }
 
@@ -1375,14 +1471,14 @@ class D3Adapter {
             cancelAnimationFrame(this.dragFrame);
             this.dragFrame = null;
         }
-        this.pendingDragNode = null;
+        this.pendingDragRender = null;
     }
 
     // Drag functions
     dragstarted(event, d) {
         this.layoutRunId += 1;
         this.forceClearLayoutStatus();
-        this.currentDragId = String(d.id);
+        this.currentDragNodeId = String(d.id);
         d.fx = d.x;
         d.fy = d.y;
         d.vx = 0;
@@ -1391,7 +1487,7 @@ class D3Adapter {
     }
 
     dragged(event, d) {
-        if (this.currentDragId !== String(d.id)) return;
+        if (this.currentDragNodeId !== String(d.id)) return;
         d.fx = event.x;
         d.fy = event.y;
         d.x = event.x;
@@ -1399,14 +1495,52 @@ class D3Adapter {
         d.vx = 0;
         d.vy = 0;
         this.storePinnedNodePosition(d);
-        this.scheduleDragRender(d);
+        this.scheduleDragRender([d]);
     }
 
     dragended(event, d) {
-        this.currentDragId = null;
+        this.currentDragNodeId = null;
         this.storePinnedNodePosition(d);
         // Keep fx/fy set so a manually positioned node remains pinned across
         // future static layouts. Reloading the network clears all pins.
+    }
+
+    edgestarted(event, d) {
+        this.layoutRunId += 1;
+        this.forceClearLayoutStatus();
+        this.currentDragEdgeId = String(d.id);
+        [d.source, d.target].forEach(node => {
+            node.fx = node.x;
+            node.fy = node.y;
+            node.vx = 0;
+            node.vy = 0;
+            this.storePinnedNodePosition(node);
+        });
+    }
+
+    edgedragged(event, d) {
+        if (this.currentDragEdgeId !== String(d.id)) return;
+        const deltaX = Number.isFinite(event.dx) ? event.dx : 0;
+        const deltaY = Number.isFinite(event.dy) ? event.dy : 0;
+
+        [d.source, d.target].forEach(node => {
+            node.x += deltaX;
+            node.y += deltaY;
+            node.fx = node.x;
+            node.fy = node.y;
+            node.vx = 0;
+            node.vy = 0;
+            this.storePinnedNodePosition(node);
+        });
+
+        this.scheduleDragRender([d.source, d.target]);
+    }
+
+    edgeended(event, d) {
+        this.currentDragEdgeId = null;
+        [d.source, d.target].forEach(node => {
+            this.storePinnedNodePosition(node);
+        });
     }
 }
 

@@ -1,7 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const util = require('util');
 const config = require('../config/config');
+const db = require('../config/database');
 const logger = require('../utils/logger');
 const { ingestNetworks } = require('../scripts/ingestData');
 
@@ -10,6 +12,9 @@ const { ingestNetworks } = require('../scripts/ingestData');
 let activeJobCount = 0;
 const LOCK_STALE_MS = 10 * 60 * 1000;
 const JSON_SENTINEL = '__SUBNET_JSON__ ';
+const NETWORK_READY_TIMEOUT_MS = 10000;
+const NETWORK_READY_POLL_MS = 100;
+const dbGet = util.promisify(db.get.bind(db));
 
 class SubnetworkError extends Error {
   constructor(message, status = 400, details = {}) {
@@ -337,11 +342,73 @@ function ensureExtractionPrerequisites(indexName) {
   return indexPrefix;
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function getNetworkStatus(filename) {
+  const edgeRow = await dbGet(
+    'SELECT COUNT(*) AS count FROM edges WHERE source = ?',
+    [filename]
+  );
+
+  const nodeRow = await dbGet(
+    `
+      SELECT COUNT(*) AS count
+      FROM (
+        SELECT node_id AS id FROM network_nodes WHERE source = ?
+        UNION
+        SELECT node1 AS id FROM edges WHERE source = ?
+        UNION
+        SELECT node2 AS id FROM edges WHERE source = ?
+      )
+    `,
+    [filename, filename, filename]
+  );
+
+  return {
+    edgeCount: edgeRow?.count || 0,
+    nodeCount: nodeRow?.count || 0,
+  };
+}
+
+async function waitForNetworkReady(filename, expectedEdgeCount) {
+  const deadline = Date.now() + NETWORK_READY_TIMEOUT_MS;
+  let lastStatus = { edgeCount: 0, nodeCount: 0 };
+
+  while (Date.now() <= deadline) {
+    lastStatus = await getNetworkStatus(filename);
+    if (lastStatus.edgeCount === expectedEdgeCount && lastStatus.nodeCount > 0) {
+      return { ready: true, ...lastStatus };
+    }
+    await sleep(NETWORK_READY_POLL_MS);
+  }
+
+  return { ready: false, ...lastStatus };
+}
+
+function suppressWatcherIngest(filename) {
+  try {
+    const fileWatcher = require('./fileWatcher');
+    if (fileWatcher && typeof fileWatcher.suppressNetworkIngest === 'function') {
+      fileWatcher.suppressNetworkIngest(filename);
+      return;
+    }
+    throw new Error('fileWatcher.suppressNetworkIngest is unavailable');
+  } catch (err) {
+    throw new SubnetworkError(
+      `Could not suppress watcher ingest for ${filename}: ${err.message}`,
+      500
+    );
+  }
+}
+
 function runExtractionProcess({ indexPrefix, seeds, outputPath, maxNodes }) {
   return new Promise((resolve, reject) => {
     const args = [
       config.subnetwork.scriptPath,
       '--json',
+      '--stitch',
       '--max_nodes',
       String(maxNodes),
       '-o',
@@ -473,6 +540,7 @@ async function createSubnetwork({ seeds, name, index = 'eu', maxNodes } = {}) {
       );
     }
 
+    suppressWatcherIngest(reservedOutputFilename);
     await fs.promises.rename(tempOutputPath, finalOutputPath);
 
     try {
@@ -488,9 +556,13 @@ async function createSubnetwork({ seeds, name, index = 'eu', maxNodes } = {}) {
       throw new SubnetworkError(`Generated CSV could not be ingested: ${err.message}`, 500, parsedMessages);
     }
 
+    const viewerStatus = await waitForNetworkReady(reservedOutputFilename, edgeCount);
+
     return {
       network: reservedOutputFilename,
       viewerUrl: `/viewer.html?network=${encodeURIComponent(reservedOutputFilename)}`,
+      viewerReady: viewerStatus.ready,
+      viewerStatusUrl: `/api/networks/${encodeURIComponent(reservedOutputFilename)}/status`,
       index: normalizedIndex,
       maxNodes: normalizedMaxNodes,
       resolvedSeedCount: parsedMessages.summary?.resolvedSeedCount ?? normalizedSeeds.length,

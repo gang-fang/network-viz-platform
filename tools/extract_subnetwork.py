@@ -14,7 +14,7 @@ Strategy (two-stage seeded expansion with balanced coverage):
            All frontier candidates compete by aggregate score.
            Nodes reachable from multiple seeds get boosted (sum of best
            edge weights per seed), naturally promoting bridge nodes.
-  Stage 3: (Optional) Component stitching via shortest weighted paths.
+  Stage 3: (Optional) Component stitching via shortest unweighted paths.
 
 Usage:
   python extract_subnetwork.py graph_index A0A2I3TW31 G3R0Y9 Q6ZQA0 \\
@@ -30,7 +30,7 @@ import re
 import struct
 import sys
 import time
-from collections import defaultdict, deque
+from collections import defaultdict
 
 import numpy as np
 
@@ -261,16 +261,24 @@ def extract_subnetwork(
     # would otherwise be missed — affecting both reached_by_seeds output and
     # Stage 2 propagation through that shared node. per_seed_scores has the
     # full reachability picture; fold it back into seed_membership now.
-    stage1_membership_grew = set()
     for node, ss in per_seed_scores.items():
         if node in selected:
-            before = len(seed_membership[node])
             seed_membership[node].update(ss.keys())
-            if len(seed_membership[node]) > before:
-                stage1_membership_grew.add(node)
 
     if budget <= 0:
+        if n_seeds == 1:
+            selected = _component_containing(graph, selected, seed_ids[0])
         return _finalize(graph, selected, seed_membership)
+
+    # If requested, spend connector budget before Stage 2 consumes the full
+    # allowance on high-scoring local neighborhoods. This gives seed-to-seed
+    # connectivity priority over extra peripheral nodes.
+    if stitch and n_seeds > 1:
+        _stage3_added, budget = _stitch_components(
+            graph, selected, seed_membership, budget
+        )
+        if budget <= 0:
+            return _finalize(graph, selected, seed_membership)
 
     # ------------------------------------------------------------------
     # Stage 2: Global merit-based expansion
@@ -305,9 +313,10 @@ def extract_subnetwork(
         agg_score[nbr] = score
     del per_seed_scores
 
-    # Augment only the selected nodes whose seed memberships grew during the
-    # post-Stage-1 sync; other selected nodes already exposed their frontiers.
-    for node in stage1_membership_grew:
+    # Re-scan selected nodes after Stage 1 and optional stitching. This keeps
+    # candidate scoring aligned with the current connected backbone, including
+    # bridge nodes introduced before global fill.
+    for node in selected:
         node_seeds = seed_membership[node]
         if not node_seeds:
             continue
@@ -347,10 +356,13 @@ def extract_subnetwork(
     # ------------------------------------------------------------------
     # Stage 3: Optional stitching
     # ------------------------------------------------------------------
-    if stitch and budget > 0:
+    if stitch and n_seeds > 1 and budget > 0:
         _stage3_added, budget = _stitch_components(
             graph, selected, seed_membership, budget
         )
+
+    if n_seeds == 1:
+        selected = _component_containing(graph, selected, seed_ids[0])
 
     return _finalize(graph, selected, seed_membership)
 
@@ -407,49 +419,109 @@ def _stitch_components(graph, selected, seed_membership, budget):
         comp_seeds = set().union(*(seed_membership.get(node, set()) for node in comp))
         bridge_seeds = main_comp_seeds | comp_seeds
         # BFS from comp nodes toward main_comp
-        path = _bfs_path(graph, comp, main_comp, max_explore=budget * 50)
+        path = _bfs_path(
+            graph,
+            comp,
+            main_comp,
+            max_explore=max(10000, budget * 1000),
+        )
         if path:
-            for node in path:
-                if node not in selected and budget > 0:
-                    selected.add(node)
-                    # Bridge nodes are synthetic connectors, so they inherit
-                    # both components' seed labels by convention.
-                    seed_membership[node].update(bridge_seeds)
-                    budget -= 1
-                    stage3_added += 1
+            new_nodes = [node for node in path if node not in selected]
+            if len(new_nodes) > budget:
+                continue
+            for node in new_nodes:
+                selected.add(node)
+                # Bridge nodes are synthetic connectors, so they inherit
+                # both components' seed labels by convention.
+                seed_membership[node].update(bridge_seeds)
+                budget -= 1
+                stage3_added += 1
             main_comp = main_comp | comp | set(path)
             main_comp_seeds.update(comp_seeds)
 
     return stage3_added, budget
 
 
+def _component_containing(graph, selected, root):
+    """Return the selected-node component reachable from root."""
+    if root not in selected:
+        return set()
+
+    component = set()
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        if node in component:
+            continue
+        component.add(node)
+        for nbr, _w in graph.get_neighbors(node):
+            if nbr in selected and nbr not in component:
+                stack.append(nbr)
+    return component
+
+
 def _bfs_path(graph, source_set, target_set, max_explore=10000):
-    """BFS from source_set to find shortest path to target_set."""
-    queue = deque()
-    parent = {}
-    for s in source_set:
-        queue.append(s)
-        parent[s] = None
+    """Bidirectional BFS from source_set to target_set."""
+    source_set = set(source_set)
+    target_set = set(target_set)
+    if source_set & target_set:
+        return []
+
+    forward_parent = {node: None for node in source_set}
+    reverse_parent = {node: None for node in target_set}
+    forward_frontier = set(source_set)
+    reverse_frontier = set(target_set)
+
+    def _reconstruct(meet):
+        left = []
+        curr = meet
+        while curr is not None:
+            left.append(curr)
+            curr = forward_parent[curr]
+        left.reverse()
+
+        right = []
+        curr = reverse_parent[meet]
+        while curr is not None:
+            right.append(curr)
+            curr = reverse_parent[curr]
+
+        # Exclude the source component endpoint; callers only need nodes to add
+        # plus the already-selected target endpoint.
+        return (left + right)[1:]
 
     explored = 0
-    while queue and explored < max_explore:
-        node = queue.popleft()
-        explored += 1
-        if node in target_set and node not in source_set:
-            # Reconstruct path
-            path = []
-            curr = node
-            while curr is not None and curr not in source_set:
-                path.append(curr)
-                curr = parent[curr]
-            return path
+    while forward_frontier and reverse_frontier and explored < max_explore:
+        if len(forward_frontier) <= len(reverse_frontier):
+            next_frontier = set()
+            for node in forward_frontier:
+                explored += 1
+                if explored > max_explore:
+                    break
+                for nbr, _w in graph.get_neighbors(node):
+                    if nbr in forward_parent:
+                        continue
+                    forward_parent[nbr] = node
+                    if nbr in reverse_parent:
+                        return _reconstruct(nbr)
+                    next_frontier.add(nbr)
+            forward_frontier = next_frontier
+        else:
+            next_frontier = set()
+            for node in reverse_frontier:
+                explored += 1
+                if explored > max_explore:
+                    break
+                for nbr, _w in graph.get_neighbors(node):
+                    if nbr in reverse_parent:
+                        continue
+                    reverse_parent[nbr] = node
+                    if nbr in forward_parent:
+                        return _reconstruct(nbr)
+                    next_frontier.add(nbr)
+            reverse_frontier = next_frontier
 
-        for nbr, _w in graph.get_neighbors(node):
-            if nbr not in parent:
-                parent[nbr] = node
-                queue.append(nbr)
-
-    return None  # no path found within budget
+    return None  # no path found within explore limit
 
 
 def _finalize(graph, selected, seed_membership):

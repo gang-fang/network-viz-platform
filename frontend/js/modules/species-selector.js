@@ -50,9 +50,7 @@ const SpeciesSelectorModule = {
 
     async _initSpeciesData() {
         try {
-            const tree = this.context.getSpeciesTree
-                ? await this.context.getSpeciesTree()
-                : null;
+            const tree = await this.context.getSpeciesTree();
 
             if (tree) {
                 await this._loadTreeView(tree);
@@ -68,17 +66,6 @@ const SpeciesSelectorModule = {
 
     /** Fetch and render the taxonomic tree. */
     async _loadTreeView(treeData) {
-        let tree = treeData;
-        if (!tree) {
-            const res = await fetch('/api/species-tree');
-            if (res.status === 404) {
-                await this._loadFlatList();
-                return;
-            }
-            if (!res.ok) throw new Error('GET /api/species-tree failed: ' + res.status);
-            ({ tree } = await res.json());
-        }
-
         this.useTree  = true;
         this.treeView = new SpeciesTreeView(this.checkboxContainer, {
             maxHeight:   '280px',
@@ -90,18 +77,13 @@ const SpeciesSelectorModule = {
                 selected.forEach(s => this.selectedSpecies.add(s.taxid));
             },
         });
-        this.treeView.load(tree);
+        this.treeView.load(treeData);
     },
 
     /** Original flat checkbox list (fallback when tree files are absent). */
     async _loadFlatList() {
         try {
-            const data = this.context.getSpeciesNames
-                ? await this.context.getSpeciesNames()
-                : await fetch('/api/species-names').then(r => {
-                    if (!r.ok) throw new Error('Failed to fetch species names');
-                    return r.json();
-                });
+            const data = await this.context.getSpeciesNames();
 
             data.forEach(item => {
                 this.speciesMap.set(String(item.ncbi_txid), item.species_name);
@@ -116,14 +98,16 @@ const SpeciesSelectorModule = {
 
     _createPopup() {
         this.popup = document.createElement('div');
-        this.popup.className    = 'floating-panel hidden';
-        this.popup.style.width  = '555px';
+        this.popup.className    = 'floating-panel species-selector-panel';
         this.popup.style.display = 'none';
 
         // ── Header ────────────────────────────────────────────────────────────
         const header = document.createElement('div');
         header.className = 'panel-header';
-        header.innerHTML = '<h3>Select Species</h3>';
+
+        const title = document.createElement('h3');
+        title.textContent = 'Highlight by Species';
+        header.appendChild(title);
 
         const closeBtn = document.createElement('button');
         closeBtn.className   = 'close-button';
@@ -133,7 +117,7 @@ const SpeciesSelectorModule = {
 
         // ── Content ───────────────────────────────────────────────────────────
         const content = document.createElement('div');
-        content.className = 'panel-content';
+        content.className = 'panel-content species-selector-content';
 
         // Select All / Deselect All row
         const controls = document.createElement('div');
@@ -158,10 +142,8 @@ const SpeciesSelectorModule = {
         this.checkboxContainer.className = 'checkbox-group';
         content.appendChild(this.checkboxContainer);
 
-        // ── Footer ────────────────────────────────────────────────────────────
-        const footer = document.createElement('div');
-        footer.className = 'panel-footer';
-        footer.style.cssText = 'flex-direction:row;gap:10px;align-items:center;justify-content:space-between;';
+        const actions = document.createElement('div');
+        actions.className = 'species-selector-actions';
 
         // Color swatches
         const colorRow = document.createElement('div');
@@ -182,19 +164,19 @@ const SpeciesSelectorModule = {
             });
             colorRow.appendChild(swatch);
         });
-        footer.appendChild(colorRow);
+        actions.appendChild(colorRow);
 
         // Highlight button
         const highlightBtn = document.createElement('button');
         highlightBtn.className   = 'control-button';
         highlightBtn.textContent = 'Highlight';
         highlightBtn.style.flexShrink = '0';
-        highlightBtn.addEventListener('click', () => this._applyAction('highlight'));
-        footer.appendChild(highlightBtn);
+        highlightBtn.addEventListener('click', () => this._applyHighlight());
+        actions.appendChild(highlightBtn);
+        content.appendChild(actions);
 
         this.popup.appendChild(header);
         this.popup.appendChild(content);
-        this.popup.appendChild(footer);
         document.body.appendChild(this.popup);
         this._makeDraggable(this.popup);
     },
@@ -259,7 +241,7 @@ const SpeciesSelectorModule = {
     },
 
     openDefaultPosition() {
-        this.popup.style.display   = 'block';
+        this.popup.style.display   = 'flex';
         this.popup.style.transform = 'none';
 
         const margin = this.popupMargin;
@@ -283,7 +265,7 @@ const SpeciesSelectorModule = {
         return res.json();
     },
 
-    async _applyAction(action) {
+    async _applyHighlight() {
         if (this.selectedSpecies.size === 0) {
             alert('Please select at least one species.');
             return;
@@ -295,13 +277,11 @@ const SpeciesSelectorModule = {
         }
         try {
             const result = await this._fetchNodesForSpecies(networkName, this.selectedSpecies);
-            if (action === 'highlight') {
-                if (result.matches && result.matches.length > 0) {
-                    const layerId = 'species:' + Date.now();
-                    this.context.addHighlightLayer(layerId, result.matches, this.selectedColor);
-                } else {
-                    alert('No nodes found for the selected species.');
-                }
+            if (result.matches && result.matches.length > 0) {
+                const layerId = 'species:' + Date.now();
+                this.context.addHighlightLayer(layerId, result.matches, this.selectedColor);
+            } else {
+                alert('No nodes found for the selected species.');
             }
         } catch (err) {
             console.error('Species action failed:', err);
@@ -337,13 +317,6 @@ const SpeciesSelectorModule = {
             el.classList.remove('dragging');
         });
     },
-
-    // ── Keep old camelCase entry-points as aliases for any external callers ───
-    toggleAll(select)    { return this._toggleAll(select); },
-    applyAction(action)  { return this._applyAction(action); },
-    fetchSpeciesData()   { return this._initSpeciesData(); },
-    createPopup()        { return this._createPopup(); },
-    makeDraggable(el)    { return this._makeDraggable(el); },
 };
 
 if (typeof module !== 'undefined' && module.exports) {

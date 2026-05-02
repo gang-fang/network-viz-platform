@@ -19,11 +19,11 @@ code {
 }
 
 .landing-shell {
-    width: min(1160px, calc(100% - 2rem));
+    width: min(1260px, calc(100% - 2rem));
     margin: 0 auto;
-    min-height: 100vh;
+    min-height: calc(100vh - 5rem);
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
     gap: 1.5rem;
     align-items: center;
     padding: 2rem 0;
@@ -39,7 +39,7 @@ code {
 }
 
 .hero-panel {
-    padding: 3rem;
+    padding: 3.25rem;
 }
 
 .eyebrow {
@@ -56,6 +56,15 @@ code {
     font-size: clamp(2.6rem, 5vw, 4.6rem);
     line-height: 0.95;
     letter-spacing: -0.03em;
+}
+
+.hero-panel .hero-title-compact {
+    font-size: clamp(1.55rem, 2.55vw, 2.35rem);
+    line-height: 1.08;
+    max-width: none;
+    padding-right: 0.5rem;
+    overflow-wrap: normal;
+    word-break: normal;
 }
 
 .hero-copy {
@@ -95,7 +104,7 @@ code {
 
 .field-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.85fr) minmax(0, 1.25fr);
     gap: 1rem;
 }
 
@@ -114,6 +123,10 @@ code {
     color: #b9c0c7;
 }
 
+.field .field-error {
+    color: #ff9f90;
+}
+
 .field input,
 .field select,
 .field textarea {
@@ -126,9 +139,18 @@ code {
     font: inherit;
 }
 
+.field input::placeholder,
+.field textarea::placeholder {
+    color: #a8b3bf;
+}
+
 .field textarea {
     resize: vertical;
     min-height: 14rem;
+}
+
+.field-max-neighbors {
+    min-width: 0;
 }
 
 .field input:focus,
@@ -136,6 +158,10 @@ code {
 .field textarea:focus {
     outline: 2px solid rgba(240, 180, 110, 0.55);
     outline-offset: 2px;
+}
+
+.field input.input-invalid {
+    border-color: rgba(210, 109, 93, 0.9);
 }
 
 .field-block {
@@ -234,8 +260,17 @@ code {
     display: none;
 }
 
-#graph-index-field.hidden {
-    display: none;
+.landing-footer {
+    width: min(1260px, calc(100% - 2rem));
+    margin: 0 auto;
+    padding: 0 0 1.5rem;
+    text-align: center;
+}
+
+.landing-footer p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: rgba(245, 239, 227, 0.62);
 }
 
 @media (max-width: 920px) {

@@ -13,6 +13,7 @@ const NetworkEditorModule = {
     popup: null,
     statsEl: null,
     statusEl: null,
+    panelButton: null,
 
     // ── Species section — flat-list (fallback) elements ───────────────────────
     speciesFilter: null,
@@ -31,15 +32,14 @@ const NetworkEditorModule = {
 
     // ── Tree-view state ───────────────────────────────────────────────────────
     treeView: null,   // SpeciesTreeView instance, or null in flat-list mode
-    useTree:  false,
     _speciesContainer: null,   // the div that hosts whichever widget is active
 
     // ─────────────────────────────────────────────────────────────────────────
     init(context) {
         this.context = context;
 
-        this.createPanelButton();
         this.createPopup();
+        this.createPanelButton();
         this.bindContextMenu();
 
         // Load species data (tree or flat list)
@@ -56,12 +56,13 @@ const NetworkEditorModule = {
 
     createPanelButton() {
         const btn = document.createElement('button');
-        btn.textContent      = 'Edit Network';
-        btn.className        = 'control-button';
-        btn.style.width      = '100%';
-        btn.style.marginTop  = '10px';
+        btn.textContent      = 'Edit & Save Network';
+        btn.className        = 'viewer-primary-btn hidden';
         btn.addEventListener('click', () => this.togglePopup());
-        this.context.addPanelControl(btn);
+        this.panelButton = btn;
+
+        document.getElementById('network-action-slot').appendChild(btn);
+        this.updateButtonVisibility(this.context.getEditStats());
     },
 
     bindContextMenu() {
@@ -83,7 +84,7 @@ const NetworkEditorModule = {
         header.className = 'panel-header';
 
         const title = document.createElement('h3');
-        title.textContent = 'Edit Network';
+        title.textContent = 'Edit & Save Network';
         const closeBtn = document.createElement('button');
         closeBtn.className   = 'close-button';
         closeBtn.textContent = 'x';
@@ -99,9 +100,9 @@ const NetworkEditorModule = {
         content.appendChild(this.statsEl);
 
         content.appendChild(this.createSelectionSection());
-        content.appendChild(this.createSpeciesSection());
-        content.appendChild(this.createIdSection());
         content.appendChild(this.createEdgeSection());
+        content.appendChild(this.createIdSection());
+        content.appendChild(this.createSpeciesSection());
         content.appendChild(this.createSaveSection());
 
         this.statusEl = document.createElement('div');
@@ -134,15 +135,25 @@ const NetworkEditorModule = {
     },
 
     createSelectionSection() {
-        const section = this.createSection('Selection and Highlights');
+        const section = this.createSection('Selection');
+        const help = document.createElement('div');
+        help.className = 'network-editor-help';
+        help.innerHTML = 'Toggle the blue star <span class="network-editor-selection-star" aria-hidden="true"><span class="network-editor-selection-star-glyph">★</span></span> in the network display frame to select nodes for removal.';
+        section.appendChild(help);
+
         const actions = document.createElement('div');
         actions.className = 'network-editor-actions';
 
-        actions.appendChild(this.createButton('Remove Selected',    () => this.removeSelected()));
-        actions.appendChild(this.createButton('Remove Highlighted', () => this.removeHighlighted()));
-        actions.appendChild(this.createButton('Restore All Edits',  () => this.restoreAll()));
+        actions.appendChild(this.createButton('Remove Selected', () => this.removeSelectedOrHighlighted()));
+        actions.appendChild(this.createButton('Restore Edits',  () => this.restoreAll()));
 
         section.appendChild(actions);
+
+        const note = document.createElement('div');
+        note.className = 'network-editor-note';
+        note.textContent = 'Make sure to deselect highlighted nodes that you do not want to remove.';
+        section.appendChild(note);
+
         return section;
     },
 
@@ -200,7 +211,6 @@ const NetworkEditorModule = {
             ({ tree } = await res.json());
         }
 
-        this.useTree  = true;
         this.treeView = new SpeciesTreeView(this._speciesContainer, {
             maxHeight:   '190px',
             showSearch:  true,
@@ -290,11 +300,11 @@ const NetworkEditorModule = {
     // ─── Remaining sections (unchanged) ───────────────────────────────────────
 
     createIdSection() {
-        const section = this.createSection('Protein IDs');
+        const section = this.createSection('Protein UniProt ACs');
 
         this.idInput = document.createElement('textarea');
         this.idInput.className   = 'network-editor-ids';
-        this.idInput.placeholder = 'P12345, Q67890';
+        this.idInput.placeholder = 'e.g. P12345, Q67890';
         this.idInput.rows        = 3;
         section.appendChild(this.idInput);
 
@@ -312,13 +322,13 @@ const NetworkEditorModule = {
 
         const help = document.createElement('div');
         help.className   = 'network-editor-help';
-        help.textContent = 'Remove or restore original edges whose raw SJI weight is below the threshold; threshold must be > 0 and < 1, and aggregated cluster weights are not used.';
+        help.textContent = 'Remove or restore original edges based on SJI edge weight; threshold must be > 0 and < 1, and aggregated cluster weights are not used.';
         section.appendChild(help);
 
         this.edgeThresholdInput = document.createElement('input');
         this.edgeThresholdInput.type        = 'number';
         this.edgeThresholdInput.className   = 'control-input network-editor-input';
-        this.edgeThresholdInput.placeholder = '0.5';
+        this.edgeThresholdInput.placeholder = 'e.g. 0.5';
         this.edgeThresholdInput.min         = '0';
         this.edgeThresholdInput.max         = '1';
         this.edgeThresholdInput.step        = '0.01';
@@ -327,7 +337,7 @@ const NetworkEditorModule = {
         const actions = document.createElement('div');
         actions.className = 'network-editor-actions';
         actions.appendChild(this.createButton('Remove Edges Below',  () => this.applyEdgeThreshold('hide')));
-        actions.appendChild(this.createButton('Restore Edges Below', () => this.applyEdgeThreshold('show')));
+        actions.appendChild(this.createButton('Restore Edges Above', () => this.applyEdgeThreshold('show')));
         actions.appendChild(this.createButton('Restore All Edges',   () => this.restoreAllEdges()));
         section.appendChild(actions);
 
@@ -361,7 +371,7 @@ const NetworkEditorModule = {
     },
 
     openDefaultPosition() {
-        this.popup.style.display   = 'block';
+        this.popup.style.display   = 'flex';
         this.popup.style.transform = 'none';
 
         const margin = this.popupMargin;
@@ -376,7 +386,7 @@ const NetworkEditorModule = {
     },
 
     openAt(x, y) {
-        this.popup.style.display   = 'block';
+        this.popup.style.display   = 'flex';
         this.popup.style.transform = 'none';
         this.popup.style.left      = x + 'px';
         this.popup.style.top       = y + 'px';
@@ -392,7 +402,7 @@ const NetworkEditorModule = {
 
     updateStats(stats = {}) {
         if (!this.statsEl) return;
-        const sel = this.context.getSelectedNodeCount ? this.context.getSelectedNodeCount() : 0;
+        const sel = this.context.getSelectedNodeCount();
         this.statsEl.textContent =
             'Visible proteins: '  + (stats.visibleProteinCount || 0) + ' / ' + (stats.totalProteinCount || 0) + '. ' +
             'Hidden proteins: '   + (stats.hiddenProteinCount  || 0) + '. ' +
@@ -400,6 +410,17 @@ const NetworkEditorModule = {
             'Drawn nodes: '       + (stats.viewNodeCount       || 0) + '. ' +
             'Drawn edges: '       + (stats.viewEdgeCount       || 0) + '. ' +
             'Selected: '          + sel + '.';
+        this.updateButtonVisibility(stats);
+    },
+
+    updateButtonVisibility(stats = {}) {
+        if (!this.panelButton) return;
+        const hasVisibleGraph = Boolean(this.context.getCurrentNetwork && this.context.getCurrentNetwork())
+            && Number(stats.viewNodeCount || 0) > 0;
+        this.panelButton.classList.toggle('hidden', !hasVisibleGraph);
+        if (!hasVisibleGraph) {
+            this.closePopup();
+        }
     },
 
     setStatus(message, isError = false) {
@@ -414,29 +435,18 @@ const NetworkEditorModule = {
         return text.split(/[\s,;]+/).map(t => t.trim()).filter(Boolean);
     },
 
-    removeSelected() {
-        const ids = this.context.getSelectedNodeIds ? this.context.getSelectedNodeIds() : [];
-        if (ids.length === 0) { this.setStatus('No selected nodes to remove.', true); return; }
+    removeSelectedOrHighlighted() {
+        const ids = Array.from(new Set([
+            ...this.context.getSelectedNodeIds(),
+            ...this.context.getHighlightedNodeIds(),
+        ]));
+        if (ids.length === 0) { this.setStatus('No selected or highlighted visible nodes to remove.', true); return; }
         this.context.hideNodes(ids);
-        this.setStatus('Removed ' + ids.length + ' selected visible node(s).');
-    },
-
-    removeHighlighted() {
-        const ids = this.context.getHighlightedProteinIds();
-        if (ids.length === 0) { this.setStatus('No highlighted visible proteins to remove.', true); return; }
-        this.context.hideNodes(ids);
-        this.setStatus('Removed ' + ids.length + ' highlighted protein(s).');
+        this.setStatus('Removed ' + ids.length + ' selected or highlighted visible node(s).');
     },
 
     restoreAll() {
-        let changed;
-        if (this.context.showAllEdits) {
-            changed = this.context.showAllEdits();
-        } else {
-            const n = this.context.showAllNodes();
-            const e = this.context.showAllEdges ? this.context.showAllEdges() : false;
-            changed = Boolean(n || e);
-        }
+        const changed = this.context.showAllEdits();
         this.setStatus(
             changed ? 'Restored all hidden proteins and edges.' : 'No hidden edits to restore.',
             !changed
@@ -444,7 +454,7 @@ const NetworkEditorModule = {
     },
 
     restoreAllEdges() {
-        const changed = this.context.showAllEdges ? this.context.showAllEdges() : false;
+        const changed = this.context.showAllEdges();
         this.setStatus(changed ? 'Restored all hidden edges.' : 'No hidden edges to restore.', !changed);
     },
 
@@ -524,9 +534,11 @@ const NetworkEditorModule = {
         try {
             const result = action === 'hide'
                 ? this.context.hideEdgesByWeightBelow(threshold)
-                : this.context.showEdgesByWeightBelow(threshold);
+                : this.context.showEdgesByWeightAbove(threshold);
             const verb   = action === 'hide' ? 'Removed' : 'Restored';
-            const suffix = 'edge(s) with SJI < ' + threshold + '.';
+            const suffix = action === 'hide'
+                ? 'edge(s) with SJI < ' + threshold + '.'
+                : 'edge(s) with SJI > ' + threshold + '.';
             this.setStatus(
                 result.changedCount > 0
                     ? verb + ' ' + result.changedCount + ' ' + suffix
@@ -581,12 +593,7 @@ const NetworkEditorModule = {
         this.setStatus('Saving edited network…');
 
         try {
-            const edgeEditPayload = this.context.getHiddenEdgeEditPayload
-                ? this.context.getHiddenEdgeEditPayload()
-                : {
-                    hiddenEdgeIds:          this.context.getHiddenEdgeIds ? this.context.getHiddenEdgeIds() : [],
-                    hiddenEdgeWeightRanges: [],
-                };
+            const edgeEditPayload = this.context.getHiddenEdgeEditPayload();
 
             const response = await fetch('/api/networks/edited', {
                 method:  'POST',
@@ -646,9 +653,6 @@ const NetworkEditorModule = {
             el.classList.remove('dragging');
         });
     },
-
-    // ── Keep old fetchSpeciesData alias for external callers / tests ──────────
-    fetchSpeciesData() { return this._initSpeciesData(); },
 };
 
 if (typeof module !== 'undefined' && module.exports) {

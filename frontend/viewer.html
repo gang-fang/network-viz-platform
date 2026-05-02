@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Network Viewer</title>
-    <link rel="stylesheet" href="css/styles.css?v=14">
+    <link rel="stylesheet" href="css/styles.css?v=19">
     <script src="/vendor/d3.min.js"></script>
 
     <!-- Core Scripts -->
@@ -20,12 +20,12 @@
 
     <!-- Modules -->
     <script src="js/config/modules.js?v=14"></script>
-    <script src="js/modules/species-selector.js?v=14"></script>
+    <script src="js/modules/species-selector.js?v=16"></script>
     <script src="js/modules/network-editor.js?v=14"></script>
     <script src="js/modules/search-highlight.js?v=14"></script>
     <script src="js/modules/clear-highlights.js?v=14"></script>
     <script src="js/modules/uniprot-tooltip.js?v=14"></script>
-    <script src="js/modules/export-panel.js?v=14"></script>
+    <script src="js/modules/export-panel.js?v=17"></script>
 </head>
 
 <body>
@@ -44,14 +44,16 @@
                     <button id="refresh-btn" title="Refresh List">↻</button>
                 </div>
             </div>
-            <button id="load-btn" disabled>Load Network</button>
+            <button id="load-btn" class="viewer-primary-btn" disabled>Load Network</button>
             <div id="info" class="status-text"></div>
+            <div id="network-action-slot"></div>
             <hr class="separator" style="margin-top: 3rem;">
 
             <!-- Module Controls Container -->
             <div id="module-controls-container"></div>
 
             <hr class="separator">
+            <div class="viewer-copyright">Copyright (c) 2026 Gang Fang</div>
 
         </div>
 

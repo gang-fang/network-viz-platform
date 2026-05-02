@@ -3,9 +3,11 @@
 const mockNetworkController = {
   listNetworks: jest.fn(),
   getNetworkData: jest.fn(),
+  getNetworkStatus: jest.fn(),
   searchProteins: jest.fn(),
   searchBySpecies: jest.fn(),
   createEditedNetwork: jest.fn(),
+  saveGroupExports: jest.fn(),
 };
 
 jest.mock('../../../controllers/networkController', () => mockNetworkController);
@@ -110,6 +112,46 @@ describe('Network route handlers', () => {
       const next = jest.fn();
 
       mockNetworkController.getNetworkData.mockRejectedValue(new Error('not found'));
+
+      await handler(req, res, next);
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body.error).toBe('Network not found');
+      expect(next).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('GET /:filename/status', () => {
+    test('returns network readiness/counts for a valid network source', async () => {
+      const handler = getRouteHandler('/:filename/status', 'get');
+      const req = { params: { filename: 'network.csv' } };
+      const res = createRes();
+      const next = jest.fn();
+
+      mockNetworkController.getNetworkStatus.mockResolvedValue({
+        ready: true,
+        nodeCount: 2500,
+        edgeCount: 55498,
+      });
+
+      await handler(req, res, next);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({
+        ready: true,
+        nodeCount: 2500,
+        edgeCount: 55498,
+      });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    test('maps not-found status errors to 404', async () => {
+      const handler = getRouteHandler('/:filename/status', 'get');
+      const req = { params: { filename: 'missing.csv' } };
+      const res = createRes();
+      const next = jest.fn();
+
+      mockNetworkController.getNetworkStatus.mockRejectedValue(new Error('not found'));
 
       await handler(req, res, next);
 
@@ -238,6 +280,54 @@ describe('Network route handlers', () => {
         hiddenEdgeIds: ['P001|P003'],
         hiddenEdgeWeightRanges: [{ min: 0, max: 0.25 }],
       });
+      expect(next).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('POST /group-exports', () => {
+    test('passes valid grouped export requests to the controller', async () => {
+      const handler = getRouteHandler('/group-exports', 'post');
+      const req = {
+        body: {
+          groups: [
+            { name: 'group1', accessions: 'P12345 Q67890' },
+            { name: 'group2', accessions: 'A0A123' },
+          ],
+        },
+      };
+      const res = createRes();
+      const next = jest.fn();
+
+      mockNetworkController.saveGroupExports.mockResolvedValue({
+        savedFiles: [
+          { name: 'group1', filename: 'group1.txt', accessionCount: 2 },
+          { name: 'group2', filename: 'group2.txt', accessionCount: 1 },
+        ],
+        exportDir: '/mock/data/exports',
+      });
+
+      await handler(req, res, next);
+
+      expect(mockNetworkController.saveGroupExports).toHaveBeenCalledWith(req.body.groups);
+      expect(res.statusCode).toBe(201);
+      expect(res.body.savedFiles).toHaveLength(2);
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    test('maps controller validation errors to the response body', async () => {
+      const handler = getRouteHandler('/group-exports', 'post');
+      const req = { body: { groups: [{ name: 'bad name', accessions: '' }] } };
+      const res = createRes();
+      const next = jest.fn();
+      const error = new Error('Group 1 name is invalid');
+      error.status = 400;
+
+      mockNetworkController.saveGroupExports.mockRejectedValue(error);
+
+      await handler(req, res, next);
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.error).toBe('Group 1 name is invalid');
       expect(next).not.toHaveBeenCalled();
     });
   });
