@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,
+      initial-scale=1.0">
+    <title>Tutorial — ProtDC Network Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com"
+      crossorigin="">
+    <link
+href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&amp;family=DM+Serif+Display:ital@0;1&amp;family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&amp;display=swap"
+      rel="stylesheet">
+    <style>:root {
+    --bg:       #0e1117;
+    --bg2:      #151b27;
+    --bg3:      #1c2436;
+    --border:   #2a3550;
+    --accent:   #3dffa0;
+    --accent2:  #3db8ff;
+    --accent3:  #ffd166;
+    --muted:    #6b7fa3;
+    --body:     #c8d4ec;
+    --heading:  #e8eef8;
+    --code-bg:  #111827;
+    --danger:   #ff6b6b;
+    --serif:    'DM Serif Display', Georgia, serif;
+    --sans:     'DM Sans', system-ui, sans-serif;
+    --mono:     'DM Mono', 'Fira Code', monospace;
+    --radius:   6px;
+    --sidebar-w: 260px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--body);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    display: flex;
+    min-height: 100vh;
+  }
+  /* ── Sidebar ─────────────────────────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 40px;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .sidebar-logo-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .sidebar-logo .doc-type {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .sidebar-home {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .sidebar-home:hover {
+    color: var(--heading);
+  }
+  .sidebar-logo h2 {
+    font-family: var(--serif);
+    font-size: 17px;
+    color: var(--heading);
+    font-weight: 400;
+    line-height: 1.3;
+  }
+  .sidebar-section {
+    padding: 8px 24px 4px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+  .sidebar nav a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 24px;
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.15s, background 0.15s;
+    border-left: 2px solid transparent;
+  }
+  .sidebar nav a:hover { color: var(--body); background: var(--bg3); }
+  .sidebar nav a.active { color: var(--accent); border-left-color: var(--accent); background: rgba(61,255,160,0.05); }
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 20px 24px 0;
+    border-top: 1px solid var(--border);
+  }
+  .sidebar-footer a {
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    display: block;
+    padding: 4px 0;
+    transition: color 0.15s;
+  }
+  .sidebar-footer a:hover { color: var(--accent2); }
+  /* ── Main content ────────────────────────────────────────────── */
+  .content {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    max-width: 860px;
+    padding: 60px 56px 120px;
+  }
+  .page-header {
+    margin-bottom: 64px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-header .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .page-header h1 {
+    font-family: var(--serif);
+    font-size: 46px;
+    font-weight: 400;
+    color: var(--heading);
+    line-height: 1.15;
+    margin-bottom: 20px;
+  }
+  .page-header h1 em { font-style: italic; color: var(--accent); }
+  .page-header p {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 560px;
+    line-height: 1.7;
+  }
+  /* ── Steps ───────────────────────────────────────────────────── */
+  .step {
+    margin-bottom: 80px;
+    scroll-margin-top: 24px;
+  }
+  .step-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  .step-header h2 {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--heading);
+    line-height: 1.25;
+  }
+  .step p { color: var(--body); margin-bottom: 14px; max-width: 680px; }
+  .step p:last-child { margin-bottom: 0; }
+  /* ── Callouts ────────────────────────────────────────────────── */
+  .callout {
+    border-left: 3px solid var(--border);
+    background: var(--bg2);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 16px 20px;
+    margin: 20px 0;
+  }
+  .callout.tip  { border-left-color: var(--accent); }
+  .callout.warn { border-left-color: var(--accent3); }
+  .callout.info { border-left-color: var(--accent2); }
+  .callout.danger { border-left-color: var(--danger); }
+  .callout-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .callout.tip    .callout-label { color: var(--accent); }
+  .callout.warn   .callout-label { color: var(--accent3); }
+  .callout.info   .callout-label { color: var(--accent2); }
+  .callout.danger .callout-label { color: var(--danger); }
+  .callout p { color: var(--body); margin: 0; font-size: 14px; line-height: 1.65; }
+  .callout a {
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .callout a:hover {
+    color: var(--heading);
+  }
+  /* ── Code blocks ─────────────────────────────────────────────── */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 18px 0;
+  }
+  .code-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+  .code-lang {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .code-block pre {
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--body);
+  }
+  code { font-family: var(--mono); font-size: 0.875em; }
+  .code-block > code {
+    display: block;
+    padding: 18px 20px;
+    color: var(--body);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.65;
+  }
+  p code, li code {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 6px;
+    color: var(--accent2);
+  }
+  .kw  { color: #c792ea; }
+  .str { color: #c3e88d; }
+  .cm  { color: #546e7a; font-style: italic; }
+  .num { color: #f78c6c; }
+  .fn  { color: var(--accent2); }
+  .var { color: var(--accent3); }
+  /* ── Diagram boxes ───────────────────────────────────────────── */
+  .diagram {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin: 24px 0;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.9;
+    color: var(--body);
+    overflow-x: auto;
+  }
+  .diagram .d-accent { color: var(--accent); }
+  .diagram .d-accent2 { color: var(--accent2); }
+  .diagram .d-muted { color: var(--muted); }
+  .diagram .d-warn { color: var(--accent3); }
+  /* ── File format tables ──────────────────────────────────────── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13.5px;
+  }
+  .data-table th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .data-table td {
+    padding: 11px 16px;
+    border-bottom: 1px solid rgba(42,53,80,0.6);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .data-table td:first-child { font-family: var(--mono); color: var(--accent2); font-size: 12.5px; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table .req { color: var(--danger); font-size: 11px; font-family: var(--mono); }
+  .data-table .opt { color: var(--muted); font-size: 11px; font-family: var(--mono); }
+  .url-param-table th:nth-child(2),
+  .url-param-table td:nth-child(2) {
+    min-width: 260px;
+    white-space: nowrap;
+  }
+  /* ── Step list ───────────────────────────────────────────────── */
+  .step-list { list-style: none; margin: 16px 0; }
+  .step-list li {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+  }
+  .step-list .bullet {
+    min-width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(61,255,160,0.1);
+    border: 1px solid rgba(61,255,160,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+  .step-list .bullet-warn {
+    background: rgba(255,209,102,0.1);
+    border-color: rgba(255,209,102,0.3);
+    color: var(--accent3);
+  }
+  /* ── Screenshot figures ──────────────────────────────────────── */
+  .figure {
+    margin: 24px 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--bg2);
+  }
+  .figure img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .figure-caption {
+    padding: 10px 16px;
+    background: var(--bg3);
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .figure-caption strong { color: var(--accent); font-weight: 500; }
+  .figure.fig-narrow { max-width: 380px; }
+  .figure.fig-medium { max-width: 70%; }
+  /* ── UI Mock ─────────────────────────────────────────────────── */
+  .ui-mock {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 24px 0;
+  }
+  .ui-mock-bar {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ui-mock-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .ui-mock-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 8px;
+  }
+  .ui-mock-body {
+    padding: 20px 24px;
+    display: grid;
+    gap: 8px;
+  }
+  /* ── Field rows in UI mocks ──────────────────────────────────── */
+  .mock-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .mock-field label { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .mock-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: var(--body);
+    font-family: var(--mono);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mock-input .placeholder { color: var(--muted); }
+  .mock-input .filled { color: var(--accent2); }
+  .mock-btn {
+    background: var(--accent);
+    color: var(--bg);
+    border-radius: 4px;
+    padding: 10px 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    cursor: default;
+  }
+  .mock-badge {
+    background: rgba(61,255,160,0.1);
+    border: 1px solid rgba(61,255,160,0.3);
+    color: var(--accent);
+    border-radius: 100px;
+    padding: 2px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  /* ── Workflow diagram ────────────────────────────────────────── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 24px 0;
+  }
+  .flow-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+  .flow-node {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    flex: 1;
+  }
+  .flow-node .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 4px;
+  }
+  .flow-node .name {
+    font-size: 14px;
+    color: var(--heading);
+    font-weight: 500;
+  }
+  .flow-node.highlight { border-color: rgba(61,255,160,0.4); background: rgba(61,255,160,0.05); }
+  .flow-node.highlight .name { color: var(--accent); }
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    color: var(--muted);
+    font-size: 16px;
+    font-family: var(--mono);
+  }
+  /* ── Inline highlight ────────────────────────────────────────── */
+  .hl-green { color: var(--accent); }
+  .hl-blue  { color: var(--accent2); }
+  .hl-gold  { color: var(--accent3); }
+  .hl-red   { color: var(--danger); }
+  .ui-label {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .viewer-icon-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.45em;
+    height: 1.45em;
+    border-radius: 50%;
+    background: #34495e;
+    color: #fff;
+    font-size: 0.9em;
+    line-height: 1;
+    vertical-align: -0.18em;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .viewer-icon-inline.arrow {
+    font-size: 0.85em;
+  }
+  /* ── Section divider ─────────────────────────────────────────── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 64px 0;
+  }
+  /* ── Progress indicator ──────────────────────────────────────── */
+  .progress-strip {
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-strip::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: var(--prog, 0%);
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  ul, ol { padding-left: 20px; }
+  ul li, ol li { margin-bottom: 6px; color: var(--body); }
+  .setup-list {
+    padding-left: 22px;
+  }
+  .setup-list li {
+    margin-bottom: 14px;
+  }
+  .footer-note {
+    text-align: center;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 2;
+  }
+  .footer-note a {
+    color: var(--accent2);
+    text-decoration: none;
+  }
+  .footer-note a:hover { color: var(--accent); }
+  strong { color: var(--heading); font-weight: 600; }
+  /* ── Scrollbar ───────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .content { margin-left: 0; padding: 32px 24px 80px; }
+  }</style>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-top">
+          <div class="doc-type">Tutorial</div>
+          <a href="/index.html" class="sidebar-home">← Home</a> </div>
+        <h2>Network Viz Platform</h2>
+      </div>
+      <div class="sidebar-section">Background</div>
+      <nav> <a href="About%20SJI.html">About SJI</a> </nav>
+      <div class="sidebar-section">Getting Started</div>
+      <nav> <a href="#overview" class="active">Overview</a> <a
+          href="#first-run">First-Time Setup</a> <a href="#landing">The
+          Landing Page</a> </nav>
+      <div class="sidebar-section">Using the Viewer</div>
+      <nav> <a href="#subnetwork">Extract a Subnetwork</a> <a
+          href="#loading">Loading a Network</a> <a href="#navigation">Navigation
+
+
+
+
+
+
+
+
+
+
+
+
+          &amp; Clusters</a> <a href="#highlights">Highlighting Nodes</a>
+        <a href="#species">Species Filter</a> <a href="#edit-save">Edit
+          and Save Networks</a> </nav>
+      <div class="sidebar-section">Export &amp; Analysis</div>
+      <nav> <a href="#export">Export Panel</a> <a href="#batch">Batch
+          Analysis</a> </nav>
+      <div class="sidebar-section">Advanced</div>
+      <nav> <a href="#url-params">URL Parameters</a> <a
+          href="#build-your-own-sji-network">Build Your Own SJI Network</a>
+        <a href="#annotate-your-own-proteins">Annotate Your Own Proteins</a>
+        <a href="#annotate-your-own-proteome">Annotate Your Own Proteome</a>
+      </nav>
+      <div class="sidebar-footer"> <a href="/index.html"
+          class="sidebar-home">← Home</a> <a href="About%20SJI.html">About
+
+
+
+
+
+
+
+
+
+
+
+
+          SJI</a> <a href="Help.html">→ Help</a> </div>
+    </aside>
+    <!-- ── Main ─────────────────────────────────────────────────────── -->
+    <main class="content">
+      <div class="page-header">
+        <div class="eyebrow">Step-by-step Tutorial</div>
+        <h1>From network topology and neighborhood structure to <br>
+          <em>biology insight</em> </h1>
+        <p>A complete walkthrough of the Network Visualization Platform
+          — installation, data ingestion, interactive exploration, and
+          downstream analysis.</p>
+      </div>
+      <!-- 00 Overview -->
+      <section id="overview" class="step">
+        <div class="step-header">
+          <h2>Platform Overview</h2>
+        </div>
+        <p>The SJI Network Explorer lets you extract subnetworks
+          centered on your specified proteins from a large, pre-built
+          SJI network. You can then explore these subnetworks
+          interactively and export protein lists for downstream
+          structural or evolutionary analysis.</p>
+        <p>The pre-built SJI network includes 51 eukaryotic and 355
+          bacterial UniProt reference proteomes. All proteins are
+          represented by UniProt accessions to make protein annotation
+          retrieval easier. As a result, queries against the pre-built
+          network, as well as subnetwork extraction, are limited to
+          UniProt accessions.</p>
+        <p>The package also includes the <code>topN</code> software and
+          a set of Python scripts that allow users to attach their own
+          proteins or proteomes to the pre-built network. The added
+          proteins do not necessarily need to correspond to UniProt
+          entries. Their potential annotations can be inferred by
+          examining the network topology and the UniProt annotations of
+          their neighboring proteins. </p>
+        <p>Guidance on building a custom SJI network is also provided.
+          For these advanced topics, please refer to the end of this
+          tutorial.</p>
+        <div class="callout info">
+          <div class="callout-label">Key concept — Neighborhoods (NH)</div>
+          <p>Proteins are organized into pre-built neighborhood
+            clusters. To reduce memory usage and simplify the initial
+            view, the viewer displays these clusters in a collapsed
+            state by default, with each cluster represented as a single
+            large node. Click a cluster to expand it and view its
+            individual protein members.</p>
+        </div>
+      </section>
+      <!-- 01 First-time setup -->
+      <section id="first-run" class="step">
+        <div class="step-header">
+          <h2>First-Time Setup (Docker)</h2>
+        </div>
+        <p>The platform is distributed as a Docker image. The image
+          includes the web server, the subnetwork extractor, and all
+          required runtime tools, but it does not include the data. Data
+          are provided by mounting a host directory into the container.</p>
+        <ol class="setup-list">
+          <li><strong>Install Docker.</strong> Make sure Docker Desktop
+            (or Docker Engine on Linux) is installed and running. </li>
+          <li><strong>Download the data bundle.</strong> Grab the SJI
+            data archive from the project's release page and unpack it
+            somewhere convenient on your machine — for example <code>~/sji-data/</code>.
+            Inside you should see four folders: <code>networks/</code>,
+            <code>nodes_attr/</code>, <code>indexes/</code>, and <code>NCBI_txID/</code>.
+            Leave the folder names as-is. </li>
+          <li><strong>Pull the image.</strong> In a terminal:
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>docker pull sji-network-explorer:latest</code></pre>
+            </div>
+          </li>
+          <li><strong>Start the container</strong>, mounting your data
+            folder to <code>/data</code> inside the container:
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell
+
+
+
+
+
+
+
+
+
+
+
+
+                  — replace ~/sji-data with your path</span> </div>
+              <pre><code>docker run -d --name sji \
+  -p 3000:3000 \
+  -v ~/sji-data:/data \
+  sji-network-explorer:latest</code></pre>
+            </div>
+          </li>
+          <li><strong>Open the app</strong> in your browser at <code>http://localhost:3000</code>.
+            The first launch ingests the data into an internal database;
+            this can take up to a minute. When it finishes, the landing
+            page in the next section appears. </li>
+        </ol>
+        <div class="callout tip">
+          <div class="callout-label">Tip — Where your data lives</div>
+          <p>Anything inside <code>~/sji-data</code> on your host is
+            what the container reads. Adding a new CSV under <code>~/sji-data/networks/</code>
+            while the container is running makes it available in the
+            viewer automatically — no restart needed. </p>
+        </div>
+        <div class="callout warn">
+          <div class="callout-label">Stopping &amp; restarting</div>
+          <p>Use <code>docker stop sji</code> to stop and <code>docker
+              start sji</code> to resume. Your data and any subnetworks
+            you extracted persist in the mounted folder. </p>
+        </div>
+      </section>
+      <!-- 02 Landing page tour -->
+      <section id="landing" class="step">
+        <div class="step-header">
+          <h2>The Landing Page</h2>
+        </div>
+        <p>Once the server is up, <code>http://localhost:3000</code>
+          shows the SJI Network Explorer landing page. There are two
+          things to know: the <span class="hl-green">saved networks</span>,
+          and the <span class="hl-gold">extraction form</span> on the
+          right where you build a focused subnetwork from seed proteins.
+        </p>
+        <div class="figure"> <img src="./tMain.png" alt="Landing page
+            of SJI Network Explorer with navigation and extraction form
+            circled">
+          <div class="figure-caption"> <strong>Landing page.</strong>
+            Left: open your saved subnetworks. Right: the subnetwork
+            extraction form. The orange <span class="ui-label">Extract
+              Subnetwork</span> button submits the form once you fill it
+            in.<br>
+          </div>
+        </div>
+        <p>You can add or delete subnetworks directly in <code>/data/subnetworks</code>,
+          then open them by selecting <span class="ui-label">Open
+            existing networks in viewer</span> from the left panel to go
+          directly to the viewer. See the <span class="ui-label"><font
+              color="#c8d4ec">Advanced</font> <font color="#c8d4ec">Topics</font></span>
+          section below for details.</p>
+      </section>
+      <hr class="divider"><!-- 03 Subnetwork -->
+      <section id="subnetwork" class="step">
+        <div class="step-header">
+          <h2>Extracting a Sub-Network</h2>
+        </div>
+        <p>From the landing page, fill in the form on the right. The
+          platform expands each seed protein outward through the SJI
+          network and returns a focused subnetwork in CSV format, ready
+          for visualization. </p>
+        <div class="figure"> <img src="./tLocal_net_extract.png"
+            alt="Subnetwork extraction form with each field annotated">
+          <div class="figure-caption"> <strong>Extraction form.</strong>
+            Fill in <em>Subnetwork name</em>, pick a <em>Domain</em>
+            (Bacteria or Eukaryotes — circled), set <em>Max neighbors</em>
+            (500–1000 recommended), paste up to 10 UniProt accessions in
+            <em>Seed proteins</em>, then click <strong>Extract
+              Subnetwork</strong>. </div>
+        </div>
+        <ul class="step-list">
+          <li>
+            <div class="bullet">1</div>
+            <div>&nbsp;<strong>Subnetwork name</strong> — letters,
+              numbers, <code>_</code>, <code>-</code>, and <code>.</code>
+              only. The <code>.csv</code> extension is added
+              automatically. Max 80 characters. </div>
+          </li>
+          <li>
+            <div class="bullet">2</div>
+            <div>&nbsp;<strong>Domain</strong> — select <em>Bacteria</em>
+              or <em>Eukaryotes</em> based on where your proteins live.
+              This selects the correct pre-built index. See the <b>Advanced
+
+
+
+
+
+
+
+
+
+
+
+
+                Topics </b>section below for instructions on building
+              custom indexes.</div>
+          </li>
+          <li>
+            <div class="bullet">3</div>
+            <div>&nbsp;<strong>Max neighbors</strong> — total nodes in
+              the resulting subnetwork (cap 2,500; 500–1,000 makes the
+              visualization readable). </div>
+          </li>
+          <li>
+            <div class="bullet">4</div>
+            <div>&nbsp;<strong>Seed proteins</strong> — up to 10 UniProt
+              ACs separated by spaces, commas, semicolons, or new lines.
+            </div>
+          </li>
+        </ul>
+        <br>
+        <p>The extraction may take from a few seconds to several
+          minutes, depending on your computer. Once the extraction is
+          complete, the server saves a CSV file under your mounted
+          directory, such as <code>data/networks/</code>, and the <span
+            class="ui-label">Open in Viewer</span> button will appear.
+          Click this button to inspect the subnetwork interactively.
+          Your seed protein will be automatically filled into the <strong
+            data-start="57" data-end="79"><font color="#3dffa0">Highlight</font>
+            <font color="#3dffa0">Proteins</font></strong> box in the
+          viewer.
+          <meta charset="utf-8">
+        </p>
+        <p>To highlight your seed proteins, click <span
+            class="ui-label">Highlight Proteins (UniProt AC)</span>,
+          choose a color, and then click anywhere outside the color
+          palette to close it. You can expand or collapse clusters to
+          examine the subnetwork in greater detail. Keep a note of any
+          proteins of interest; you can always enter them in the <span
+            class="ui-label">Highlight Proteins</span> box to locate
+          them within the subnetwork.</p>
+        <p><span class="ui-label">Tip:</span> For large subnetworks,
+          network detection may be delayed. If the number of nodes in
+          your subnetwork appears incomplete, refreshing the browser
+          should resolve the issue.</p>
+        <div class="callout info">
+          <div class="callout-label">What the SUB-NETWORK EXTRACTION
+            algorithm does</div>
+          <p>Each seed first gets a guaranteed local neighborhood, then
+            remaining budget is filled globally by merit score — nodes
+            reached by multiple seeds are boosted. The result is a
+            single connected subnetwork centered on your seeds.</p>
+        </div>
+      </section>
+      <!-- 04 Loading -->
+      <section id="loading" class="step">
+        <div class="step-header">
+          <h2>Loading a Network in the Viewer</h2>
+        </div>
+        <p>The viewer's left panel — <strong>Controls</strong> — is
+          used to load, edit, and manage networks. </p>
+        <div class="figure fig-narrow"> <img src="./tNetBasic.png"
+            alt="Viewer left control panel with network selector, Load
+            Network, Edit &amp; Save, Highlight, and Clear buttons
+            annotated">
+          <div class="figure-caption"> <strong>Controls panel.</strong>
+            Pick a CSV from <em>Select Network</em> and click <strong>Load
+
+
+
+
+
+
+
+
+
+
+
+
+              Network</strong>. The status line below confirms the
+            loaded counts (e.g. <em>"Loaded: 61 nodes, 1364 edges"</em>).
+
+
+
+
+
+
+
+
+
+
+
+
+            Use <strong>Edit &amp; Save Network </strong>to modify a
+            network. For example, when a subnetwork is too large or
+            contains clearly unrelated proteins, you can remove
+            irrelevant clusters or proteins and save the edited version
+            as a new subnetwork.
+            <meta charset="utf-8">
+            Use <strong>Highlight by Species</strong> and <strong>Clear
+
+
+
+
+
+
+
+
+
+
+
+
+              Highlights</strong> to locate proteins of interest. Note
+            that you need to know the protein identifiers; by default,
+            these are UniProt ACs.
+            <meta charset="utf-8">
+          </div>
+        </div>
+        <p>The <strong><font color="#3dffa0">Load</font> <font
+              color="#3dffa0"> Network</font> </strong>button renders a
+          physics-based force layout that runs briefly and then settles.
+          The status line under the dropdown confirms how many nodes and
+          edges loaded.</p>
+        <div class="callout tip">
+          <div class="callout-label">Refresh the network list</div>
+          <p>If you have just extracted a&nbsp; subnetwork and it does
+            not appear in the dropdown list,
+            <meta charset="utf-8">
+            click the small <strong>↻</strong> button next to the
+            dropdown (red circle) to refresh the list without reloading
+            the page. </p>
+        </div>
+      </section>
+      <!-- 05 Navigation -->
+      <section id="navigation" class="step">
+        <div class="step-header">
+          <h2>Navigation &amp; Cluster Expansion</h2>
+        </div>
+        <p>The graph starts with every neighborhood <strong>collapsed</strong>
+          — each large gray node is a cluster of related proteins. Click
+          any cluster to expand its members. </p>
+        <div class="figure"> <img src="./tLower5buttons.png"
+            alt="Collapsed network with three clusters and Expand All
+            button highlighted">
+          <div class="figure-caption"> <strong>Collapsed view.</strong>
+            The three large gray nodes are neighborhoods (NH) — node
+            size scales with the number of members. Click the orange <strong>Expand
+
+
+
+
+
+
+
+
+
+
+
+
+              All</strong> sun-icon (red circle, bottom-right) to expand
+            every cluster at once. Use <strong>+/−</strong> to zoom and
+            the <strong>↺</strong> button to fit-to-screen. </div>
+        </div>
+        <table class="data-table">
+          <thead> <tr>
+              <th>Control</th>
+              <th>Action</th>
+            </tr>
+          </thead> <tbody>
+            <tr>
+              <td>Scroll wheel</td>
+              <td>Zoom in / out</td>
+            </tr>
+            <tr>
+              <td>Click + drag (background)</td>
+              <td>Pan the canvas</td>
+            </tr>
+            <tr>
+              <td>+ / − buttons</td>
+              <td>Zoom in / out</td>
+            </tr>
+            <tr>
+              <td>↺ Reset button</td>
+              <td>Fit all nodes to viewport</td>
+            </tr>
+            <tr>
+              <td>☀️ Expand All / 🌙 Collapse All</td>
+              <td>Expand or collapse every cluster at once</td>
+            </tr>
+            <tr>
+              <td>Click cluster node</td>
+              <td>Expand that single cluster into its protein members</td>
+            </tr>
+            <tr>
+              <td>Click protein node</td>
+              <td>Collapse the cluster it belongs to</td>
+            </tr>
+            <tr>
+              <td>Drag any node</td>
+              <td>Pin its position; double-click to release</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <!-- 06 Highlights -->
+      <section id="highlights" class="step">
+        <div class="step-header">
+          <h2>Highlighting Proteins</h2>
+        </div>
+        <p>You can color-mark proteins of interest in two ways: by <strong>UniProt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            accession</strong><strong>s</strong> (the input field in the
+          left panel) or by <strong>species</strong> (next section). </p>
+        <ul class="step-list">
+          <li>
+            <div class="bullet">1</div>
+            <div>Type one or more UniProt ACs into <span
+                class="ui-label">Highlight Proteins (UniProt AC)</span>
+              — separated by spaces, commas, or semicolons. </div>
+          </li>
+          <li>
+            <div class="bullet">2</div>
+            <div>Press <strong>Enter</strong> or click the 🔍 icon. A
+              color picker appears — pick a swatch to color the matching
+              nodes. </div>
+          </li>
+          <li>
+            <div class="bullet">3</div>
+            <div>Multiple searches can be performed using distinct
+              colors. Each search generates an independent visualization
+              layer. When members of a cluster are assigned to multiple
+              layers, the corresponding cluster node is displayed as a
+              pie chart. For example, after highlighting a set of
+              UniProt accessions, you may want to identify which
+              proteins are of human origin. To do so, add a new layer by
+              selecting <span class="ui-label">Highlight by Species</span>
+              and assigning a different color. The corresponding nodes
+              will then be displayed with pie-chart patterns.</div>
+          </li>
+          <li>
+            <div class="bullet">4</div>
+            <div>Use <span class="ui-label">Clear Highlights</span> to
+              remove all highlights and selections. Note that this
+              button is often overlooked, which may lead to unintended
+              selections.</div>
+          </li>
+        </ul>
+        <div class="figure"> <img src="./tNodesHighlight.png"
+            alt="Network with proteins highlighted in yellow on the
+            right side">
+          <div class="figure-caption"> <strong>Highlight applied.</strong>
+            The proteins matching the highlight query (or the selected
+            species) glow with a colored ring. Use <strong>Clear
+              Highlights</strong> in the left panel to remove all
+            colored layers at once. </div>
+        </div>
+      </section>
+      <!-- 07 Species -->
+      <section id="species" class="step">
+        <div class="step-header">
+          <h2>Filtering by Species</h2>
+        </div>
+        <p>Click <strong><font color="#3dffa0">Highlight</font> <font
+              color="#3dffa0">by</font> <font color="#3dffa0">Species</font></strong>
+          on the left panel to open a draggable taxonomic tree. Drill
+          down through the taxonomy, check the species you care about,
+          then pick a color and click <font color="#3dffa0"><strong>Highlight</strong></font>.</p>
+        <p>Note that the species panel includes <strong data-start="37"
+            data-end="51"><font color="#3dffa0">Select</font> <font
+              color="#3dffa0">All</font></strong> and <strong
+            data-start="56" data-end="72"><font color="#3dffa0">Deselect</font>
+            <font color="#3dffa0">All</font></strong> buttons. For
+          example, if you want to retain only human and mouse proteins
+          in your subnetwork and remove proteins from all other species,
+          first click <strong data-start="222" data-end="236"><font
+              color="#3dffa0">Select</font> <font color="#3dffa0">All</font></strong>,
+          then uncheck only human and mouse. Next, click <font
+            color="#3dffa0"><strong data-start="285" data-end="298">Highlight</strong></font>
+          so that proteins from all other species are selected. You can
+          then click <strong data-start="372" data-end="395"><font
+              color="#3dffa0">Edit</font> <font color="#3dffa0">&amp;</font>
+            <font color="#3dffa0">Save</font> <font color="#3dffa0">Network</font></strong>
+          to generate a new species-focused subnetwork.
+          <meta charset="utf-8">
+        </p>
+        <div class="figure"> <img src="./tantiSpecies.png"
+            alt="Highlight by Species panel showing taxonomic tree with
+            E. coli K-12 highlighted in the network">
+          <div class="figure-caption"> <strong>Species panel.</strong>
+            Expand the tree by clicking the ▾ arrows. Numbers in
+            parentheses show how many proteins in your network match
+            each taxon. Pick a color swatch (bottom-left) and click <strong>Highlight</strong>
+            (red circle) to color all matching nodes. Hover any node to
+            see its UniProt ID and species (tooltip shown for <em>P30750</em>
+            in <em>E. coli K-12</em>). </div>
+        </div>
+        <div class="callout tip">
+          <div class="callout-label">Tip — Move the panel out of the way</div>
+          <p>The species panel is draggable — grab its header to move it
+            anywhere on screen so it doesn't cover the graph.</p>
+        </div>
+      </section>
+      <section id="edit-save" class="step">
+        <div class="step-header">
+          <h2>Edit and Save Networks</h2>
+        </div>
+        <p>Use <span class="ui-label">Edit &amp; Save Network</span> to
+          remove proteins or edges from the current network view and
+          save the edited result as a new network file. This is useful
+          when you want to focus on a smaller biological subset,
+          removing less relevant species, trimming weak SJI edges, or
+          reducing the size of an overly large network.</p>
+        <div class="figure fig-medium"> <img src="./teditNet.png"
+            alt="Edit and Save Network popup showing selection, SJI edge
+            filtering, UniProt AC, species, and save controls">
+          <div class="figure-caption"> <strong>Edit &amp; Save Network.</strong>
+            The popup summarizes visible proteins and edges, then groups
+            editing tools into Selection, Edges by SJI Weight, Protein
+            UniProt ACs, Species, and Save Edited Network sections.</div>
+        </div>
+        <ul class="step-list">
+          <li>
+            <div class="bullet">1</div>
+            <div>Open the popup with <span class="ui-label">Edit &amp;
+                Save Network</span> button in the left control panel.</div>
+          </li>
+          <li>
+            <div class="bullet">2</div>
+            <div>Use <span class="ui-label">Selection</span> section to
+              remove proteins from the network. First, confirm that the
+              currently highlighted or previously selected proteins are
+              the ones you intend to remove. If not, click <span
+                class="ui-label">Clear Highlights</span> at the bottom
+              of the left control panel to clear the current selection.<br>
+              <br>
+              Next, toggle the blue <span class="viewer-icon-inline"
+                aria-label="Select Nodes">★</span> button in the network
+              viewer; its color will change to gold. You can then click
+              to select clusters or individual proteins for removal. You
+              can also drag the mouse to draw a selection box and select
+              multiple nodes at once. <br>
+              <br>
+              Finally, click <span class="ui-label">Remove Selected</span>
+              to remove the selected nodes. To undo the changes and
+              restore the network to its previous state, click <span
+                class="ui-label">Restore Edits</span>.</div>
+          </li>
+          <li>
+            <div class="bullet">3</div>
+            <div>Use <span class="ui-label">Edges by SJI Weight</span>
+              to trim weak links. For example, <span class="ui-label">Remove
+
+
+
+
+
+
+
+                Edges Below</span> <code>0.5</code> removes edges with
+              SJI below 0.5, while <span class="ui-label">Restore Edges
+                Above</span> <code>0.3</code> can restore previously
+              removed edges with SJI above 0.3.</div>
+          </li>
+          <li>
+            <div class="bullet">4</div>
+            <div>Use <span class="ui-label">Protein UniProt ACs</span>
+              or <span class="ui-label">Species</span> when you want to
+              remove or restore proteins by accession number or
+              taxonomic group.</div>
+          </li>
+          <li>
+            <div class="bullet">5</div>
+            <div>Enter a new name in <span class="ui-label">Save Edited
+                Network</span> and click <span class="ui-label">Save</span>.
+              The edited CSV is written to the mounted network folder
+              and can be loaded from the viewer like any other network.</div>
+          </li>
+        </ul>
+        <div class="callout warn">
+          <div class="callout-label">Keep the original network</div>
+          <p>Save edits under a new name rather than overwriting the
+            source network. This keeps the original extraction available
+            if you need to revisit the full topology later.</p>
+        </div>
+      </section>
+      <!-- 08 Export -->
+      <section id="export" class="step">
+        <div class="step-header">
+          <h2>Export &amp; Analysis Panel</h2>
+        </div>
+        <p>In the viewer panel, you interact with the network, while the
+          right-side panel displays the proteins selected for detailed
+          analysis. The system therefore has two modes: <strong>viewer
+            mode</strong> and <strong>export mode</strong>. These modes
+          are controlled by the blue star <span
+            class="viewer-icon-inline" aria-label="Select Nodes">★</span>
+          button at the top right of the viewer panel.</p>
+        <p>Both individual protein nodes and entire clusters can be
+          exported. Toggle the blue star <span
+            class="viewer-icon-inline" aria-label="Select Nodes">★</span>
+          button so that it turns gold; this switches the system to <strong>export
+
+
+
+
+
+            mode</strong>. In this mode, clicking a node no longer
+          collapses or expands a cluster. Instead, it selects or
+          deselects the node.</p>
+        <p>In export mode, click the <span class="viewer-icon-inline
+            arrow" aria-label="Export">➡</span> arrow immediately below
+          the blue star <span class="viewer-icon-inline"
+            aria-label="Select Nodes">★</span> button to send the
+          selected nodes to the export panel.</p>
+        <p>From the export panel, you can sort proteins by degree
+          centrality, open direct UniProt links, select different
+          UniProt annotation categories, download the protein list, or
+          send the proteins for batch analysis.</p>
+        <div class="figure"> <img src="./tExport.png" alt="Export and
+            Analysis panel with UniProt section buttons; Sort by ProtDC
+            and Expression button annotated">
+          <div class="figure-caption"> <strong>Export &amp; Analysis
+              panel.</strong> The top box lists all selected proteins
+            and clusters. When valid entries are available, proteins are
+            automatically linked to their corresponding UniProt records.
+            <meta charset="utf-8">
+            The <strong>UniProt section buttons</strong> below
+            (Function, Names &amp; Taxonomy, Expression, …) re-target
+            every link in the list to that section of UniProt — handy
+            for quickly comparing, say, expression data across the whole
+            selection. Click <em>Function</em> to return to the top of
+            entry link.
+            <meta charset="utf-8">
+          </div>
+        </div>
+        <div class="figure fig-medium"> <img src="./tsortProtDC.png"
+            alt="Tooltip Sort proteins by ProtDC over the right-arrow
+            icon">
+          <div class="figure-caption"> <strong>Sort by ProtDC.</strong>
+            The <strong>→</strong> right-pointing arrow icon (red
+            circle) sorts the protein list by <em>ProtDC</em>
+            centrality — proteins most central to their neighborhood
+            appear first. Click again to toggle ascending/descending.
+            Use the <strong>⬇</strong> icon to download the list as a
+            CSV; the <strong>🗑</strong> icon clears the panel. </div>
+        </div>
+        <div class="callout info">
+          <div class="callout-label">What is ProtDC?</div>
+          <p> <strong>ProtDC</strong> (Protein Degree Centrality)
+            measures how well-connected a protein is within its
+            neighborhood. Higher ProtDC = more central within its
+            cluster, so sorting top-down surfaces likely "hub"
+            candidates first. </p>
+        </div>
+      </section>
+      <!-- 09 Batch -->
+      <section id="batch" class="step">
+        <div class="step-header">
+          <h2>Batch &amp; Comparative Analysis</h2>
+        </div>
+        <p>The <strong>Batch &amp; Comparative Analysis</strong> popup
+          (accessible from the UniProt section buttons) lets you define
+          named groups of proteins and save them as separate files for
+          cross-group comparison. </p>
+        <ul class="step-list">
+          <li>
+            <div class="bullet">1</div>
+            <div>Click <strong>Batch &amp; Comparative Analysis</strong>
+              in the right panel section controls. A draggable popup
+              appears. </div>
+          </li>
+          <li>
+            <div class="bullet">2</div>
+            <div>Enter a <strong>group name</strong> (letters, numbers,
+              <code>_</code>, <code>-</code>, <code>.</code> — max 16
+              characters) and paste UniProt ACs from the Export panel
+              into the accessions area. ProtDC values in parentheses are
+              stripped automatically. </div>
+          </li>
+          <li>
+            <div class="bullet">3</div>
+            <div>Click <strong>+</strong> to add more groups. Groups
+              must have unique names. </div>
+          </li>
+          <li>
+            <div class="bullet">4</div>
+            <div>Click <strong>Save</strong>. The server writes one
+              text file per group to <code>data/exports/</code>. You
+              can then load these files into the example Colab notebooks
+              for structural alignment or phylogenetic analysis. </div>
+          </li>
+        </ul>
+        <div class="figure"> <img src="./tBatch.png" alt="Batch and
+            Comparative Analysis popup for creating UniProt accession
+            groups and saving group files">
+          <div class="figure-caption"> <strong>Batch &amp; Comparative
+              Analysis.</strong> Create named groups, paste UniProt ACs
+            from the Export panel, add more groups as needed, and save
+            each group as a text file for downstream comparison.</div>
+        </div>
+        <div class="callout tip">
+          <div class="callout-label">Example workflows</div>
+          <p>The popup contains links to two Colab notebooks: one for
+            pairwise structural alignment with USalign, and one for
+            multiple sequence alignment and DIVERGE v4 analysis of
+            evolutionary shifts.</p>
+          <p><a
+href="https://colab.research.google.com/drive/1tISHcE9Hj-AF9j5oIZrK9HIg5AM1yGr6"
+              target="_blank" rel="noopener noreferrer">Structural
+              alignment workflow</a></p>
+          <p><a
+href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
+              target="_blank" rel="noopener noreferrer">Multiple
+              sequence alignment and DIVERGE workflow</a></p>
+        </div>
+      </section>
+      <!-- 10 URL Params -->
+      <section id="url-params" class="step">
+        <div class="step-header">
+          <h2>URL Parameters &amp; Easy Access<br>
+          </h2>
+        </div>
+        <p>The pages accept query parameters for deep-linking and
+          automation.</p>
+        <p> <strong>viewer.html</strong> </p>
+        <table class="data-table url-param-table">
+          <thead> <tr>
+              <th>Parameter</th>
+              <th>Example</th>
+              <th>Effect</th>
+            </tr>
+          </thead> <tbody>
+            <tr>
+              <td>network</td>
+              <td> <code>?network=my_proteins.csv</code> </td>
+              <td>Loads and displays this network automatically on page
+                open</td>
+            </tr>
+            <tr>
+              <td>seeds</td>
+              <td> <code>&amp;seeds=P04637,O15151</code> </td>
+              <td>Pre-populates the highlight search field with these
+                accessions and executes the search immediately</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>Example — open the viewer on a specific network with two
+          proteins pre-filled in the highlight box
+          <meta charset="utf-8">
+          :</p>
+        <div class="code-block">
+          <div class="code-block-header"> <span class="code-lang">URL</span>
+          </div>
+          <pre><code>http://localhost:3000/viewer.html?network=my_proteins.csv&amp;seeds=P04637,O15151</code></pre>
+        </div>
+        <br>
+        <div class="callout tip">
+          <div class="callout-label">Tip — Bookmarking sessions</div>
+          <p>Copy the viewer URL containing
+            <meta charset="utf-8">
+            <code>?network=</code> to access a specific network and
+            easily highlight seed proteins.
+            <meta charset="utf-8">
+          </p>
+        </div>
+      </section>
+      <section id="build-your-own-sji-network" class="step">
+        <div class="step-header">
+          <h2>Build Your Own SJI Network</h2>
+        </div>
+        <p>The package also includes a template workflow for building a
+          custom SJI network from a selected set of UniProt reference
+          proteomes. The detailed scripts are located in:</p>
+        <div class="code-block">
+          <div class="code-block-header"> <span class="code-lang">Path</span>
+          </div>
+          <pre><code>tools/preprocessing/pipelines/build_your_net_scripts</code></pre>
+        </div>
+        <p>Run the workflow in the order indicated by the script names.
+          Each script validates the expected inputs from earlier steps
+          and writes outputs used by later steps.</p>
+        <ul class="step-list">
+          <li>
+            <div class="bullet">1</div>
+            <div><code>01_download_proteome_list.sh</code> downloads and
+              prepares the proteome FASTA files listed in your proteome
+              ID file.</div>
+          </li>
+          <li>
+            <div class="bullet">2</div>
+            <div><code>02_run_topn_all_vs_all.sh</code> runs
+              all-against-all <code>topN</code> comparisons. The Docker
+              package ships the compiled executable under <code>tools/bin/topn</code>.</div>
+          </li>
+          <li>
+            <div class="bullet">3</div>
+            <div><code>03_run_make_2d_all_vs_all.sh</code> converts the
+              <code>topN</code> outputs into two-dimensional similarity
+              inputs for signal detection.</div>
+          </li>
+          <li>
+            <div class="bullet">4</div>
+            <div><code>04_run_son_spectral_cluster_all_vs_all.sh</code>
+              runs <code>son_spectral_final.py</code> to separate
+              signal from noise for the 2D similarity outputs.</div>
+          </li>
+          <li>
+            <div class="bullet">5</div>
+            <div><code>05_run_build_network_all_vs_all.sh</code> builds
+              the SJI network edge table from the detected signal sets.</div>
+          </li>
+          <li>
+            <div class="bullet">6</div>
+            <div><code>06.1_leiden_01_preprocess.sh</code> preprocesses
+              the SJI edge table for Leiden clustering by converting
+              node ids into zero-based integer IDs.</div>
+          </li>
+          <li>
+            <div class="bullet">7</div>
+            <div><code>06.2_leiden_02_global.sh</code> runs global
+              Leiden clustering.</div>
+          </li>
+          <li>
+            <div class="bullet">8</div>
+            <div><code>06.3_leiden_03_refine.sh</code> refines
+              neighborhoods and optionally parallelizes refinement jobs.</div>
+          </li>
+          <li>
+            <div class="bullet">9</div>
+            <div><code>06.4_leiden_04_restore_uniprot_ids.sh</code>
+              restores UniProt accessions after integer-ID clustering.</div>
+          </li>
+          <li>
+            <div class="bullet">10</div>
+            <div><code>07_build_uAC_taxonomy_mapping.sh</code> builds
+              the UniProt accession to taxonomy mapping used by node
+              attributes, along with two files required by the package:
+              <code>commontree.txt</code> and <code>NCBI_txID.csv</code>.
+              Copy these two files to <code>/data/NCBI_txID/</code>.</div>
+          </li>
+          <li>
+            <div class="bullet">11</div>
+            <div><code>08_run_ct_attr.sh</code> creates the final <code>.nodes.attr</code>
+              file for the viewer. Move this file to <code>/data/nodes_attr/</code>.</div>
+          </li>
+          <li>
+            <div class="bullet">12</div>
+            <div>
+              <p><code>09_run_preprocess_graph.sh</code> preprocesses
+                the graph into binary index files used by fast
+                subnetwork extraction. Move these files to <code>/data/indexes/</code>.</p>
+            </div>
+          </li>
+        </ul>
+        <div class="callout warn">
+          <div class="callout-label">Configure paths before running</div>
+          <p>Before starting, open the scripts and update the editable
+            variables for your environment. In particular, set <code>WORK_ROOT</code>,
+            input proteome locations, output folders, Python environment
+            activation, and script paths such as <code>MAKE_2D</code>,
+            <code>SON</code>, <code>SJI_NET</code>, Leiden scripts, <code>CT_ATTR</code>,
+            and <code>PREPROCESS_GRAPH</code>. Supporting tools are
+            shipped under directories such as <code>tools/bin</code>
+            and <code>tools/preprocessing</code>, but the analysis data
+            directories should point to your own mounted volume or
+            working filesystem.</p>
+        </div>
+        <div class="callout info">
+          <div class="callout-label">Large-scale runs</div>
+          <p>For large proteome sets, expect to adapt the template
+            workflow to your HPC or AWS environment. The most expensive
+            steps are usually all-against-all <code>topN</code> and <code>son_spectral_final.py</code>.
+            These steps may need array jobs, job batching, or other
+            parallel execution strategies that match your scheduler and
+            storage layout.</p>
+        </div>
+        <div class="callout tip">
+          <div class="callout-label">Monitor memory</div>
+          <p>Memory usage can vary strongly with proteome size and the
+            number of intermediate similarity records. If <code>son_spectral_final.py</code>
+            becomes memory-limited, splitting proteomes or 2D inputs
+            into smaller chunks can substantially improve throughput in
+            parallel-computing environments. The best chunking strategy
+            depends on the local HPC or AWS configuration.<br>
+          </p>
+        </div>
+      </section>
+      <section id="annotate-your-own-proteins" class="step">
+        <div class="step-header">
+          <h2>Annotate Your Own Proteins</h2>
+        </div>
+        <p>A second workflow lets you attach your own proteins to a
+          pre-built SJI network. This is useful when you have proteins
+          of interest that are not part of the SJI network and want to
+          infer possible annotations from how they connect to annotated
+          proteins in the network.</p>
+        <p>The detailed workflow is located in:</p>
+        <div class="code-block">
+          <div class="code-block-header"> <span class="code-lang">Path</span>
+          </div>
+          <pre><code>tools/preprocessing/pipelines/annotate_proteins_scripts</code></pre>
+        </div>
+        <div class="callout warn">
+          <div class="callout-label">Interpretation</div>
+          <p>The resulting values should be treated as pseudo-SJI
+            scores. Standard SJI estimation is most reliable when a
+            complete proteome is available. For individually supplied
+            proteins, only one-way SJI relationships can be computed, so
+            the scores are useful for annotation guidance but should not
+            be interpreted as fully equivalent to standard SJI values.</p>
+        </div>
+        <p>Run the workflow in the order indicated by the script names:</p>
+        <ul class="step-list">
+          <li>
+            <div class="bullet">1</div>
+            <div><code>01_addP_topn_targets.sh</code> runs <code>topN</code>
+              from your query protein FASTA against the target reference
+              proteome files. The Docker package ships the compiled
+              executable under <code>tools/bin/topn</code>.</div>
+          </li>
+          <li>
+            <div class="bullet">2</div>
+            <div><code>02_run_make_2d.sh</code> converts the <code>topN</code>
+              output into two-dimensional similarity inputs for each
+              query protein.</div>
+          </li>
+          <li>
+            <div class="bullet">3</div>
+            <div><code>03_run_son_spectral.sh</code> runs a spectral
+              clustering algorithm <code>son_spectral_final.py</code>
+              to identify signal proteins for the query proteins.</div>
+          </li>
+          <li>
+            <div class="bullet">4</div>
+            <div><code>04_run_build_network_oneway.sh</code> builds
+              one-way SJI-style edges between your query proteins and
+              proteins already represented in the SJI network. Each
+              query protein has an SJI edge report that lists its
+              neighbors in the pre-built network, ordered from closest
+              to farthest.
+              <meta charset="utf-8">
+              Use the closest neighbors as seeds to extract subnetworks,
+              then concatenate the edge reports with the extracted
+              subnetworks using the <code data-start="76" data-end="81">cat</code>
+              command or any plain-text editor to attach your proteins
+              to the networks.
+              <meta charset="utf-8">
+              Move your custom networks to <code>/data/networks</code>
+              and load them from <code>viewer.html</code>. Enter your
+              own protein IDs in the <span class="ui-label">Highlight
+                Proteins</span> box to locate them in the networks.<br>
+            </div>
+          </li>
+        </ul>
+        <div class="callout tip">
+          <div class="callout-label">Configure paths before running</div>
+          <p>This workflow starts from your own query FASTA file. Before
+            running the scripts, update the editable variables for your
+            environment, including <code>DB</code>, <code>QUERY</code>,
+            <code>OUT_FOLDER</code>, <code>TOPN_OUT</code>, <code>TWO_D_OUT</code>,
+            <code>QUERY_DIR</code>, <code>SIGNAL_DIR</code>, Python
+            environment activation, and script paths such as <code>MAKE_2D</code>,
+            <code>SON</code>, and <code>SJI_NET</code>. Supporting
+            tools are shipped under <code>tools/bin</code> and <code>tools/preprocessing</code>,
+            but the input and output directories should point to your
+            own mounted volume or working filesystem.</p>
+        </div>
+        <div class="callout info">
+          <div class="callout-label">Use the result</div>
+          <p>The output network can be loaded with the viewer like other
+            network CSV files. Inspect where your query proteins
+            connect, review neighboring UniProt annotations, and use
+            highlighting or export tools to compare candidate functional
+            contexts.</p>
+        </div>
+      </section>
+      <section id="annotate-your-own-proteome" class="step">
+        <div class="step-header">
+          <h2>Annotate Your Own Proteome</h2>
+        </div>
+        <p>This workflow lets you attach an entire user-supplied
+          proteome to a pre-built SJI network. It is useful when you
+          want to infer potential annotations for many proteins by
+          examining how the added proteome connects to proteins already
+          present in the pre-built SJI network.</p>
+        <p>The detailed workflow is located in:</p>
+        <div class="code-block">
+          <div class="code-block-header"> <span class="code-lang">Path</span>
+          </div>
+          <pre><code>tools/preprocessing/pipelines/annotate_wholeProteome_scripts</code></pre>
+        </div>
+        <p>Run the workflow in the order indicated by the script names:</p>
+        <ul class="step-list">
+          <li>
+            <div class="bullet">1</div>
+            <div><code>01_download_proteome_run_topn_targets.sh</code>
+              downloads the query proteome, normalizes FASTA headers,
+              and runs <code>topN</code> from the query proteome
+              against the reference target proteomes.</div>
+          </li>
+          <li>
+            <div class="bullet">2</div>
+            <div><code>02_run_make_2d_proteome.sh</code> converts the
+              query-proteome <code>topN</code> outputs into 2D
+              similarity inputs.</div>
+          </li>
+          <li>
+            <div class="bullet">3</div>
+            <div><code>03_run_son_spectral_proteome.sh</code> runs a
+              spectral clustering algorithm <code>son_spectral_final.py</code>
+              to identify signal proteins for the query proteome.</div>
+          </li>
+          <li>
+            <div class="bullet">4</div>
+            <div><code>04_prepare_ProT_download_fastas.sh</code>
+              identifies target proteins needed for the reverse side of
+              the comparison and prepares their FASTA files.</div>
+          </li>
+          <li>
+            <div class="bullet">5</div>
+            <div><code>05_run_topn_T_against_query_proteome.sh</code>
+              runs <code>topN</code> from those target proteins back
+              against the query proteome.</div>
+          </li>
+          <li>
+            <div class="bullet">6</div>
+            <div><code>06_run_make_2d_T.sh</code> converts the reverse <code>topN</code>
+              results into 2D similarity inputs.</div>
+          </li>
+          <li>
+            <div class="bullet">7</div>
+            <div><code>07_merge_existing_2d_with_new_T_2d.sh</code>
+              merges existing reference 2D files with the newly computed
+              reverse-comparison 2D files.</div>
+          </li>
+          <li>
+            <div class="bullet">8</div>
+            <div><code>08_run_son_spectral_T.sh</code> runs the spectral
+              clustering algorithm <code>son_spectral_final.py</code>
+              again for the target-side signal sets.</div>
+          </li>
+          <li>
+            <div class="bullet">9</div>
+            <div><code>09_run_build_network_addProteome.sh</code> builds
+              the final add-proteome network edges connecting the query
+              proteome to the pre-built SJI network. Each query protein
+              has an SJI edge report that lists its neighbors in the
+              pre-built network, ordered from nearest to farthest. You
+              can use a strategy similar to the one described in the
+              protein annotation section to identify the closest
+              neighbors of your proteins of interest and then examine
+              each protein individually. The subnetwork extraction tool,
+              <code inline="">tools/runtime/extract_subnetwork.py</code>,
+              can also be used as a standalone script, allowing this
+              workflow to be automated for proteome annotation by
+              training a parameter-selection system.
+              <meta charset="utf-8">
+            </div>
+          </li>
+        </ul>
+        <div class="callout tip">
+          <div class="callout-label">Configure paths before running</div>
+          <p>Before running the scripts, update the editable variables
+            for your environment. Common variables include <code>PROTEOME_ID</code>,
+            <code>WORK_ROOT</code>, <code>DB</code>, <code>TWO_D_HOME</code>,
+            <code>OUT_FOLDER</code>, <code>TOPN_OUT</code>, <code>TWO_D_ROOT</code>,
+            <code>VENV_ACT</code>, and script paths such as <code>MAKE_2D</code>,
+            <code>SON</code>, and <code>SJI_NET</code>. Supporting
+            tools are shipped under <code>tools/bin</code> and <code>tools/preprocessing</code>,
+            but the input and output directories should point to your
+            own mounted volume or working filesystem.</p>
+        </div>
+        <div class="callout info">
+          <div class="callout-label">Large-scale runs</div>
+          <p>For large proteomes, expect to adapt the workflow to your
+            AWS or HPC environment. Computationally intensive steps such
+            as <code>topN</code> and <code>son_spectral_final.py</code>
+            may require array jobs, batching, or other parallel
+            execution strategies that match your scheduler and storage
+            layout.</p>
+        </div>
+        <div class="callout warn">
+          <div class="callout-label">Monitor memory</div>
+          <p>Memory usage should be monitored carefully. In some cases,
+            splitting proteomes into smaller chunks and providing those
+            smaller inputs to <code>son_spectral_final.py</code> can
+            substantially improve performance in parallel-computing
+            environments. The best optimization strategy depends
+            strongly on the specific AWS or HPC configuration, so this
+            tutorial provides general guidance rather than
+            cluster-specific scripts.</p>
+        </div>
+      </section>
+      <hr class="divider">
+      <div class="footer-note"> Network Visualization Platform ·
+        Tutorial Complete<br>
+        <a href="Help.html">→ Continue to the Help →</a> </div>
+    </main>
+  </body>
+</html>

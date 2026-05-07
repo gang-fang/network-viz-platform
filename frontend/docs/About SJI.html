@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,
+      initial-scale=1.0">
+    <title>About SJI — ProtDC Network Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com"
+      crossorigin="">
+    <link
+href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&amp;family=DM+Serif+Display:ital@0;1&amp;family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&amp;display=swap"
+      rel="stylesheet">
+    <style>
+  :root {
+    --bg:       #0e1117;
+    --bg2:      #151b27;
+    --bg3:      #1c2436;
+    --border:   #2a3550;
+    --accent:   #3dffa0;
+    --accent2:  #3db8ff;
+    --accent3:  #ffd166;
+    --muted:    #6b7fa3;
+    --body:     #c8d4ec;
+    --heading:  #e8eef8;
+    --code-bg:  #111827;
+    --danger:   #ff6b6b;
+    --serif:    'DM Serif Display', Georgia, serif;
+    --sans:     'DM Sans', system-ui, sans-serif;
+    --mono:     'DM Mono', 'Fira Code', monospace;
+    --radius:   6px;
+    --sidebar-w: 260px;
+    --content-max: 780px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--body);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.75;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 40px;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .sidebar-logo-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .sidebar-logo .doc-type {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent3);
+  }
+  .sidebar-home {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .sidebar-home:hover {
+    color: var(--heading);
+  }
+  .sidebar-logo h2 {
+    font-family: var(--serif);
+    font-size: 17px;
+    color: var(--heading);
+    font-weight: 400;
+    line-height: 1.3;
+  }
+  .sidebar-section {
+    padding: 8px 24px 4px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+  .sidebar nav a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 24px;
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.15s, background 0.15s;
+    border-left: 2px solid transparent;
+  }
+  .sidebar nav a:hover { color: var(--body); background: var(--bg3); }
+  .sidebar nav a.active { color: var(--accent3); border-left-color: var(--accent3); background: rgba(255,209,102,0.05); }
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 20px 24px 0;
+    border-top: 1px solid var(--border);
+  }
+  .sidebar-footer a {
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    display: block;
+    padding: 4px 0;
+    transition: color 0.15s;
+  }
+  .sidebar-footer a:hover { color: var(--accent2); }
+
+  /* ── Content ─────────────────────────────────────────────────── */
+  .content {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    padding: 60px 64px 120px;
+  }
+
+  /* ── Page header ─────────────────────────────────────────────── */
+  .page-header {
+    max-width: var(--content-max);
+    margin-bottom: 64px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-header .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 16px;
+  }
+  .page-header h1 {
+    font-family: var(--serif);
+    font-size: 50px;
+    font-weight: 400;
+    color: var(--heading);
+    line-height: 1.1;
+    margin-bottom: 22px;
+  }
+  .page-header h1 em { font-style: italic; color: var(--accent3); }
+  .page-header .lead {
+    font-size: 17px;
+    color: var(--body);
+    line-height: 1.7;
+    max-width: 620px;
+  }
+  .page-header .citation-note {
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--muted);
+    font-family: var(--sans);
+  }
+  .page-header .citation-note a {
+    color: var(--accent2);
+    text-decoration: none;
+  }
+  .page-header .citation-note a:hover { text-decoration: underline; }
+
+  /* ── Article body ────────────────────────────────────────────── */
+  article {
+    max-width: var(--content-max);
+  }
+
+  /* ── Section headings ────────────────────────────────────────── */
+  .section {
+    margin-bottom: 60px;
+    scroll-margin-top: 28px;
+  }
+  .section h2 {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--heading);
+    line-height: 1.25;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section p {
+    color: var(--body);
+    margin-bottom: 16px;
+    line-height: 1.8;
+    font-size: 15px;
+  }
+  .section p:last-child { margin-bottom: 0; }
+
+  /* ── Inline citation links ───────────────────────────────────── */
+  .cite {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--accent2);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--accent2);
+    padding: 0 1px;
+    vertical-align: super;
+    line-height: 0;
+    white-space: nowrap;
+  }
+  .cite:hover { color: var(--accent3); border-bottom-color: var(--accent3); }
+
+  /* ── Definition terms ────────────────────────────────────────── */
+  .def {
+    color: var(--accent3);
+    font-weight: 500;
+  }
+  strong { color: var(--heading); font-weight: 600; }
+  em.sci { font-style: italic; color: var(--body); }
+
+  /* ── Figure blocks ───────────────────────────────────────────── */
+  .figure-block {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 36px 0;
+  }
+  .figure-block img {
+    width: 100%;
+    display: block;
+    background: #fff;
+  }
+  .figure-caption {
+    padding: 16px 22px 18px;
+    border-top: 1px solid var(--border);
+  }
+  .figure-caption .fig-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 6px;
+  }
+  .figure-caption p {
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.65;
+    margin: 0;
+  }
+  .figure-caption p strong { color: var(--body); }
+
+  /* ── Pull-quote / key concept ────────────────────────────────── */
+  .key-concept {
+    border-left: 3px solid var(--accent3);
+    background: rgba(255,209,102,0.05);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 18px 22px;
+    margin: 28px 0;
+  }
+  .key-concept .kc-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent3);
+    margin-bottom: 8px;
+  }
+  .key-concept p {
+    color: var(--body);
+    font-size: 14.5px;
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* ── Formula display ─────────────────────────────────────────── */
+  .formula-block {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 28px;
+    margin: 24px 0;
+    text-align: center;
+  }
+  .formula {
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--heading);
+    letter-spacing: 0.05em;
+  }
+  .formula .frac {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    vertical-align: middle;
+    margin: 0 6px;
+  }
+  .formula .frac .num-f {
+    border-bottom: 1.5px solid var(--body);
+    padding: 0 8px 4px;
+    color: var(--accent);
+  }
+  .formula .frac .den-f {
+    padding: 4px 8px 0;
+    color: var(--accent2);
+  }
+  .formula-caption {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--muted);
+    font-family: var(--sans);
+  }
+
+  /* ── Divider ─────────────────────────────────────────────────── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 60px 0; }
+
+  /* ── References ──────────────────────────────────────────────── */
+  .references {
+    scroll-margin-top: 28px;
+    max-width: var(--content-max);
+  }
+  .references h2 {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--heading);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-list {
+    list-style: none;
+    padding: 0;
+  }
+  .ref-list li {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 10px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(42,53,80,0.5);
+    scroll-margin-top: 28px;
+    font-size: 13.5px;
+    line-height: 1.65;
+    align-items: baseline;
+  }
+  .ref-list li:last-child { border-bottom: none; }
+  .ref-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent3);
+    text-align: right;
+    padding-top: 2px;
+  }
+  .ref-body { color: var(--body); }
+  .ref-body .ref-title { color: var(--heading); font-style: italic; }
+  .ref-body a {
+    color: var(--accent2);
+    text-decoration: none;
+    font-family: var(--mono);
+    font-size: 11.5px;
+  }
+  .ref-body a:hover { text-decoration: underline; }
+
+  /* ── Scrollbar ───────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .content { margin-left: 0; padding: 32px 24px 80px; }
+  }
+</style>
+  </head>
+  <body>
+    <!-- ── Sidebar ───────────────────────────────────────────────────── -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-top">
+          <div class="doc-type">Background</div>
+          <a href="/index.html" class="sidebar-home">← Home</a> </div>
+        <h2>SJI Network <br>
+        </h2>
+      </div>
+      <div class="sidebar-section">This page</div>
+      <nav> <a href="#what-is-sji" class="active">What Is SJI?</a> <a
+          href="#why-new-metric">Why a New Metric?</a> <a
+          href="#fitness-landscape">Fitness-Landscape View</a> <a
+          href="#what-sji-measures">What SJI Measures</a> <a
+          href="#similarity-cutoffs">Similarity Cutoffs</a> <a
+          href="#scale-and-interpretation">Scale &amp; Interpretation</a>
+        <a href="#references">References</a> </nav>
+      <div class="sidebar-section">Documentation</div>
+      <nav> <a href="Tutorial.html">Tutorial</a> <a href="Help.html">Help</a>
+      </nav>
+      <div class="sidebar-footer"> <a href="/index.html"
+          style="color:var(--accent3);">← Home</a> <a
+          href="Tutorial.html">→ Tutorial</a> <a href="Help.html">→
+          Help</a> </div>
+    </aside>
+    <!-- ── Main ─────────────────────────────────────────────────────── -->
+    <main class="content">
+      <header class="page-header">
+        <div class="eyebrow">Scientific Background</div>
+        <h1>About <em>SJI</em></h1>
+        <p class="lead">The Signal Jaccard Index is the
+          protein-similarity metric underlying every network in this
+          platform. This page explains what it measures, why it is
+          needed.<br>
+        </p>
+      </header>
+      <article>
+        <!-- ── What Is SJI ─────────────────────────────────────────── -->
+        <section class="section" id="what-is-sji">
+          <h2>What Is the Signal Jaccard Index?</h2>
+          <p>The <span class="def">Signal Jaccard Index (SJI)</span> is
+            a protein-similarity metric that compares proteins by their
+            <strong>signal proteins</strong>: the set of homologs
+            separated from more distant homologs by data-derived gaps in
+            a two-dimensional similarity plot. Unlike conventional
+            pairwise sequence-similarity approaches, SJI does not
+            compare two proteins only by their direct sequence
+            similarity. Instead, it compares the homolog neighborhoods
+            associated with each protein <a href="#ref1" class="cite">[1]</a>.</p>
+          <p>For any given protein, referred to here as the <span
+              class="def">seed</span>, its top similar proteins are
+            retrieved across many proteomes and placed on a
+            two-dimensional plot. The x-axis represents the length ratio
+            between each homolog and the seed protein, and the y-axis
+            represents full-length sequence similarity (Figure 1C;
+            Figure 2A–D). In most cases, the points separate into two
+            groups with a visible gap between them. The upper group is
+            close to the seed in both similarity and length and is
+            defined as the <span class="def">signal</span>. The lower
+            group forms a denser cloud of more distant matches and is
+            defined as the <span class="def">noise</span>. This gap is
+            not determined by a fixed similarity cutoff. Instead, it is
+            inferred from the local density structure of each plot using
+            unsupervised spectral clustering, so each protein has its
+            own protein-specific boundary <a href="#ref1" class="cite">[1]</a>.</p>
+          <p>The signal set is what SJI compares. Given two proteins A
+            and B, each with its own signal set, SJI is defined as the
+            size of the intersection of their signal sets divided by the
+            size of their union (Figure 1D). If A and B share most of
+            their signal homologs across proteomes, their SJI is high.
+            Building the metric from signal sets, rather than from a
+            single pairwise similarity score, makes SJI sensitive to the
+            broader genomic and evolutionary context in which each
+            protein occurs.<br>
+          </p>
+        </section>
+        <section class="section" id="sji-framework-overview">
+          <div class="figure-block" id="fig1"> <img src="aFig1.png"
+              alt="Figure 1: SJI framework overview — fitness landscape,
+              MSA blocks, 2D similarity plot, SJI computation, and
+              network core/periphery structure">
+            <div class="figure-caption">
+              <div class="fig-label">Figure 1 — SJI Framework Overview</div>
+              <p><strong>Figure 1A</strong> provides a schematic fitness
+                landscape with three major peaks. <strong>Figure 1B</strong>
+                shows how these peaks appear as blocks in a multiple
+                sequence alignment: within a block, both sequence
+                similarity and full-length similarity are high; across
+                blocks, both decrease. <strong>Figure 1C</strong> shows
+                the two-dimensional plot itself — signal proteins
+                cluster above the noise cloud. <strong>Figure 1D</strong>
+                shows how SJI is computed as the Jaccard index of two
+                signal sets. <strong>Figure 1E</strong> shows the
+                network-level consequence: the core contains proteins
+                with relatively stable orthology predictions, whereas
+                the periphery contains proteins whose database
+                assignments vary across commonly used ortholog
+                databases. These peripheral proteins make up more than
+                50% of the proteins in UniProt reference proteomes. </p>
+            </div>
+          </div>
+        </section>
+        <!-- ── Scale and Interpretation ───────────────────────────── -->
+        <section class="section">
+          <section class="section" id="why-new-metric">
+            <h2>Why a New Metric Was Needed</h2>
+            <p>SJI was developed to address a practical problem in
+              ortholog-based functional annotation. When different
+              ortholog databases are used to annotate the same set of
+              sequences — such as enriched reads from metagenomic data —
+              they often assign those sequences to different ortholog
+              groups. As a result, downstream functional annotations may
+              diverge. This affects comparative genomics, pan-genome
+              analysis, metagenomic interpretation, and tests of the
+              ortholog conjecture <a href="#ref1" class="cite">[1]</a>.</p>
+            <p>It should also be noted that SJI focuses on functional
+              transfer among annotated orthologs rather than on
+              phylogenetic reconstruction per se.
+              <meta charset="utf-8">
+              When a phylogenetic tree is complex, it is not always
+              clear how to select an internal node and claim that all
+              proteins in the subtree below that node share the same
+              biological function. Species-overlap methods may work well
+              for broadly conserved proteins <a href="#ref2"
+                class="cite">[2]</a>, but they are less straightforward
+              for genes affected by horizontal transfer,
+              lineage-specific expansion, or rapid functional
+              divergence.</p>
+            <p>My investigation began by asking whether inconsistencies
+              among ortholog databases were technical, biological, or
+              both, focusing on proteins classified differently across
+              databases. An initial hypothesis was that moonlighting
+              proteins <a href="#ref3" class="cite">[3]</a> might
+              explain some of these inconsistencies — proteins that
+              perform multiple, mechanistically distinct functions
+              within a single polypeptide chain. Large-scale analysis
+              did not support this pattern as common. This negative
+              result led to a broader question: when function changes
+              between homologs, does similarity decline continuously, or
+              does it show discontinuities?</p>
+          </section>
+          <section class="section" id="fitness-landscape">
+            <h2>The Fitness-Landscape View</h2>
+            <p>A separate line of work, based on protein fitness studies
+              and multiple sequence alignments, caught my attention. It
+              argues that residues evolve in coupled ways and that
+              protein fitness depends on combinations of sequence,
+              structure, genomic context, and environment <a
+                href="#ref5" class="cite">[5]</a><a href="#ref6"
+                class="cite">[6]</a><a href="#ref7" class="cite">[7]</a>.
+              From this perspective, an ortholog group can be viewed as
+              a region on a fitness landscape (Figure 1A). Members of
+              the group can accumulate substitutions while remaining on
+              the same functional peak, but acquiring a new function may
+              require coordinated changes that move the protein to a
+              different peak.</p>
+            <p>If this interpretation is correct, then functionally
+              related proteins and more distant homologs should not
+              always form a smooth continuum in similarity space.
+              Instead, there should be valleys between different regions
+              of homolog space. This idea motivated the two-dimensional
+              similarity-versus-length-ratio plots used in the SJI
+              framework, as shown in Figure 2. We show that gaps between
+              signals and noise are ubiquitous, and that spectral
+              clustering effectively distinguishes signals <a
+href="file:///Users/gangfang/Nodes/network-viz-platform/frontend/docs/About%20SJI.html#ref1"
+                class="cite">[1]</a>.
+              <meta charset="utf-8">
+            </p>
+          </section>
+        </section>
+        <div class="figure-block" id="fig2"> <img src="aFig2.png"
+            alt="Figure 2: Two-dimensional density plots and gap
+            validation for OR52K1 and ugpE">
+          <div class="figure-caption">
+            <div class="fig-label">Figure 2 — Gap Validation Across
+              Proteins</div>
+            <p><strong>(A, B)</strong> Three-dimensional density plots
+              for <em class="sci">OR52K1</em> of <em class="sci">Homo
+                sapiens</em> and <em class="sci">ugpE</em> of <em
+                class="sci">E. coli</em>, showing two distinct density
+              peaks separated by a valley. <strong>(C, D)</strong>
+              Corresponding two-dimensional plots: signal proteins
+              (orange) lie clearly above the noise cloud (grey), with
+              the spectral-clustering boundary shown in blue. <strong>(E)</strong>
+              Definitions of true positives (TP), false positives (FP),
+              and positive predictive value (PPV) in this framework. <strong>(F)</strong>
+              The vast majority of two-dimensional plots satisfy high
+              PPV thresholds for both Eukaryotes and Prokaryotes,
+              confirming that the signal–noise gap is a broadly reliable
+              feature of protein homolog distributions.</p>
+          </div>
+        </div>
+        <!-- ── What SJI Measures ───────────────────────────────────── -->
+        <section class="section" id="what-sji-measures">
+          <h2>What SJI Actually Measures</h2>
+          <p>SJI is not simply another orthology score. It uses
+            whole-proteome composition to identify a signal set for each
+            protein and then measures how much two proteins' signal sets
+            overlap. Two proteins with comparable functions are expected
+            to have similar neighborhoods of homologs across proteomes,
+            and SJI directly measures that shared neighborhood.</p>
+          <p>This design gives SJI several advantages. First, it
+            incorporates information from many homologs rather than
+            relying on a single pairwise alignment. Second, it handles
+            inparalogs more naturally than strict one-to-one best-hit
+            methods. Third, the resulting SJI network exposes difficult
+            proteins as peripheral nodes. In the ProtDC framework, the <strong>network
+
+
+
+
+
+
+              core</strong> represents proteins for which orthology
+            prediction is relatively stable across databases, whereas
+            the <strong>periphery</strong> contains proteins for which
+            database assignments are more inconsistent <a href="#ref1"
+              class="cite">[1]</a>.</p>
+          <p>In summary, SJI was developed from the observation that
+            ortholog-database inconsistencies are not merely
+            computational artifacts. They reflect, at least in part, the
+            structure of protein evolutionary space. By identifying
+            protein-specific gaps between signal and noise homologs, SJI
+            provides a data-driven framework for evaluating protein
+            similarity, ortholog consistency, and functional annotation
+            transfer.</p>
+        </section>
+        <!-- ── Similarity Cutoffs ──────────────────────────────────── -->
+        <section class="section" id="similarity-cutoffs">
+          <h2>Why This Matters for Similarity Cutoffs</h2>
+          <p>The gaps shown in Figure 2 also expose a limitation of
+            conventional similarity-search workflows. BLAST and related
+            tools <a href="#ref4" class="cite">[4]</a> provide
+            alignment scores, E-values, and ranked hits, but the
+            interpretation of these values often depends on thresholds
+            chosen by researchers. Whether a similarity score is
+            considered high enough for ortholog prediction, functional
+            annotation transfer, or comparative analysis is frequently
+            determined by empirical convention or practical convenience
+            rather than by a protein-specific biological boundary.</p>
+          <p>This is problematic because different protein families
+            evolve under different constraints. A cutoff that is
+            stringent for one family may be permissive for another. The
+            valley in each two-dimensional plot provides a <strong>per-protein
+
+
+
+
+
+
+              cutoff inferred from the data</strong> rather than imposed
+            in advance. In this sense, SJI provides a way to replace
+            arbitrary global similarity thresholds with locally inferred
+            boundaries that are specific to each protein's homolog
+            distribution.</p>
+        </section>
+        <section class="section" id="scale-and-interpretation">
+          <h2>A Note on Scale and Interpretation</h2>
+          <p>Some criticism of this framework was based on experimental
+            studies showing that a single amino acid substitution can
+            dramatically change protein function. Such cases are real
+            and biologically important, particularly in microevolution,
+            protein engineering, and population genetics. However, they
+            do not directly address the problem of functional annotation
+            transfer across species.</p>
+          <p>Functional annotation transfer is a <strong>macroevolutionary
+
+
+
+
+
+
+              question</strong>. It asks whether a protein in one
+            organism can be treated as functionally equivalent to a
+            homolog in another organism, often across substantial
+            evolutionary distances. At this scale, the relevant issue is
+            not whether one mutation can alter function under a specific
+            experimental condition. The relevant issue is whether
+            homologs across many proteomes form distinguishable clusters
+            in similarity space. The recurring valleys observed in the
+            two-dimensional plots suggest that such clusters are
+            objectively defined.
+            <meta charset="utf-8">
+            <br>
+          </p>
+        </section>
+        <hr class="divider">
+        <!-- ── References ─────────────────────────────────────────── -->
+        <section class="references" id="references">
+          <h2>References</h2>
+          <ol class="ref-list">
+            <li id="ref1"> <span class="ref-num">1</span> <span
+                class="ref-body">Yang W, Ji J, Fang G. <span
+                  class="ref-title">A metric and its derived protein
+                  network for evaluation of ortholog database
+                  inconsistency.</span> <em>BMC Bioinformatics.</em>
+                2025;26:6. doi:10.1186/s12859-024-06023-x.
+                PMID:39773281. <a
+                  href="https://pubmed.ncbi.nlm.nih.gov/39773281/"
+                  target="_blank" rel="noopener">PubMed</a></span> </li>
+            <li id="ref2"> <span class="ref-num">2</span> <span
+                class="ref-body">Huerta-Cepas J, Dopazo H, Dopazo J,
+                Gabaldón T. <span class="ref-title">The human phylome.</span>
+                <em>Genome Biology.</em> 2007;8:R109.
+                doi:10.1186/gb-2007-8-6-r109. PMID:17567924. <a
+                  href="https://pmc.ncbi.nlm.nih.gov/articles/PMC2394744/"
+                  target="_blank" rel="noopener">PMC</a></span> </li>
+            <li id="ref3"> <span class="ref-num">3</span> <span
+                class="ref-body">Singh N, Bhalla N. <span
+                  class="ref-title">Moonlighting proteins.</span> <em>Annual
+
+
+
+
+
+
+                  Review of Genetics.</em> 2020;54:265–285.
+                doi:10.1146/annurev-genet-030620-102906. PMID:32870732.
+                <a href="https://pubmed.ncbi.nlm.nih.gov/32870732/"
+                  target="_blank" rel="noopener">PubMed</a></span> </li>
+            <li id="ref4"> <span class="ref-num">4</span> <span
+                class="ref-body">Altschul SF, Gish W, Miller W, Myers
+                EW, Lipman DJ. <span class="ref-title">Basic local
+                  alignment search tool.</span> <em>Journal of
+                  Molecular Biology.</em> 1990;215:403–410.
+                doi:10.1016/S0022-2836(05)80360-2. PMID:2231712. <a
+                  href="https://pubmed.ncbi.nlm.nih.gov/2231712/"
+                  target="_blank" rel="noopener">PubMed</a></span> </li>
+            <li id="ref5"> <span class="ref-num">5</span> <span
+                class="ref-body">Romero PA, Arnold FH. <span
+                  class="ref-title">Exploring protein fitness landscapes
+                  by directed evolution.</span> <em>Nature Reviews
+                  Molecular Cell Biology.</em> 2009;10:866–876.
+                doi:10.1038/nrm2805. PMID:19935669. <a
+                  href="https://pubmed.ncbi.nlm.nih.gov/19935669/"
+                  target="_blank" rel="noopener">PubMed</a></span> </li>
+            <li id="ref6"> <span class="ref-num">6</span> <span
+                class="ref-body">Facco E, Pagnani A, Russo ET, Laio A. <span
+                  class="ref-title">The intrinsic dimension of protein
+                  sequence evolution.</span> <em>PLoS Computational
+                  Biology.</em> 2019;15:e1006767.
+                doi:10.1371/journal.pcbi.1006767. PMID:30958823. <a
+                  href="https://pubmed.ncbi.nlm.nih.gov/30958823/"
+                  target="_blank" rel="noopener">PubMed</a></span> </li>
+            <li id="ref7"> <span class="ref-num">7</span> <span
+                class="ref-body">Ding X, Zou Z, Brooks CL III. <span
+                  class="ref-title">Deciphering protein evolution and
+                  fitness landscapes with latent space models.</span> <em>Nature
+
+
+
+
+
+
+                  Communications.</em> 2019;10:5644.
+                doi:10.1038/s41467-019-13633-0. PMID:31822668. <a
+                  href="https://pubmed.ncbi.nlm.nih.gov/31822668/"
+                  target="_blank" rel="noopener">PubMed</a></span> </li>
+          </ol>
+        </section>
+      </article>
+    </main>
+    <script>
+  // Active sidebar link on scroll
+  const sections = document.querySelectorAll('.section[id], .references[id]');
+  const links    = document.querySelectorAll('.sidebar nav a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        links.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, { rootMargin: '-15% 0px -65% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+  </body>
+</html>

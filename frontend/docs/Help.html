@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Viz Platform — Help</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0e1117;
+    --bg2:      #151b27;
+    --bg3:      #1c2436;
+    --border:   #2a3550;
+    --accent:   #3dffa0;
+    --accent2:  #3db8ff;
+    --accent3:  #ffd166;
+    --muted:    #6b7fa3;
+    --body:     #c8d4ec;
+    --heading:  #e8eef8;
+    --code-bg:  #111827;
+    --danger:   #ff6b6b;
+    --serif:    'DM Serif Display', Georgia, serif;
+    --sans:     'DM Sans', system-ui, sans-serif;
+    --mono:     'DM Mono', 'Fira Code', monospace;
+    --radius:   6px;
+    --sidebar-w: 260px;
+    --get:   #22c55e;
+    --post:  #3b82f6;
+    --del:   #ef4444;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--body);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 40px;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .sidebar-logo-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .sidebar-logo .doc-type {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent2);
+  }
+  .sidebar-home {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .sidebar-home:hover {
+    color: var(--heading);
+  }
+  .sidebar-logo h2 {
+    font-family: var(--serif);
+    font-size: 17px;
+    color: var(--heading);
+    font-weight: 400;
+    line-height: 1.3;
+  }
+  .sidebar-section {
+    padding: 8px 24px 4px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+  .sidebar nav a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 24px;
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.15s, background 0.15s;
+    border-left: 2px solid transparent;
+  }
+  .sidebar nav a:hover { color: var(--body); background: var(--bg3); }
+  .sidebar nav a.active { color: var(--accent2); border-left-color: var(--accent2); background: rgba(61,184,255,0.05); }
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 20px 24px 0;
+    border-top: 1px solid var(--border);
+  }
+  .sidebar-footer a {
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    display: block;
+    padding: 4px 0;
+    transition: color 0.15s;
+  }
+  .sidebar-footer a:hover { color: var(--accent); }
+
+  /* ── Content ─────────────────────────────────────────────────── */
+  .content {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    padding: 60px 56px 120px;
+    max-width: 960px;
+  }
+
+  .page-header {
+    margin-bottom: 64px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-header .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 16px;
+  }
+  .page-header h1 {
+    font-family: var(--serif);
+    font-size: 46px;
+    font-weight: 400;
+    color: var(--heading);
+    line-height: 1.15;
+    margin-bottom: 20px;
+  }
+  .page-header h1 em { font-style: italic; color: var(--accent2); }
+  .page-header p {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 560px;
+    line-height: 1.7;
+  }
+
+  /* ── Section ─────────────────────────────────────────────────── */
+  .ref-section {
+    margin-bottom: 80px;
+    scroll-margin-top: 24px;
+  }
+  .ref-section h2 {
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 400;
+    color: var(--heading);
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .ref-section .section-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .ref-section h3 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--heading);
+    margin: 28px 0 10px;
+    font-family: var(--sans);
+  }
+  .ref-section p { color: var(--body); margin-bottom: 12px; max-width: 760px; }
+  .ref-section ul, .ref-section ol { padding-left: 20px; margin-bottom: 12px; }
+  .ref-section ul li, .ref-section ol li { margin-bottom: 5px; color: var(--body); }
+
+  /* ── API endpoint cards ──────────────────────────────────────── */
+  .endpoint {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin: 16px 0;
+    overflow: hidden;
+  }
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .endpoint-header:hover { background: var(--bg3); }
+  .method {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 3px;
+    min-width: 48px;
+    text-align: center;
+  }
+  .method.GET  { background: rgba(34,197,94,0.15);  color: var(--get);  border: 1px solid rgba(34,197,94,0.3); }
+  .method.POST { background: rgba(59,130,246,0.15); color: var(--post); border: 1px solid rgba(59,130,246,0.3); }
+  .method.DEL  { background: rgba(239,68,68,0.15);  color: var(--del);  border: 1px solid rgba(239,68,68,0.3); }
+  .endpoint-path {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--heading);
+    flex: 1;
+  }
+  .endpoint-desc {
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .endpoint-body {
+    padding: 20px 22px;
+    display: none;
+  }
+  .endpoint-body.open { display: block; }
+  .endpoint-body p { font-size: 14px; margin-bottom: 10px; }
+  .endpoint-chevron {
+    color: var(--muted);
+    font-size: 12px;
+    transition: transform 0.2s;
+    font-family: var(--mono);
+  }
+  .endpoint-header.open .endpoint-chevron { transform: rotate(90deg); }
+
+  /* ── Param table ─────────────────────────────────────────────── */
+  .param-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  .param-table th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 6px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .param-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(42,53,80,0.5);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .param-table td:first-child { font-family: var(--mono); color: var(--accent2); font-size: 12px; }
+  .param-table td:nth-child(2) { font-family: var(--mono); color: var(--accent3); font-size: 11.5px; }
+  .param-table tr:last-child td { border-bottom: none; }
+  .badge-req { background: rgba(255,107,107,0.1); color: var(--danger); border: 1px solid rgba(255,107,107,0.3); border-radius: 3px; padding: 1px 6px; font-size: 10px; font-family: var(--mono); }
+  .badge-opt { background: rgba(107,127,163,0.1); color: var(--muted); border: 1px solid rgba(107,127,163,0.3); border-radius: 3px; padding: 1px 6px; font-size: 10px; font-family: var(--mono); }
+
+  /* ── Code blocks ─────────────────────────────────────────────── */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 14px 0;
+  }
+  .code-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+  .code-lang { font-family: var(--mono); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .code-block pre {
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--body);
+  }
+  code { font-family: var(--mono); font-size: 0.875em; }
+  p code, li code {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 6px;
+    color: var(--accent2);
+  }
+  .kw { color: #c792ea; }
+  .str { color: #c3e88d; }
+  .cm { color: #546e7a; font-style: italic; }
+  .num { color: #f78c6c; }
+  .fn { color: var(--accent2); }
+  .key { color: var(--accent3); }
+
+  /* ── Callouts ────────────────────────────────────────────────── */
+  .callout {
+    border-left: 3px solid var(--border);
+    background: var(--bg2);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+  .callout.tip    { border-left-color: var(--accent); }
+  .callout.warn   { border-left-color: var(--accent3); }
+  .callout.info   { border-left-color: var(--accent2); }
+  .callout.danger { border-left-color: var(--danger); }
+  .callout-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .callout.tip    .callout-label { color: var(--accent); }
+  .callout.warn   .callout-label { color: var(--accent3); }
+  .callout.info   .callout-label { color: var(--accent2); }
+  .callout.danger .callout-label { color: var(--danger); }
+  .callout p { color: var(--body); margin: 0; font-size: 14px; line-height: 1.65; }
+
+  /* ── Config table ────────────────────────────────────────────── */
+  .config-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+  .config-table th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 7px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .config-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(42,53,80,0.5);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .config-table td:first-child { font-family: var(--mono); color: var(--accent3); font-size: 12px; white-space: nowrap; }
+  .config-table td:nth-child(2) { font-family: var(--mono); color: var(--muted); font-size: 12px; }
+  .config-table tr:last-child td { border-bottom: none; }
+
+  /* ── Architecture boxes ──────────────────────────────────────── */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .arch-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .arch-card .arch-layer {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .arch-card h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--heading);
+    margin-bottom: 8px;
+  }
+  .arch-card ul { list-style: none; padding: 0; }
+  .arch-card ul li {
+    font-size: 13px;
+    color: var(--body);
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(42,53,80,0.4);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .arch-card ul li:last-child { border-bottom: none; }
+  .arch-card ul li::before { content: '→'; color: var(--muted); flex-shrink: 0; margin-top: 1px; }
+  .arch-card.backend { border-top: 3px solid var(--accent); }
+  .arch-card.frontend { border-top: 3px solid var(--accent2); }
+
+  /* ── Event bus table ─────────────────────────────────────────── */
+  .event-list { list-style: none; padding: 0; margin: 12px 0; }
+  .event-list li {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(42,53,80,0.5);
+    font-size: 13.5px;
+    align-items: baseline;
+  }
+  .event-list li:last-child { border-bottom: none; }
+  .event-name { font-family: var(--mono); color: var(--accent); font-size: 13px; }
+
+  /* ── Module cards ────────────────────────────────────────────── */
+  .module-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .module-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .module-card .mod-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    margin-bottom: 6px;
+  }
+  .module-card .mod-name { font-size: 14px; font-weight: 600; color: var(--heading); margin-bottom: 6px; }
+  .module-card p { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.55; }
+
+  /* ── Divider ─────────────────────────────────────────────────── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 64px 0; }
+
+  /* ── Data flow diagram ───────────────────────────────────────── */
+  .flow-diagram {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin: 20px 0;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 2;
+    overflow-x: auto;
+  }
+  .fd-accent  { color: var(--accent); }
+  .fd-blue    { color: var(--accent2); }
+  .fd-warn    { color: var(--accent3); }
+  .fd-muted   { color: var(--muted); }
+  .fd-red     { color: var(--danger); }
+
+  strong { color: var(--heading); font-weight: 600; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .content { margin-left: 0; padding: 32px 24px 80px; }
+    .arch-grid, .module-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ──────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-top">
+      <div class="doc-type">Help</div>
+      <a href="/index.html" class="sidebar-home">← Home</a>
+    </div>
+    <h2>Network Viz Platform</h2>
+  </div>
+
+  <div class="sidebar-section">Background</div>
+  <nav>
+    <a href="About SJI.html">About SJI</a>
+  </nav>
+
+  <div class="sidebar-section">API Reference</div>
+  <nav>
+    <a href="#api-overview" class="active">Endpoints Overview</a>
+    <a href="#api-networks">Networks API</a>
+    <a href="#api-subnetworks">Subnetworks API</a>
+    <a href="#api-species">Species API</a>
+    <a href="#api-uniprot">UniProt API</a>
+  </nav>
+
+  <div class="sidebar-section">Configuration</div>
+  <nav>
+    <a href="#config-env">Environment Variables</a>
+    <a href="#config-startup">Startup Modes</a>
+  </nav>
+
+  <div class="sidebar-section">Data Formats</div>
+  <nav>
+    <a href="#data-network-csv">Network CSV</a>
+    <a href="#data-nodes-attr">Nodes Attr File</a>
+    <a href="#data-indexes">Binary Index</a>
+    <a href="#data-taxonomy">Taxonomy Files</a>
+  </nav>
+
+  <div class="sidebar-section">Architecture</div>
+  <nav>
+    <a href="#arch-overview">System Overview</a>
+    <a href="#arch-backend">Backend Internals</a>
+    <a href="#arch-frontend">Frontend Internals</a>
+    <a href="#arch-modules">Module System</a>
+    <a href="#arch-events">Event Bus</a>
+    <a href="#arch-db">Database Schema</a>
+  </nav>
+
+  <div class="sidebar-section">Testing</div>
+  <nav>
+    <a href="#testing">Running Tests</a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="/index.html" style="color:var(--accent3);">← Home</a>
+    <a href="About SJI.html">About SJI</a>
+    <a href="Tutorial.html">← Back to Tutorial</a>
+  </div>
+</aside>
+
+<!-- ── Main ─────────────────────────────────────────────────────── -->
+<main class="content">
+
+  <div class="page-header">
+    <div class="eyebrow">Complete Help</div>
+    <h1>API · Config · Data<br><em>Formats</em> · Architecture</h1>
+    <p>Full reference documentation for the Network Visualization Platform — every endpoint, config key, file format, and internal system.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       API Reference
+  ════════════════════════════════════════════════════════════════ -->
+  <section class="ref-section" id="api-overview">
+    <h2>API Reference</h2>
+    <div class="section-sub">REST Endpoints</div>
+    <p>All API endpoints are served by the Express server at <code>http://localhost:3000</code> (or the configured <code>PORT</code>). The server also serves frontend static files from the same origin.</p>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="code-lang">Health check</span></div>
+      <pre><span class="fn">GET</span>  /health
+<span class="cm"># Returns: { "status": "ok", "db": "connected", "uptime": 42.1 }</span></pre>
+    </div>
+  </section>
+
+  <section class="ref-section" id="api-networks">
+    <h2>Networks API</h2>
+    <div class="section-sub">/api/networks</div>
+
+    <!-- List networks -->
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/api/networks</span>
+        <span class="endpoint-desc">List all available networks</span>
+        <span class="endpoint-chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Returns a sorted list of all ingested network source filenames.</p>
+        <div class="code-block">
+          <div class="code-block-header"><span class="code-lang">Response 200</span></div>
+          <pre>[
+  <span class="str">"O52K1_HUMAN_Example1.csv"</span>,
+  <span class="str">"METN_ECOLI_Example2.csv"</span>,
+  <span class="str">"my_proteins.csv"</span>
+]</pre>
+        </div>
+        <p>Returns <code>500</code> if the database is unavailable.</p>
+      </div>
+    </div>
+
+    <!-- Get network data -->
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/api/networks/:filename</span>
+        <span class="endpoint-desc">Fetch nodes + edges for one network</span>
+        <span class="endpoint-chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <table class="param-table">
+          <thead><tr><th>Param</th><th>Type</th><th></th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>:filename</td><td>string</td><td><span class="badge-req">required</span></td><td>URL-encoded network filename (e.g. <code>my_proteins.csv</code>)</td></tr>
+          </tbody>
+        </table>
+        <div class="code-block">
+          <div class="code-block-header"><span class="code-lang">Response 200</span></div>
+          <pre>{
+  <span class="key">"elements"</span>: {
+    <span class="key">"nodes"</span>: [
+      { <span class="key">"data"</span>: { <span class="key">"id"</span>: <span class="str">"P12345"</span>, <span class="key">"NH_ID"</span>: <span class="str">"NH001"</span>, <span class="key">"NH_Size"</span>: <span class="num">14</span>, <span class="key">"NCBI_txID"</span>: <span class="str">"9606"</span> } }
+    ],
+    <span class="key">"edges"</span>: [
+      { <span class="key">"data"</span>: { <span class="key">"id"</span>: <span class="str">"P12345|Q67890"</span>, <span class="key">"source"</span>: <span class="str">"P12345"</span>, <span class="key">"target"</span>: <span class="str">"Q67890"</span>, <span class="key">"weight"</span>: <span class="num">0.854</span> } }
+    ]
+  }
+}</pre>
+        </div>
+        <p>Returns <code>404</code> if the filename is not found. Edge IDs are canonical: <code>smaller_id|larger_id</code> (alphabetically sorted).</p>
+      </div>
+    </div>
+
+    <!-- Search proteins -->
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/api/networks/search</span>
+        <span class="endpoint-desc">Find nodes by UniProt accession</span>
+        <span class="endpoint-chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Searches the specified network for proteins matching exact UniProt accession numbers. Results are scoped strictly to the given network — accessions in other networks are not returned.</p>
+        <div class="code-block">
+          <div class="code-block-header"><span class="code-lang">Request body</span></div>
+          <pre>{
+  <span class="key">"network"</span>:     <span class="str">"my_proteins.csv"</span>,
+  <span class="key">"accessions"</span>: [<span class="str">"P04637"</span>, <span class="str">"O15151"</span>]
+}</pre>
+        </div>
+        <div class="code-block">
+          <div class="code-block-header"><span class="code-lang">Response 200</span></div>
+          <pre>{
+  <span class="key">"matches"</span>: [
+    { <span class="key">"id"</span>: <span class="str">"P04637"</span>, <span class="key">"nh_id"</span>: <span class="str">"NH001"</span> },
+    { <span class="key">"id"</span>: <span class="str">"O15151"</span>, <span class="key">"nh_id"</span>: <span class="str">"NH001"</span> }
+  ]
+}</pre>
+        </div>
+        <p><code>nh_id</code> is <code>null</code> if the protein has no neighborhood assignment in the attributes file.</p>
+      </div>
+    </div>
+
+    <!-- Search by species -->
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/api/networks/search-species</span>
+        <span class="endpoint-desc">Find nodes by NCBI taxonomy ID</span>
+        <span class="endpoint-chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="code-block">
+          <div class="code-block-header"><span class="code-lang">Request body</span></div>
+          <pre>{
+  <span class="key">"network"</span>:    <span class="str">"my_proteins.csv"</span>,
+  <span class="key">"speciesIds"</span>: [<span class="str">"9606"</span>, <span class="str">"10090"</span>]
+}</pre>
+        </div>
+        <div class="code-block">
+          <div class="code-block-header"><span class="code-lang">Response 200</span></div>
+          <pre>{
+  <span class="key">"matches"</span>: [
+    { <span class="key">"id"</span>: <span class="str">"P04637"</span>, <span class="key">"nh_id"</span>: <span class="str">"NH001"</span> },
+    { <span class="key">"id"</span>: <span class="str">"A0A2I3TW31"</span>, <span class="key">"nh_id"</span>: <span class="str">"NH004"</span> }
+  ]
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group exports -->
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/api/networks/group-exports</span>
+        <span class="endpoint-desc">Save named protein groups to disk</span>
+        <span class="endpoint-chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Writes one text file per group to the configured <code>EXPORTS_PATH</code> directory (<code>data/exports/</code> by default).</p>
+        <div class="code-block">
+          <div class="code-block-header"><span class="code-lang">Request body</span></div>
+          <pre>{
+  <span class="key">"groups"</span>: [
+    { <span class="key">"name"</span>: <span class="str">"GroupA"</span>, <span class="key">"accessions"</span>: <span class="str">"P04637 O15151 Q13418"</span> },
+    { <span class="key">"name"</span>: <span class="str">"GroupB"</span>, <span class="key">"accessions"</span>: <span class="str">"P98765 A0A2I3TW31"</span> }
+  ]
+}</pre>
+        </div>
+        <div class="code-block">
+          <div class="code-block-header"><span class="code-lang">Response 200</span></div>
+          <pre>{
+  <span class="key">"savedFiles"</span>: [<span class="str">"GroupA.txt"</span>, <span class="str">"GroupB.txt"</span>],
+  <span class="key">"exportDir"</span>:  <span class="str">"data/exports"</span>
+}</pre>
+        </div>
+        <p>Group names allow only letters, digits, <code>_</code>, <code>-</code>, and <code>.</code>. Maximum 16 characters. Names must be unique within a request.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ref-section" id="api-subnetworks">
+    <h2>Subnetworks API</h2>
+    <div class="section-sub">/api/subnetworks</div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/api/subnetworks/limits</span>
+        <span class="endpoint-desc">Return extraction limits and available indexes</span>
+        <span class="endpoint-chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="code-block">
+          <div class="code-block-header"><span class="code-lang">Response 200</span></div>
+          <pre>{
+  <span class="key">"maxSeeds"</span>:        <span class="num">10</span>,
+  <span class="key">"maxNodes"</span>:        <span class="num">2500</span>,
+  <span class="key">"defaultMaxNodes"</span>: <span class="num">500</span>,
+  <span class="key">"indexes"</span>: [
+    { <span class="key">"label"</span>: <span class="str">"Eukaryotes"</span>, <span class="key">"value"</span>: <span class="str">"Eukaryotes"</span> },
+    { <span class="key">"label"</span>: <span class="str">"Bacteria"</span>,    <span class="key">"value"</span>: <span class="str">"Bacteria"</span> }
+  ]
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/api/subnetworks</span>
+        <span class="endpoint-desc">Extract a subnetwork from the binary index</span>
+        <span class="endpoint-chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Spawns the Python extraction script, writes the resulting CSV to <code>data/networks/</code>, and returns a viewer link. The file watcher auto-ingests the new CSV.</p>
+        <table class="param-table">
+          <thead><tr><th>Field</th><th>Type</th><th></th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>name</td><td>string</td><td><span class="badge-req">required</span></td><td>Output filename (without <code>.csv</code>). Max 80 chars. Pattern: <code>[A-Za-z0-9_.-]+</code></td></tr>
+            <tr><td>index</td><td>string</td><td><span class="badge-req">required</span></td><td>Index prefix, e.g. <code>Eukaryotes</code> or <code>Bacteria</code></td></tr>
+            <tr><td>seeds</td><td>string</td><td><span class="badge-req">required</span></td><td>Comma/space-separated UniProt ACs. Max 10 seeds, total length &le; 2000 chars</td></tr>
+            <tr><td>maxNodes</td><td>integer</td><td><span class="badge-opt">optional</span></td><td>Node budget. Default 500, max 2500</td></tr>
+          </tbody>
+        </table>
+        <div class="code-block">
+          <div class="code-block-header"><span class="code-lang">Response 200</span></div>
+          <pre>{
+  <span class="key">"ok"</span>:           <span class="kw">true</span>,
+  <span class="key">"viewerUrl"</span>:    <span class="str">"/viewer.html?network=my_proteins.csv&amp;seeds=P04637"</span>,
+  <span class="key">"edgeCount"</span>:    <span class="num">1284</span>,
+  <span class="key">"selectedNodeCount"</span>: <span class="num">498</span>,
+  <span class="key">"missingSeeds"</span>: [],
+  <span class="key">"elapsedMs"</span>:    <span class="num">3241</span>
+}</pre>
+        </div>
+        <p>Returns <code>400</code> for validation errors and <code>408</code> on timeout (default 120 s, configurable via <code>SUBNETWORK_TIMEOUT_MS</code>).</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ref-section" id="api-species">
+    <h2>Species API</h2>
+    <div class="section-sub">/api/species-names · /api/species-tree</div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/api/species-names</span>
+        <span class="endpoint-desc">NCBI taxonomy ID → species name mapping</span>
+        <span class="endpoint-chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Reads <code>NCBI_txID.csv</code> on every request and returns all rows. Used by the species selector flat-list fallback.</p>
+        <div class="code-block">
+          <div class="code-block-header"><span class="code-lang">Response 200</span></div>
+          <pre>[
+  { <span class="key">"ncbi_txid"</span>: <span class="str">"9606"</span>,  <span class="key">"species_name"</span>: <span class="str">"Homo sapiens"</span> },
+  { <span class="key">"ncbi_txid"</span>: <span class="str">"10090"</span>, <span class="key">"species_name"</span>: <span class="str">"Mus musculus"</span> }
+]</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/api/species-tree</span>
+        <span class="endpoint-desc">Full parsed taxonomic tree (cached)</span>
+        <span class="endpoint-chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Returns the parsed <code>commontree.txt</code> as a nested JSON tree, cached in memory. Cache is invalidated when taxonomy files change on disk.</p>
+        <p>Returns <code>404</code> if <code>commontree.txt</code> is absent — the frontend falls back to the flat species list.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ref-section" id="api-uniprot">
+    <h2>UniProt API</h2>
+    <div class="section-sub">/api/uniprot</div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/api/uniprot/:accession</span>
+        <span class="endpoint-desc">Proxied UniProt REST entry</span>
+        <span class="endpoint-chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Proxies a request to <code>https://rest.uniprot.org/uniprotkb/:accession</code> with a 10 s timeout and up to 3 retries. The tooltip module calls UniProt directly from the browser — this proxy is for server-side use.</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/api/uniprot/availability</span>
+        <span class="endpoint-desc">Bulk check UniProt entry existence</span>
+        <span class="endpoint-chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Used by the Export panel to decide whether to render accessions as hyperlinks. Checks up to 100 accessions per call in batches.</p>
+        <div class="code-block">
+          <div class="code-block-header"><span class="code-lang">Request body</span></div>
+          <pre>{ <span class="key">"accessions"</span>: [<span class="str">"P04637"</span>, <span class="str">"FAKE9999"</span>] }</pre>
+        </div>
+        <div class="code-block">
+          <div class="code-block-header"><span class="code-lang">Response 200</span></div>
+          <pre>{
+  <span class="key">"results"</span>: [
+    { <span class="key">"accession"</span>: <span class="str">"P04637"</span>,  <span class="key">"available"</span>: <span class="kw">true</span>  },
+    { <span class="key">"accession"</span>: <span class="str">"FAKE9999"</span>, <span class="key">"available"</span>: <span class="kw">false</span> }
+  ]
+}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       Configuration
+  ════════════════════════════════════════════════════════════════ -->
+  <section class="ref-section" id="config-env">
+    <h2>Environment Variables</h2>
+    <div class="section-sub">backend/config/config.js · .env</div>
+    <p>Copy <code>.env.example</code> to <code>.env</code> and override as needed. All variables have safe defaults for local development.</p>
+
+    <h3>Server &amp; Paths</h3>
+    <table class="config-table">
+      <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>PORT</td><td>3000</td><td>HTTP port the server listens on</td></tr>
+        <tr><td>CORS_ORIGIN</td><td>*</td><td>Allowed CORS origin. Restrict to your domain in production.</td></tr>
+        <tr><td>DB_PATH</td><td>./data/network_viz.db</td><td>SQLite file path. Point to a Docker volume mount for persistence.</td></tr>
+        <tr><td>DATA_PATH</td><td>./data/networks</td><td>Directory containing network <code>*.csv</code> files</td></tr>
+        <tr><td>NODE_ATTRIBUTES_PATH</td><td>./data/nodes_attr</td><td>Directory containing exactly one <code>*.nodes.attr</code> file</td></tr>
+        <tr><td>INDEXES_PATH</td><td>./data/indexes</td><td>Directory containing binary graph index files</td></tr>
+        <tr><td>EXPORTS_PATH</td><td>./data/exports</td><td>Output directory for group export files</td></tr>
+        <tr><td>TAXON_NAMES_PATH</td><td>./data/NCBI_txID/NCBI_txID.csv</td><td>Two-column NCBI taxonomy CSV (ncbi_txid, species_name)</td></tr>
+        <tr><td>TAXON_TREE_PATH</td><td>./data/NCBI_txID/commontree.txt</td><td>NCBI Common Tree ASCII file for the interactive species tree</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Subnetwork Extraction</h3>
+    <table class="config-table">
+      <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>PYTHON_COMMAND</td><td>python3</td><td>Python executable used to run the extraction script</td></tr>
+        <tr><td>SUBNETWORK_SCRIPT_PATH</td><td>./tools/runtime/extract_subnetwork.py</td><td>Path to the extraction CLI</td></tr>
+        <tr><td>SUBNETWORK_JOB_TEMP_PATH</td><td>./data/tmp/subnetwork-jobs</td><td>Temp directory for in-flight extraction jobs</td></tr>
+        <tr><td>SUBNETWORK_MAX_SEEDS</td><td>10</td><td>Maximum seed proteins per extraction request</td></tr>
+        <tr><td>SUBNETWORK_MAX_NODES_LIMIT</td><td>2500</td><td>Hard cap on node budget</td></tr>
+        <tr><td>SUBNETWORK_DEFAULT_MAX_NODES</td><td>500</td><td>Default node budget when not specified</td></tr>
+        <tr><td>SUBNETWORK_TIMEOUT_MS</td><td>120000</td><td>Extraction timeout in milliseconds (120 s)</td></tr>
+        <tr><td>SUBNETWORK_MAX_CONCURRENT_JOBS</td><td>2</td><td>Maximum simultaneous extraction jobs</td></tr>
+      </tbody>
+    </table>
+
+    <h3>File Watching &amp; Live Reload</h3>
+    <table class="config-table">
+      <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>FILE_WATCH_ENABLED</td><td>true</td><td>Set to <code>false</code> to disable Chokidar file watcher</td></tr>
+        <tr><td>NETWORK_EDIT_WATCHER_SUPPRESS_MS</td><td>300000</td><td>After saving an edited network, suppress re-ingestion for this many ms</td></tr>
+        <tr><td>NETWORK_EDIT_WATCHER_SUPPRESS_EVENTS</td><td>3</td><td>Also suppress up to this many watcher events for the same file</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="ref-section" id="config-startup">
+    <h2>Startup Modes</h2>
+    <div class="section-sub">START_MODE env variable · backend/entrypoint.js</div>
+    <p>Set <code>START_MODE</code> in <code>.env</code> to control what happens at startup:</p>
+
+    <table class="config-table">
+      <thead><tr><th>Mode</th><th>npm script</th><th>Behavior</th></tr></thead>
+      <tbody>
+        <tr><td>serve</td><td>npm start</td><td>Default. Auto-ingests from scratch if the database is empty (first run), then starts the server. Safe to re-run at any time.</td></tr>
+        <tr><td>ingest</td><td>npm run ingest</td><td>Runs the full ingestion pipeline (attributes + all CSVs) then exits. No server is started.</td></tr>
+        <tr><td>ingest-and-serve</td><td>npm run start:ingest-and-serve</td><td>Ingests, then starts the server. Use when you have new data files and want to guarantee a fresh load.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <div class="callout-label">First-run detection</div>
+      <p>In <code>serve</code> mode, the entrypoint queries <code>SELECT COUNT(*) FROM nodes</code>. If it returns 0, full ingestion runs before the server starts. This is how the first <code>npm start</code> works without needing a separate ingest command.</p>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       Data Formats
+  ════════════════════════════════════════════════════════════════ -->
+  <section class="ref-section" id="data-network-csv">
+    <h2>Network CSV Format</h2>
+    <div class="section-sub">data/networks/*.csv</div>
+    <p>Each line defines one undirected edge. <strong>No header row.</strong></p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="code-lang">Format</span></div>
+      <pre><span class="cm"># node1,node2,weight</span>
+P12345,Q67890,0.854231
+P12345,A0A0H0PPY1,0.712045</pre>
+    </div>
+    <table class="config-table">
+      <thead><tr><th>Column</th><th>Type</th><th>Rules</th></tr></thead>
+      <tbody>
+        <tr><td>node1</td><td>string</td><td>UniProt accession (or any string ID). Must not be blank.</td></tr>
+        <tr><td>node2</td><td>string</td><td>Same. Must differ from node1 (self-loops produce no visible edge).</td></tr>
+        <tr><td>weight</td><td>float</td><td>Must be a finite number. Rows with non-numeric or infinite weights are silently skipped.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout tip">
+      <div class="callout-label">Edge ID canonicalization</div>
+      <p>Edge IDs are stored as <code>min(node1,node2)|max(node1,node2)</code> (alphabetical sort). The order of columns in the CSV does not matter — both <code>A|B</code> and <code>B|A</code> resolve to the same edge.</p>
+    </div>
+  </section>
+
+  <section class="ref-section" id="data-nodes-attr">
+    <h2>Node Attributes File Format</h2>
+    <div class="section-sub">data/nodes_attr/*.nodes.attr</div>
+    <p>Comma-separated, <strong>with header row</strong>. Exactly one file must be present in the directory.</p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="code-lang">Format</span></div>
+      <pre>node_id,NCBI_txID,NH_ID,NH_Size
+P12345,9606,NH001,14
+Q67890,9606,NH001,14
+A0A0H0PPY1,10090,NH002,7</pre>
+    </div>
+    <table class="config-table">
+      <thead><tr><th>Column</th><th>Required</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>node_id</td><td>Yes</td><td>UniProt accession. Must be globally unique in the file.</td></tr>
+        <tr><td>NCBI_txID</td><td>Yes</td><td>NCBI taxonomy ID. Used by the species filter.</td></tr>
+        <tr><td>NH_ID</td><td>Yes</td><td>Neighborhood cluster ID. Proteins sharing the same NH_ID form a cluster.</td></tr>
+        <tr><td>NH_Size</td><td>Yes</td><td>Total number of proteins in this cluster (used for ProtDC normalization).</td></tr>
+        <tr><td>reserved1–5</td><td>No</td><td>Extra columns are silently ignored (stripped from stored attributes).</td></tr>
+      </tbody>
+    </table>
+    <div class="callout danger">
+      <div class="callout-label">Constraint — one file, unique accessions</div>
+      <p>The directory must contain <strong>exactly one</strong> <code>.nodes.attr</code> file. Every <code>node_id</code> must be unique — duplicates cause ingestion to abort with an error naming both line numbers and both NH_IDs.</p>
+    </div>
+  </section>
+
+  <section class="ref-section" id="data-indexes">
+    <h2>Binary Graph Index Format</h2>
+    <div class="section-sub">data/indexes/ — used by extract_subnetwork.py</div>
+    <p>Three files per domain form one index. The prefix (e.g. <code>Eukaryotes</code>) must match the value presented in the domain dropdown.</p>
+    <table class="config-table">
+      <thead><tr><th>File</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>*.node_ids.tsv</td><td>Two-column tab-separated: <code>integer_id\tUniProt_AC</code>. Maps internal integer IDs ↔ accession strings.</td></tr>
+        <tr><td>*.adj.index.bin</td><td>Binary index header + per-node (offset, degree) entries. Header: 4-byte uint32 node count. Entries: 12 bytes each (8-byte uint64 offset into adj.bin, 4-byte uint32 degree).</td></tr>
+        <tr><td>*.adj.bin</td><td>Flat binary adjacency list. Each entry is 8 bytes: 4-byte uint32 neighbor ID + 4-byte float32 weight. Neighbors are pre-sorted by descending weight.</td></tr>
+      </tbody>
+    </table>
+    <p>These files are memory-mapped at extraction time via Python's <code>mmap</code> and read with NumPy for speed. They are read-only by the application.</p>
+  </section>
+
+  <section class="ref-section" id="data-taxonomy">
+    <h2>Taxonomy Files</h2>
+    <div class="section-sub">data/NCBI_txID/</div>
+
+    <h3>NCBI_txID.csv</h3>
+    <p>Two-column CSV with header. Used both for the flat species dropdown and as the label source for the taxonomic tree.</p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="code-lang">Format</span></div>
+      <pre>ncbi_txid,species_name
+9606,Homo sapiens
+10090,Mus musculus
+7227,Drosophila melanogaster</pre>
+    </div>
+
+    <h3>commontree.txt</h3>
+    <p>ASCII tree downloaded from the <a href="https://www.ncbi.nlm.nih.gov/Taxonomy/CommonTree/wwwcmt.cgi" target="_blank" rel="noopener" style="color:var(--accent2)">NCBI Common Tree</a> tool. The parser extracts taxon IDs from lines of the form:</p>
+    <div class="code-block">
+      <div class="code-block-header"><span class="code-lang">Example commontree.txt fragment</span></div>
+      <pre>Eukaryota
+  Opisthokonta
+    Metazoa
+      Chordata
+        Mammalia
+          Primates
+            9606: Homo sapiens
+          Rodentia
+            10090: Mus musculus</pre>
+    </div>
+    <p>Both files are hot-reloaded — replacing them on disk while the server is running invalidates the cached tree within about 2 seconds.</p>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       Architecture
+  ════════════════════════════════════════════════════════════════ -->
+  <section class="ref-section" id="arch-overview">
+    <h2>System Architecture</h2>
+    <div class="section-sub">Two independent layers, zero shared code</div>
+
+    <div class="flow-diagram">
+<span class="fd-blue">┌──────────────────────────────────────────────────────────────┐</span>
+<span class="fd-blue">│  BROWSER (frontend — vanilla JS, no build step)             │</span>
+<span class="fd-blue">│                                                              │</span>
+<span class="fd-blue">│  app.js → AppState → ModuleSystem → D3Adapter               │</span>
+<span class="fd-blue">│            ↕ EventBus                                        │</span>
+<span class="fd-blue">│  Modules: species-selector  search-highlight  export-panel  │</span>
+<span class="fd-blue">│           uniprot-tooltip   clear-highlights                 │</span>
+<span class="fd-blue">└──────────────────────────────────────────────────────────────┘</span>
+                      <span class="fd-muted">↕  HTTP / REST  ↕</span>
+<span class="fd-accent">┌──────────────────────────────────────────────────────────────┐</span>
+<span class="fd-accent">│  NODE.JS / EXPRESS (backend)                                │</span>
+<span class="fd-accent">│                                                              │</span>
+<span class="fd-accent">│  entrypoint.js → server.js → routes → controllers           │</span>
+<span class="fd-accent">│                                                              │</span>
+<span class="fd-accent">│  fileWatcher.js → ingestData.js → SQLite (network_viz.db)  │</span>
+<span class="fd-accent">│                                                              │</span>
+<span class="fd-accent">│  subnetworkController → extract_subnetwork.py (Python)      │</span>
+<span class="fd-accent">└──────────────────────────────────────────────────────────────┘</span>
+    </div>
+
+    <div class="arch-grid">
+      <div class="arch-card backend">
+        <div class="arch-layer">Backend</div>
+        <h4>Node.js / Express</h4>
+        <ul>
+          <li>entrypoint.js — startup mode router</li>
+          <li>server.js — Express app + static file serving</li>
+          <li>config/database.js — SQLite connection + schema init</li>
+          <li>scripts/ingestData.js — transactional ingestion pipeline</li>
+          <li>services/fileWatcher.js — Chokidar hot-reload watcher</li>
+          <li>controllers/networkController.js — query layer</li>
+          <li>controllers/uniprotController.js — UniProt proxy</li>
+        </ul>
+      </div>
+      <div class="arch-card frontend">
+        <div class="arch-layer">Frontend</div>
+        <h4>Vanilla JS (ES5-compatible)</h4>
+        <ul>
+          <li>core/graph.js — Graph data structure</li>
+          <li>core/graph-view.js — Visible graph computation</li>
+          <li>core/state.js — AppState + EventBus</li>
+          <li>core/module-system.js — Plugin loader</li>
+          <li>adapters/d3-adapter.js — D3.js rendering bridge</li>
+          <li>modules/ — five self-contained feature modules</li>
+          <li>config/modules.js — active module declarations</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="ref-section" id="arch-backend">
+    <h2>Backend Internals</h2>
+    <div class="section-sub">Ingestion pipeline · file watcher · query layer</div>
+
+    <h3>Ingestion Pipeline (<code>ingestData.js</code>)</h3>
+    <p>Two independent pipelines share the same module:</p>
+
+    <p><strong>ingestNodeAttributes(files)</strong> — Transactional, all-or-nothing:</p>
+    <ol>
+      <li><strong>Preflight</strong> — validates header format; scans for duplicate UniProt ACs across all files (reports file, line, NH_ID for each conflict).</li>
+      <li><strong>Reconcile</strong> — inside a single <code>BEGIN TRANSACTION</code>, clears <code>attributes_json</code> and <code>attribute_source</code> for every protein row that has non-empty attributes. Also deletes unreferenced <code>kind='nh'</code> rows (one-time migration).</li>
+      <li><strong>Write</strong> — upserts each row using <code>INSERT … ON CONFLICT DO UPDATE</code>. Batches use <code>SAVEPOINT/RELEASE</code> for memory management without breaking outer atomicity.</li>
+      <li><strong>Commit or rollback</strong> — any failure in any file triggers <code>ROLLBACK</code>, restoring the entire pre-ingest state.</li>
+    </ol>
+
+    <p><strong>ingestNetworks(specificFile)</strong> — Per-file, serialized via a promise queue:</p>
+    <ol>
+      <li>Deletes all edges for the source file (<code>DELETE … WHERE source = ?</code>).</li>
+      <li>Inserts placeholder nodes (<code>INSERT OR IGNORE</code>) before edges to satisfy foreign key constraints.</li>
+      <li>Inserts edges with a <code>SAVEPOINT</code>-based batch loop.</li>
+      <li>Skips rows with fewer than 3 columns, blank node IDs, or non-finite weights.</li>
+    </ol>
+
+    <h3>File Watcher (<code>fileWatcher.js</code>)</h3>
+    <p>Uses Chokidar with polling (<code>interval: 1000 ms</code>, <code>stabilityThreshold: 2000 ms</code>) for compatibility across filesystems and Docker mounts.</p>
+    <ul>
+      <li><code>*.csv</code> added/changed → <code>ingestNetworks(filename)</code> for that file only.</li>
+      <li><code>*.csv</code> deleted → removes edges and network_nodes for that source.</li>
+      <li><code>*.nodes.attr</code> changed → re-scans directory; ingests if exactly one file is present.</li>
+      <li>Taxonomy files changed → invalidates the in-memory species tree cache.</li>
+      <li>Internally-saved networks (from subnetwork extraction or edit service) are suppressed for up to 300 s / 3 events to avoid double-ingest.</li>
+    </ul>
+  </section>
+
+  <section class="ref-section" id="arch-frontend">
+    <h2>Frontend Internals</h2>
+    <div class="section-sub">Graph data model · visible graph · D3 rendering</div>
+
+    <h3>Graph (<code>core/graph.js</code>)</h3>
+    <p>Framework-agnostic graph data structure. Stores nodes in a <code>Map&lt;id, node&gt;</code>, edges in a <code>Map&lt;id, edge&gt;</code>, and adjacency as a <code>Map&lt;nodeId, Set&lt;edgeId&gt;&gt;</code>. <strong>Never modified by the rendering layer.</strong></p>
+
+    <h3>GraphView (<code>core/graph-view.js</code>) — Collapsed vs. Expanded</h3>
+    <p><code>GraphView.compute(coreGraph, expandedClusters, hiddenNodes, hiddenEdges)</code> derives the visible graph on each render:</p>
+    <ol>
+      <li>For each visible protein: if its <code>NH_ID</code> is <strong>not</strong> in <code>expandedClusters</code>, its representative is the cluster node. Otherwise, it represents itself.</li>
+      <li>Cluster nodes are created on the fly with <code>kind: 'nh'</code>, <code>size</code> = member count, <code>_memberIds</code> list.</li>
+      <li>Edges between the same representative are discarded (self-loops). Inter-representative edges accumulate weight and are normalized: <code>sum(weights) / (size_u × size_v)</code>.</li>
+    </ol>
+    <p><strong>Cluster nodes are never stored in the database.</strong> They are purely a render-time derivation.</p>
+
+    <h3>AppState (<code>core/state.js</code>)</h3>
+    <p>Single source of truth for all application state. Key fields:</p>
+    <ul>
+      <li><code>graph</code> — the full core Graph (all proteins + edges from the loaded network)</li>
+      <li><code>viewGraph</code> — the currently rendered Graph (computed by GraphView)</li>
+      <li><code>expandedClusters</code> — Set of NH IDs that are currently expanded</li>
+      <li><code>highlightLayers</code> — Map of layerId → { matches, color }</li>
+      <li><code>nodeColors</code> — derived Map of nodeId → [color, …] (pie slices)</li>
+      <li><code>hiddenNodes</code> / <code>hiddenEdges</code> — Sets of hidden element IDs</li>
+      <li><code>hiddenEdgeWeightRanges</code> — compact threshold rules for weight-based filtering</li>
+      <li><code>selectedNodes</code> — Set of selected node IDs (export mode)</li>
+      <li><code>topologyRevision</code> — integer incremented on any structural change (used as cache key)</li>
+    </ul>
+
+    <h3>D3Adapter (<code>adapters/d3-adapter.js</code>)</h3>
+    <p>Bridges AppState to D3.js. Key behaviors:</p>
+    <ul>
+      <li><strong>Static layout</strong> — runs the force simulation for a fixed tick count scaled to <code>sqrt(nodeCount)</code>, then freezes it. No continuous animation.</li>
+      <li><strong>Position preservation</strong> — on topology changes (expand/collapse), existing node positions are carried forward. New cluster members are seeded in a golden-angle spiral around their parent.</li>
+      <li><strong>Component layout</strong> — disconnected graph components are packed into non-overlapping circles using an iterative packing algorithm, then each component's centroid is used as its force-center attractor.</li>
+      <li><strong>Pinned nodes</strong> — drag sets <code>node.fx</code> / <code>node.fy</code>. Pinned positions survive topology changes but are cleared on a fresh network load.</li>
+      <li><strong>Viewport-aware fit</strong> — <code>fitToView()</code> accounts for occluding UI panels (zoom controls, export controls) when computing the usable viewport bounds.</li>
+    </ul>
+  </section>
+
+  <section class="ref-section" id="arch-modules">
+    <h2>Module System</h2>
+    <div class="section-sub">core/module-system.js · config/modules.js</div>
+    <p>Modules are plain objects registered with <code>ModuleSystem.register(module)</code>. They receive a <strong>context object</strong> on init that exposes safe AppState methods — modules never touch AppState directly.</p>
+
+    <h3>Adding a Module</h3>
+    <ol>
+      <li>Create <code>frontend/js/modules/my-feature.js</code> exporting <code>window.MyFeatureModule</code> with an <code>id</code> string and an <code>init(context)</code> function.</li>
+      <li>Add <code>"my-feature"</code> to the <code>activeModules</code> array in <code>frontend/js/config/modules.js</code>.</li>
+      <li>Add the script tag to <code>viewer.html</code>. No core files need to change.</li>
+    </ol>
+
+    <div class="module-grid">
+      <div class="module-card">
+        <div class="mod-id">species-selector</div>
+        <div class="mod-name">Species Selector</div>
+        <p>Floating panel with interactive taxonomic tree (or flat checkbox fallback). Queries the backend for proteins by NCBI_txID and adds a highlight layer.</p>
+      </div>
+      <div class="module-card">
+        <div class="mod-id">search-highlight</div>
+        <div class="mod-name">Search &amp; Highlight</div>
+        <p>Accession-based search with canvas color picker. Creates named highlight layers with per-layer color; supports multiple simultaneous layers.</p>
+      </div>
+      <div class="module-card">
+        <div class="mod-id">clear-highlights</div>
+        <div class="mod-name">Clear Highlights</div>
+        <p>Single-button module that calls <code>appState.clearHighlightLayers()</code>. Removes all color layers and resets node appearance.</p>
+      </div>
+      <div class="module-card">
+        <div class="mod-id">uniprot-tooltip</div>
+        <div class="mod-name">UniProt Tooltip</div>
+        <p>Hover tooltip fetching protein name and organism from UniProt REST API. For clusters, samples up to 5 random members to find one with a function annotation.</p>
+      </div>
+      <div class="module-card">
+        <div class="mod-id">export-panel</div>
+        <div class="mod-name">Export Panel</div>
+        <p>Selection mode, protein export sections, ProtDC scoring, UniProt link management, and Batch &amp; Comparative Analysis popup with group file saving.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="ref-section" id="arch-events">
+    <h2>Event Bus</h2>
+    <div class="section-sub">AppState.eventBus — CustomEvent-based pub/sub</div>
+    <p>Components communicate by emitting and listening to events on <code>AppState.eventBus</code> (a native <code>EventTarget</code>). Use <code>appState.on(event, callback)</code> to subscribe and <code>appState.emit(event, detail)</code> to publish.</p>
+
+    <ul class="event-list">
+      <li><span class="event-name">graphUpdated</span><span>Fired on network load, expand/collapse, or any edit. Detail: <code>{ layoutReset, fitView, preservePins, topologyRevision, reason }</code>. D3Adapter re-renders.</span></li>
+      <li><span class="event-name">graphVisualsUpdated</span><span>Fired when only colors change (no topology change). D3Adapter re-draws node visuals only.</span></li>
+      <li><span class="event-name">clusterExpanded</span><span>Fired when a single cluster is expanded. Detail: <code>{ clusterId, topologyRevision }</code>.</span></li>
+      <li><span class="event-name">clusterCollapsed</span><span>Fired when a single cluster is collapsed. Detail: <code>{ clusterId, topologyRevision }</code>.</span></li>
+      <li><span class="event-name">editUpdated</span><span>Fired after hide/show node or edge operations. Detail: edit stats object (<code>totalProteinCount</code>, <code>visibleProteinCount</code>, etc.).</span></li>
+      <li><span class="event-name">selectionModeChanged</span><span>Fired when export selection mode is toggled. Detail: <code>boolean</code>. D3Adapter enables/disables brush.</span></li>
+      <li><span class="event-name">selectionUpdated</span><span>Fired when the selected node set changes. Detail: <code>Array&lt;nodeId&gt;</code>.</span></li>
+      <li><span class="event-name">nodeHover</span><span>Fired by D3Adapter on mouseover/mousemove/mouseout. Detail: <code>{ nodeId, data, x, y, type }</code>. UniprotTooltipModule listens.</span></li>
+      <li><span class="event-name">viewGraphUpdated</span><span>Fired after <code>AppState.setViewGraph()</code>. Carries edit stats.</span></li>
+    </ul>
+  </section>
+
+  <section class="ref-section" id="arch-db">
+    <h2>Database Schema</h2>
+    <div class="section-sub">SQLite — data/network_viz.db</div>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="code-lang">SQL — nodes table</span></div>
+      <pre><span class="kw">CREATE TABLE</span> nodes (
+  id               <span class="fn">TEXT</span> <span class="kw">PRIMARY KEY</span>,
+  kind             <span class="fn">TEXT</span> <span class="kw">NOT NULL</span>,       <span class="cm">-- always 'protein' (NH nodes never stored)</span>
+  attributes_json  <span class="fn">TEXT</span>,              <span class="cm">-- JSON object; '{}' = placeholder (no attr file row)</span>
+  attribute_source <span class="fn">TEXT</span>               <span class="cm">-- filename that wrote this row's attributes</span>
+);</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="code-lang">SQL — edges table</span></div>
+      <pre><span class="kw">CREATE TABLE</span> edges (
+  id              <span class="fn">TEXT</span> <span class="kw">NOT NULL</span>,         <span class="cm">-- canonical: sorted(node1, node2) joined with |</span>
+  node1           <span class="fn">TEXT</span> <span class="kw">NOT NULL</span>,
+  node2           <span class="fn">TEXT</span> <span class="kw">NOT NULL</span>,
+  weight          <span class="fn">REAL</span>,
+  source          <span class="fn">TEXT</span> <span class="kw">NOT NULL</span>,         <span class="cm">-- source CSV filename</span>
+  attributes_json <span class="fn">TEXT</span>,
+  <span class="kw">PRIMARY KEY</span> (id, source),
+  <span class="kw">FOREIGN KEY</span>(node1) <span class="kw">REFERENCES</span> nodes(id),
+  <span class="kw">FOREIGN KEY</span>(node2) <span class="kw">REFERENCES</span> nodes(id)
+);</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="code-lang">SQL — network_nodes table</span></div>
+      <pre><span class="kw">CREATE TABLE</span> network_nodes (
+  source   <span class="fn">TEXT</span> <span class="kw">NOT NULL</span>,   <span class="cm">-- source CSV filename</span>
+  node_id  <span class="fn">TEXT</span> <span class="kw">NOT NULL</span>,   <span class="cm">-- node that belongs to this network</span>
+  <span class="kw">PRIMARY KEY</span> (source, node_id)
+);</pre>
+    </div>
+
+    <p><code>attribute_source</code> on the nodes table is added via <code>ALTER TABLE</code> migration for databases created before it existed. The column enables correct reconcile (stale legacy rows with <code>attribute_source = NULL</code> are cleared on next ingestion).</p>
+
+    <div class="callout info">
+      <div class="callout-label">Why network_nodes?</div>
+      <p>Isolated nodes (present in a network but with no edges) cannot be discovered from the edges table alone. The <code>network_nodes</code> table records every node explicitly registered to a source, regardless of degree.</p>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       Testing
+  ════════════════════════════════════════════════════════════════ -->
+  <section class="ref-section" id="testing">
+    <h2>Running Tests</h2>
+    <div class="section-sub">Jest — backend only</div>
+
+    <div class="code-block">
+      <div class="code-block-header"><span class="code-lang">Shell</span></div>
+      <pre><span class="cm"># Run the full backend test suite</span>
+<span class="fn">npm</span> test
+
+<span class="cm"># Equivalent</span>
+<span class="fn">npm</span> run test:backend</pre>
+    </div>
+
+    <p>All tests use Jest. Integration tests use a real in-memory SQLite database — no mocks for database behaviour. Supertest is used for HTTP route tests.</p>
+
+    <table class="config-table">
+      <thead><tr><th>Suite</th><th>Type</th><th>What it covers</th></tr></thead>
+      <tbody>
+        <tr><td>ingestData.test.js</td><td>Unit</td><td>validateNodeAttributeFiles, reconcile SQL shape, argument validation, file-watcher attr-file handling</td></tr>
+        <tr><td>ingestData.integration.test.js</td><td>Integration</td><td>Legacy NULL-source rows, protein removal, protein movement, no NH rows written, rollback on failure, stale edge removal, FK enforcement, mid-write rollback, malformed row skipping</td></tr>
+        <tr><td>networkController.integration.test.js</td><td>Integration</td><td>Unknown source → 404, correct node/edge shape, searchProteins network scoping, NH_ID extraction</td></tr>
+        <tr><td>routes/networks.test.js</td><td>Integration (Supertest)</td><td>GET /api/networks, GET /api/networks/:filename, error mapping</td></tr>
+        <tr><td>server.test.js / server_startup.test.js</td><td>Unit/Integration</td><td>Server starts cleanly, routes configured, health check, 404 for unknown routes</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Test Fixtures (<code>backend/tests/fixtures/</code>)</h3>
+    <table class="config-table">
+      <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>test-e.nodes.attr</td><td>3 proteins: node1 (NH001), node2 (NH002), node3 (NH003)</td></tr>
+        <tr><td>test-p.nodes.attr</td><td>2 proteins: node4 (NH101), node5 (NH102)</td></tr>
+        <tr><td>test-dup-within.nodes.attr</td><td>DUPNODE1 appears twice — tests within-file duplicate detection</td></tr>
+        <tr><td>test-dup-cross-a/b.nodes.attr</td><td>CROSSNODE2 appears in both — tests cross-file duplicate detection</td></tr>
+        <tr><td>test-network.csv</td><td>5 edges: node1-node2, node1-node3, node2-node4, node3-node4, node1-node5</td></tr>
+        <tr><td>malformed.csv</td><td>Rows with &lt;3 columns, blank IDs, non-numeric weights, partial-numeric weights (<code>1abc</code>), infinite weights — all must be skipped</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr class="divider">
+
+  <div style="text-align:center; color:var(--muted); font-family:var(--mono); font-size:12px; line-height:2;">
+    Network Visualization Platform · Help<br>
+    <a href="Tutorial.html" style="color:var(--accent); text-decoration:none;">← Back to Tutorial</a>
+  </div>
+
+</main>
+
+<script>
+  function toggleEndpoint(header) {
+    header.classList.toggle('open');
+    const body = header.nextElementSibling;
+    if (body) body.classList.toggle('open');
+  }
+
+  // Active sidebar link on scroll
+  const sections = document.querySelectorAll('.ref-section[id]');
+  const links    = document.querySelectorAll('.sidebar nav a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        links.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -60% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
