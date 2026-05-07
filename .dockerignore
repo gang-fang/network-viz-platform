@@ -1,0 +1,45 @@
+# Version control
+.git
+.gitignore
+
+# Installed dependencies and package-manager output
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Tests and coverage are kept in GitHub but not shipped in the runtime image.
+backend/tests
+coverage
+frontend/coverage
+backend/coverage
+.nyc_output
+.jest-cache
+
+# Local data and generated runtime output should be mounted, not baked in.
+data
+logs
+backend/logs
+*.log
+
+# Developer-only documentation and local tooling state
+Doc
+.claude
+.cursor
+.vscode
+.idea
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# OS/editor artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Local backup files
+*.kp
