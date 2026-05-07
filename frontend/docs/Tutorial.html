@@ -562,6 +562,12 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
     text-decoration: none;
   }
   .footer-note a:hover { color: var(--accent); }
+  .chatbot-training-message {
+    margin-top: 8px;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
   strong { color: var(--heading); font-weight: 600; }
   /* ── Scrollbar ───────────────────────────────────────────────── */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -628,7 +634,7 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
 
 
 
-          SJI</a> <a href="Help.html">→ Help</a> </div>
+          SJI</a> <a href="#" class="help-placeholder">→ Help</a> </div>
     </aside>
     <!-- ── Main ─────────────────────────────────────────────────────── -->
     <main class="content">
@@ -1719,7 +1725,8 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
       <hr class="divider">
       <div class="footer-note"> Network Visualization Platform ·
         Tutorial Complete<br>
-        <a href="Help.html">→ Continue to the Help →</a> </div>
+        <a href="#" class="help-placeholder">→ Continue to the Help →</a> </div>
     </main>
+    <script src="help-placeholder.js"></script>
   </body>
 </html>

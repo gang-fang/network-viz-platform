@@ -41,5 +41,6 @@ Thumbs.db
 *.swp
 *.swo
 
-# Local backup files
-*.kp
+# Local tool build outputs are rebuilt inside Docker.
+tools/bin
+tools/preprocessing/topN_cpp/build

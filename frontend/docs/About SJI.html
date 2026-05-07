@@ -135,6 +135,12 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
     transition: color 0.15s;
   }
   .sidebar-footer a:hover { color: var(--accent2); }
+  .chatbot-training-message {
+    margin-top: 8px;
+    color: var(--accent3);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
 
   /* ── Content ─────────────────────────────────────────────────── */
   .content {
@@ -411,11 +417,11 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
           href="#scale-and-interpretation">Scale &amp; Interpretation</a>
         <a href="#references">References</a> </nav>
       <div class="sidebar-section">Documentation</div>
-      <nav> <a href="Tutorial.html">Tutorial</a> <a href="Help.html">Help</a>
+      <nav> <a href="Tutorial.html">Tutorial</a> <a href="#" class="help-placeholder">Help</a>
       </nav>
       <div class="sidebar-footer"> <a href="/index.html"
           style="color:var(--accent3);">← Home</a> <a
-          href="Tutorial.html">→ Tutorial</a> <a href="Help.html">→
+          href="Tutorial.html">→ Tutorial</a> <a href="#" class="help-placeholder">→
           Help</a> </div>
     </aside>
     <!-- ── Main ─────────────────────────────────────────────────────── -->
@@ -773,6 +779,8 @@ href="file:///Users/gangfang/Nodes/network-viz-platform/frontend/docs/About%20SJ
   }, { rootMargin: '-15% 0px -65% 0px' });
 
   sections.forEach(s => observer.observe(s));
+
 </script>
+    <script src="help-placeholder.js"></script>
   </body>
 </html>

@@ -1,5 +1,6 @@
 #include "speedup.h"
 #include <cctype>
+#include <cstddef>
 
 // Define the global substitution matrix
 int substitutionMatrix[26][26];

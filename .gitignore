@@ -35,8 +35,6 @@ backend/coverage/
 .jest-cache/
 tools/bin/
 tools/preprocessing/topN_cpp/build/
-tools/preprocessing/topN_cpp/src/*.o
-tools/preprocessing/topN_cpp/src/topn
 
 # Build and cache output
 dist/
