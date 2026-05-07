@@ -45,12 +45,6 @@ const config = {
   taxonNamesPath: process.env.TAXON_NAMES_PATH || path.join(__dirname, '../../data/NCBI_txID/NCBI_txID.csv'),
   taxonTreePath:  process.env.TAXON_TREE_PATH  || path.join(__dirname, '../../data/NCBI_txID/commontree.txt'),
 
-  // Explicit list of .nodes.attr filenames to ingest (required for attribute ingestion)
-  // e.g. NODE_ATTRIBUTE_FILES=e.nodes.attr,p.nodes.attr
-  nodeAttributeFiles: process.env.NODE_ATTRIBUTE_FILES
-    ? process.env.NODE_ATTRIBUTE_FILES.split(',').map(f => f.trim()).filter(Boolean)
-    : [],
-
   // File watching (set FILE_WATCH_ENABLED=false to disable)
   fileWatchEnabled: process.env.FILE_WATCH_ENABLED !== 'false',
 
@@ -68,7 +62,7 @@ const config = {
   // Subnetwork extraction
   subnetwork: {
     pythonCommand:    process.env.PYTHON_COMMAND               || 'python3',
-    scriptPath:       process.env.SUBNETWORK_SCRIPT_PATH       || path.join(__dirname, '../../tools/extract_subnetwork.py'),
+    scriptPath:       process.env.SUBNETWORK_SCRIPT_PATH       || path.join(__dirname, '../../tools/runtime/extract_subnetwork.py'),
     jobTempPath:      process.env.SUBNETWORK_JOB_TEMP_PATH     || path.join(__dirname, '../../data/tmp/subnetwork-jobs'),
     maxSeedCount:     parseInt(process.env.SUBNETWORK_MAX_SEEDS,          10) || 10,
     maxInputLength:   parseInt(process.env.SUBNETWORK_MAX_INPUT_LENGTH,   10) || 2000,

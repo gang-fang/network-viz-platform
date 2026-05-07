@@ -9,17 +9,33 @@
 </head>
 
 <body>
+    <nav class="doc-links">
+        <div class="doc-links-row">
+            <a class="doc-link" href="/docs/About%20SJI.html" title="What the metric measures &amp; the science behind it">
+                <span class="doc-link-title">About SJI</span>
+            </a>
+            <a class="doc-link" href="/docs/Help.html" title="API, configuration &amp; architecture">
+                <span class="doc-link-title">Help</span>
+            </a>
+            <a class="doc-link" href="/docs/Tutorial.html" title="Step-by-step walkthrough of the platform">
+                <span class="doc-link-title">Tutorial</span>
+            </a>
+        </div>
+    </nav>
+
     <main class="landing-shell">
-        <section class="hero-panel">
-            <p class="eyebrow">SJI Network Explorer</p>
-            <h1 class="hero-title-compact">Extract a focused subnetwork from the SJI network, select proteins of interest, and perform downstream analyses.</h1>
-            <p class="hero-copy">
-                Enter seed proteins of interest and provide a subnetwork name. The server will then generate the corresponding network CSV file.
-            </p>
-            <div class="hero-actions">
-                <a class="ghost-link" href="/viewer.html">Open existing networks in viewer</a>
-            </div>
-        </section>
+        <div class="hero-column">
+            <section class="hero-panel">
+                <p class="eyebrow">SJI Network Explorer</p>
+                <h1 class="hero-title-compact">Extract a focused subnetwork from the SJI network, select proteins of interest, and perform downstream analyses.</h1>
+                <p class="hero-copy">
+                    Enter seed proteins of interest and provide a subnetwork name. The server will then generate the corresponding network CSV file.
+                </p>
+                <div class="hero-actions">
+                    <a class="ghost-link" href="/viewer.html">Open existing networks in viewer</a>
+                </div>
+            </section>
+        </div>
 
         <section class="form-panel">
             <form id="subnetwork-form" novalidate>

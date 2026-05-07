@@ -152,7 +152,6 @@ describe('ingestNodeAttributes reconcile step', () => {
 
         jest.mock('../../config/config', () => ({
             nodeAttributesPath: require('path').join(__dirname, '../fixtures'),
-            nodeAttributeFiles: ['test-e.nodes.attr'],
         }));
     });
 
@@ -192,8 +191,76 @@ describe('ingestNodeAttributes argument validation', () => {
         await expect(ingestNodeAttributes(undefined)).rejects.toThrow(/No attribute files specified/);
     });
 
-    test('throws with a message that mentions NODE_ATTRIBUTE_FILES', async () => {
-        await expect(ingestNodeAttributes([])).rejects.toThrow(/NODE_ATTRIBUTE_FILES/);
+    test('throws with a message that mentions the node attributes directory', async () => {
+        await expect(ingestNodeAttributes([])).rejects.toThrow(/node attributes directory/);
+    });
+});
+
+describe('syncMissingNetworks', () => {
+    let syncMissingNetworks;
+    let mockIngestNetworks;
+    let mockDbAll;
+    let mockReadDirSync;
+
+    beforeEach(() => {
+        jest.resetModules();
+
+        mockIngestNetworks = jest.fn().mockResolvedValue(undefined);
+        mockDbAll = jest.fn((sql, callback) => callback(null, [{ source: 'already_ingested.csv' }]));
+        mockReadDirSync = jest.fn(() => ['already_ingested.csv', 'extra_test.csv', 'notes.txt']);
+
+        jest.mock('fs', () => {
+            const real = jest.requireActual('fs');
+            return {
+                ...real,
+                existsSync: jest.fn(() => true),
+                readdirSync: mockReadDirSync,
+            };
+        });
+
+        jest.mock('../../config/database', () => ({
+            run: jest.fn(),
+            get: jest.fn(),
+            all: mockDbAll,
+            prepare: jest.fn(() => ({ run: jest.fn(), finalize: jest.fn() })),
+            serialize: jest.fn(cb => cb()),
+        }));
+
+        jest.mock('util', () => {
+            const real = jest.requireActual('util');
+            return {
+                ...real,
+                promisify: (fn) => (...args) => new Promise((resolve, reject) => {
+                    fn(...args, (err, result) => err ? reject(err) : resolve(result));
+                }),
+            };
+        });
+
+        jest.mock('../../utils/logger', () => ({
+            info: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+            debug: jest.fn(),
+        }));
+
+        jest.mock('../../config/config', () => ({
+            dataPath: '/mock/networks',
+            nodeAttributesPath: '/mock/nodes_attr',
+        }));
+
+        syncMissingNetworks = require('../../scripts/ingestData').syncMissingNetworks;
+    });
+
+    afterEach(() => {
+        jest.resetModules();
+    });
+
+    test('ingests csv files that exist on disk but are missing from the database', async () => {
+        const missing = await syncMissingNetworks(mockIngestNetworks);
+
+        expect(missing).toEqual(['extra_test.csv']);
+        expect(mockIngestNetworks).toHaveBeenCalledTimes(1);
+        expect(mockIngestNetworks).toHaveBeenCalledWith('extra_test.csv');
     });
 });
 
@@ -203,6 +270,7 @@ describe('FileWatcher event handling', () => {
     let FileWatcher;
     let mockIngestNodeAttributes;
     let mockIngestNetworks;
+    let mockResolveSingleNodeAttributeFile;
     let mockInvalidateSpeciesTree;
     let mockLogger;
     let mockDbRun;
@@ -212,6 +280,7 @@ describe('FileWatcher event handling', () => {
 
         mockIngestNodeAttributes = jest.fn().mockResolvedValue(undefined);
         mockIngestNetworks = jest.fn().mockResolvedValue(undefined);
+        mockResolveSingleNodeAttributeFile = jest.fn(() => ['e.nodes.attr']);
         mockInvalidateSpeciesTree = jest.fn();
         mockDbRun = jest.fn((sql, params, callback) => {
             if (typeof params === 'function') callback = params;
@@ -222,6 +291,7 @@ describe('FileWatcher event handling', () => {
         jest.mock('../../scripts/ingestData', () => ({
             ingestNodeAttributes: mockIngestNodeAttributes,
             ingestNetworks: mockIngestNetworks,
+            resolveSingleNodeAttributeFile: mockResolveSingleNodeAttributeFile,
         }));
 
         jest.mock('../../routes/species-tree', () => ({
@@ -249,7 +319,6 @@ describe('FileWatcher event handling', () => {
             nodeAttributesPath: '/mock/nodes_attr',
             taxonTreePath: '/mock/taxonomy/commontree.txt',
             taxonNamesPath: '/mock/taxonomy/NCBI_txID.csv',
-            nodeAttributeFiles: ['e.nodes.attr'],
             networkEdit: {
                 watcherSuppressMs: 30000,
                 watcherSuppressEvents: 3,
@@ -270,15 +339,24 @@ describe('FileWatcher event handling', () => {
         jest.resetModules();
     });
 
-    test('ignores a .nodes.attr file that is not in NODE_ATTRIBUTE_FILES', async () => {
+    test('rescans and re-ingests the single discovered .nodes.attr file on attr changes', async () => {
         await FileWatcher.handleFileChange('/mock/nodes_attr/p.nodes.attr', 'added');
-        expect(mockIngestNodeAttributes).not.toHaveBeenCalled();
-    });
 
-    test('triggers full configured-set re-ingestion when a configured file changes', async () => {
-        await FileWatcher.handleFileChange('/mock/nodes_attr/e.nodes.attr', 'changed');
+        expect(mockResolveSingleNodeAttributeFile).toHaveBeenCalledTimes(1);
         expect(mockIngestNodeAttributes).toHaveBeenCalledWith(['e.nodes.attr']);
         expect(mockInvalidateSpeciesTree).toHaveBeenCalledTimes(1);
+    });
+
+    test('logs and skips attr re-ingestion when the attr directory is invalid', async () => {
+        mockResolveSingleNodeAttributeFile.mockImplementationOnce(() => {
+            throw new Error('Expected exactly one .nodes.attr file');
+        });
+
+        await FileWatcher.handleFileChange('/mock/nodes_attr/e.nodes.attr', 'changed');
+
+        expect(mockIngestNodeAttributes).not.toHaveBeenCalled();
+        expect(mockInvalidateSpeciesTree).not.toHaveBeenCalled();
+        expect(mockLogger.error).toHaveBeenCalled();
     });
 
     test('suppresses watcher ingestion for internally saved edited network files', async () => {

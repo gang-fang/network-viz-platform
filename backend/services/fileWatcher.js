@@ -2,7 +2,7 @@ const chokidar = require('chokidar');
 const path = require('path');
 const logger = require('../utils/logger');
 const config = require('../config/config');
-const { ingestNodeAttributes, ingestNetworks } = require('../scripts/ingestData');
+const { ingestNodeAttributes, ingestNetworks, resolveSingleNodeAttributeFile } = require('../scripts/ingestData');
 const speciesTreeRoute = require('../routes/species-tree');
 
 const NETWORKS_DIR = config.dataPath;
@@ -103,20 +103,11 @@ class FileWatcher {
                 speciesTreeRoute.invalidateCache();
                 logger.info(`Successfully updated network database for ${filename}`);
             } else if (filename.endsWith('.nodes.attr')) {
-                const configured = config.nodeAttributeFiles;
-                if (!configured.includes(filename)) {
-                    logger.info(
-                        `Ignoring attr file "${filename}" — not listed in NODE_ATTRIBUTE_FILES ` +
-                        `(configured: [${configured.join(', ')}])`
-                    );
-                    return;
-                }
-                // Re-ingest the complete configured set so the preflight can validate
-                // the full selection, not just the changed file in isolation.
-                logger.info(`Triggering attribute re-ingestion for configured set: [${configured.join(', ')}]`);
-                await ingestNodeAttributes(configured);
+                const files = resolveSingleNodeAttributeFile();
+                logger.info(`Triggering attribute re-ingestion for ${files[0]}`);
+                await ingestNodeAttributes(files);
                 speciesTreeRoute.invalidateCache();
-                logger.info(`Successfully updated attribute database for configured set`);
+                logger.info(`Successfully updated attribute database for ${files[0]}`);
             }
         } catch (error) {
             logger.error(`Error processing ${filename}:`, error);
@@ -149,14 +140,14 @@ class FileWatcher {
                     logger.error(`Error deleting network ${filename}:`, err);
                 }
             } else if (filename.endsWith('.nodes.attr')) {
-                const configured = config.nodeAttributeFiles;
-                if (configured.includes(filename)) {
-                    logger.warn(
-                        `Configured attr file "${filename}" was removed from disk. ` +
-                        `Remove it from NODE_ATTRIBUTE_FILES and restart, or restore the file.`
-                    );
-                } else {
-                    logger.info(`Removed attr file "${filename}" was not in NODE_ATTRIBUTE_FILES — no action needed.`);
+                try {
+                    const files = resolveSingleNodeAttributeFile();
+                    logger.info(`Attribute file removed; re-ingesting remaining file ${files[0]}`);
+                    await ingestNodeAttributes(files);
+                    speciesTreeRoute.invalidateCache();
+                    logger.info(`Successfully updated attribute database for ${files[0]}`);
+                } catch (err) {
+                    logger.error(`Node attribute folder is invalid after removing ${filename}: ${err.message}`);
                 }
             }
         } catch (error) {

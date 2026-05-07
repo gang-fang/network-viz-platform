@@ -33,7 +33,7 @@ jest.mock('../../config/config', () => ({
   indexesPath: require('path').join(mockTestRoot, 'data/indexes'),
   subnetwork: {
     pythonCommand: 'python3',
-    scriptPath: require('path').join(mockTestRoot, 'tools/extract_subnetwork.py'),
+    scriptPath: require('path').join(mockTestRoot, 'tools/runtime/extract_subnetwork.py'),
     jobTempPath: require('path').join(mockTestRoot, 'data/tmp/subnetwork-jobs'),
     maxSeedCount: 10,
     maxInputLength: 2000,

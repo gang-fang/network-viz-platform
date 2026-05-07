@@ -80,7 +80,6 @@ describe('Attribute ingestion — integration tests (real SQLite)', () => {
         jest.doMock('../../config/database', () => testDb);
         jest.doMock('../../config/config', () => ({
             nodeAttributesPath: FIXTURES,
-            nodeAttributeFiles: [],
         }));
 
         ({ ingestNodeAttributes } = require('../../scripts/ingestData'));
@@ -255,7 +254,6 @@ describe('ingestNetworks — integration tests (real SQLite)', () => {
         jest.doMock('../../config/config', () => ({
             dataPath: FIXTURES,
             nodeAttributesPath: FIXTURES,
-            nodeAttributeFiles: [],
         }));
 
         ({ ingestNetworks } = require('../../scripts/ingestData'));

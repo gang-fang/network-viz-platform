@@ -22,8 +22,8 @@ The platform uses a clean separation between a backend data pipeline and a front
 
 ### Backend
 
-- **`scripts/ingestData.js`** — Data ingestion pipeline. Reads `.nodes.attr` files and network CSVs into SQLite. Node attribute ingestion is transactional: reconcile (clear all non-empty protein rows) then rewrite from the current file set.
-- **`services/fileWatcher.js`** — Chokidar-based hot-reload watcher. Re-triggers attribute ingestion when a configured `.nodes.attr` file changes.
+- **`scripts/ingestData.js`** — Data ingestion pipeline. Reads the single `.nodes.attr` file and network CSVs into SQLite. Node attribute ingestion is transactional: reconcile (clear all non-empty protein rows) then rewrite from the current attribute file.
+- **`services/fileWatcher.js`** — Chokidar-based hot-reload watcher. Re-triggers attribute ingestion when the `.nodes.attr` file changes.
 - **`controllers/networkController.js`** — Query layer over the SQLite DB; exposes network lists, node/edge data with attributes, protein search by accession or species.
 - **`config/database.js`** — Opens the SQLite connection and initialises the schema (`nodes`, `edges` tables; `attribute_source` migration).
 
@@ -32,7 +32,7 @@ The platform uses a clean separation between a backend data pipeline and a front
 - **Attribute-based clustering**: Nodes are grouped by `NH_ID`. Clusters can be expanded/collapsed individually or in bulk.
 - **Module system**: Feature modules (species selector, UniProt tooltip, search highlight, export) are loaded declaratively via `config/modules.js` and can be added or removed without touching core code.
 - **Transactional ingestion**: Node attributes are ingested atomically — reconcile clears all existing protein attribute rows, then rewrites from the current file set. A mid-write failure rolls back to the previous state.
-- **Hot-reload**: `fileWatcher.js` detects changes to configured `.nodes.attr` files and re-triggers ingestion automatically.
+- **Hot-reload**: `fileWatcher.js` detects changes to the single `.nodes.attr` file and re-triggers ingestion automatically.
 
 ## Development
 
@@ -67,7 +67,6 @@ backend/
 │   └── uniprot.js               # UniProt API endpoints
 ├── scripts/
 │   ├── ingestData.js            # Data ingestion pipeline
-│   └── configureAttrs.js        # Interactive NODE_ATTRIBUTE_FILES helper
 ├── services/
 │   └── fileWatcher.js           # Hot-reload watcher for data files
 └── entrypoint.js                # Startup mode router
@@ -85,16 +84,13 @@ npm install
 cp .env.example .env
 # Edit .env as needed (PORT, DB_PATH, DATA_PATH, etc.)
 
-# 4. Select which .nodes.attr files to load
-npm run configure:attrs         # interactive prompt — updates NODE_ATTRIBUTE_FILES in .env
-
-# 5. Ingest data files into the database
+# 4. Ingest data files into the database
 npm run ingest
 
-# 6. Start the server
+# 5. Start the server
 npm start
 
-# Or combine steps 5 and 6:
+# Or combine steps 4 and 5:
 npm run start:ingest-and-serve
 ```
 
@@ -112,7 +108,7 @@ All paths are configurable via environment variables (see Configuration below).
 |---|---|---|
 | `data/networks/` | `DATA_PATH` | `*.csv` — one edge per line: `node1,node2,weight` |
 | `data/indexes/` | `INDEXES_PATH` | Preprocessed graph index triplets such as `eu.adj.bin`, `eu.adj.index.bin`, `eu.node_ids.tsv` |
-| `data/nodes_attr/` | `NODE_ATTRIBUTES_PATH` | `*.nodes.attr` — comma-separated, with a header row: `node_id`, `NCBI_txID`, `NH_ID`, `NH_Size`, … |
+| `data/nodes_attr/` | `NODE_ATTRIBUTES_PATH` | Exactly one `*.nodes.attr` file — comma-separated, with a header row: `node_id`, `NCBI_txID`, `NH_ID`, `NH_Size`, … |
 | `data/NCBI_txID/NCBI_txID.csv` | `SPECIES_PATH` | Two columns: `ncbi_txid,species_name` |
 
 ### Configuration
@@ -125,11 +121,10 @@ Copy `.env.example` to `.env` and override as needed. Key variables:
 | `DB_PATH` | `./data/network_viz.db` | SQLite file path — point to a volume mount in Docker |
 | `DATA_PATH` | `./data/networks` | Directory containing network CSV files |
 | `INDEXES_PATH` | `./data/indexes` | Directory containing preprocessed extraction indexes |
-| `NODE_ATTRIBUTES_PATH` | `./data/nodes_attr` | Directory containing `.nodes.attr` files |
-| `NODE_ATTRIBUTE_FILES` | *(required)* | Comma-separated list of `.nodes.attr` filenames to ingest, e.g. `e.nodes.attr,p.nodes.attr` |
+| `NODE_ATTRIBUTES_PATH` | `./data/nodes_attr` | Directory containing exactly one `.nodes.attr` file |
 | `SPECIES_PATH` | `./data/NCBI_txID/NCBI_txID.csv` | NCBI taxonomy mapping CSV |
 | `PYTHON_COMMAND` | `python3` | Python executable used for subnetwork extraction |
-| `SUBNETWORK_SCRIPT_PATH` | `./tools/extract_subnetwork.py` | Extraction CLI path |
+| `SUBNETWORK_SCRIPT_PATH` | `./tools/runtime/extract_subnetwork.py` | Extraction CLI path |
 | `SUBNETWORK_JOB_TEMP_PATH` | `./data/tmp/subnetwork-jobs` | Controlled temp directory for extraction jobs |
 | `SUBNETWORK_TIMEOUT_MS` | `120000` | Extraction timeout in milliseconds |
 | `FILE_WATCH_ENABLED` | `true` | Set to `false` to disable hot-reload of data files |
@@ -146,7 +141,7 @@ Copy `.env.example` to `.env` and override as needed. Key variables:
 | `POST /api/networks/search` | Find nodes by UniProt accession |
 | `POST /api/networks/search-species` | Find nodes by NCBI taxonomy ID |
 | `GET /api/subnetworks/limits` | Return client-facing extraction limits and available discovered indexes |
-| `POST /api/subnetworks` | Run `tools/extract_subnetwork.py`, write a generated CSV to `data/networks`, and return a `/viewer.html?network=...` link |
+| `POST /api/subnetworks` | Run `tools/runtime/extract_subnetwork.py`, write a generated CSV to `data/networks`, and return a `/viewer.html?network=...` link |
 | `GET /api/species-names` | NCBI taxonomy ID → species name mappings |
 | `GET /api/uniprot/:accession` | UniProt protein data |
 

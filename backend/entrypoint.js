@@ -21,8 +21,12 @@ async function runIngest() {
 }
 
 async function runServe() {
+    let syncMissingNetworksAfterStart = null;
+    const { resolveSingleNodeAttributeFile } = require('./scripts/ingestData');
+    resolveSingleNodeAttributeFile();
+
     if (config.fileWatchEnabled) {
-        const { cleanupOrphans } = require('./scripts/ingestData');
+        const { cleanupOrphans, syncMissingNetworks } = require('./scripts/ingestData');
         const fileWatcher = require('./services/fileWatcher');
         try {
             await cleanupOrphans();
@@ -30,10 +34,17 @@ async function runServe() {
             logger.warn(`Orphan cleanup failed, continuing: ${err.message}`);
         }
         fileWatcher.initialize();
+        syncMissingNetworksAfterStart = syncMissingNetworks;
     } else {
         logger.info('File watching disabled (FILE_WATCH_ENABLED=false)');
     }
     require('./server');
+
+    if (syncMissingNetworksAfterStart) {
+        syncMissingNetworksAfterStart().catch(err => {
+            logger.warn(`Startup missing-network sync failed, continuing: ${err.message}`);
+        });
+    }
 }
 
 async function main() {

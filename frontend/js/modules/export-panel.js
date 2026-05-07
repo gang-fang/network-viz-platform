@@ -174,7 +174,7 @@ const ExportPanelModule = {
 
         const instruction = document.createElement('p');
         instruction.className = 'export-link-sections-help';
-        instruction.textContent = 'Select a section below to update the links above to the corresponding UniProt section. Select "Function" to restore the main entry link. Note that some UniProt entries may not contain annotations for the selected section.';
+        instruction.textContent = 'Select a section below to update the links above so that they point to the corresponding UniProt section. Select Function to restore the main entry link. Note that some UniProt entries may not contain annotations for the selected section. If no link is shown, the entry is not available in UniProt.';
         container.appendChild(instruction);
 
         this.uniprotSectionOptions.forEach(option => {

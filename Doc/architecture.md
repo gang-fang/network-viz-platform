@@ -31,9 +31,9 @@ Two independent pipelines share a single module:
 
 **Network ingestion** (`ingestNetworks`): reads `*.csv` files from `DATA_PATH` and writes edges + placeholder nodes into SQLite. Format: `node1,node2,weight` per line, no header.
 
-**Attribute ingestion** (`ingestNodeAttributes`): reads the files listed in `NODE_ATTRIBUTE_FILES` from `NODE_ATTRIBUTES_PATH`. The pipeline is:
+**Attribute ingestion** (`ingestNodeAttributes`): reads the single `.nodes.attr` file from `NODE_ATTRIBUTES_PATH`. Startup fails with a clear error if the directory contains zero or multiple `.nodes.attr` files. The pipeline is:
 
-1. **Preflight** (`validateNodeAttributeFiles`) — scans all selected files and rejects the run if any UniProt AC appears more than once across the set.
+1. **Preflight** (`validateNodeAttributeFiles`) — validates the header and scans the attribute file, rejecting the run if any UniProt AC appears more than once.
 2. **Reconcile** — inside a single transaction, clears `attributes_json` and `attribute_source` on every protein row that has non-empty attributes. This ensures removed or moved proteins don't carry stale data.
 3. **Write** — re-inserts attributes from each file. Existing `{}` placeholder rows (from network ingestion) are updated in place; new proteins get `INSERT`.
 4. **Commit or rollback** — a mid-write failure rolls back the entire transaction, including the reconcile, leaving the DB in its prior state.
@@ -46,8 +46,7 @@ Chokidar watches `DATA_PATH` and `NODE_ATTRIBUTES_PATH`:
 
 - **`.csv` added/changed** → `ingestNetworks(filename)` for that file only.
 - **`.csv` deleted** → edges for that source removed from DB.
-- **`.nodes.attr` changed** → if the filename is in `NODE_ATTRIBUTE_FILES`, re-runs the full `ingestNodeAttributes` for the complete configured set (preflight requires the full set).
-- **`.nodes.attr` not in `NODE_ATTRIBUTE_FILES`** → ignored with a log message.
+- **`.nodes.attr` added/changed/deleted** → rescans `NODE_ATTRIBUTES_PATH`; if exactly one `.nodes.attr` file is present, re-runs `ingestNodeAttributes` for that file. If zero or multiple files are present, logs a clear error and keeps the previous DB state.
 
 ### Database schema (`backend/config/database.js`)
 
@@ -140,8 +139,7 @@ backend/
 │   ├── species.js           # Species name endpoint
 │   └── uniprot.js           # UniProt endpoint
 ├── scripts/
-│   ├── ingestData.js        # Ingestion pipeline
-│   └── configureAttrs.js    # Interactive NODE_ATTRIBUTE_FILES helper
+│   └── ingestData.js        # Ingestion pipeline
 ├── services/
 │   └── fileWatcher.js       # Chokidar hot-reload watcher
 └── entrypoint.js            # Startup mode router
@@ -170,7 +168,7 @@ frontend/
 ## Key design principles
 
 1. **Transactional ingestion** — attribute ingestion is all-or-nothing. Partial writes never persist.
-2. **Explicit file selection** — `NODE_ATTRIBUTE_FILES` is required; the system never silently ingests whatever it finds.
+2. **Single attribute source** — exactly one `.nodes.attr` file is required, so the global protein metadata source is unambiguous.
 3. **Provenance tracking** — `attribute_source` records which file wrote each protein's attributes, enabling correct reconcile and conflict detection.
 4. **NH nodes are frontend-only** — cluster (NH) nodes are derived at render time by `GraphView` from protein `NH_ID` attributes; they are never stored in the database.
 5. **Module isolation** — frontend features are self-contained modules with no cross-dependencies; adding or removing one does not affect others.

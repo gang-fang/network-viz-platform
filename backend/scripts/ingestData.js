@@ -11,12 +11,14 @@ const NETWORKS_DIR = config.dataPath;
 const BATCH_SIZE = 10000;
 
 const ATTR_COLUMNS = ['node_id', 'NCBI_txID', 'NH_ID', 'NH_Size', 'reserved1', 'reserved2', 'reserved3', 'reserved4', 'reserved5'];
+const REQUIRED_ATTR_HEADER_PREFIX = ['node_id', 'NCBI_txID', 'NH_ID', 'NH_Size'];
 let networkIngestQueue = Promise.resolve();
 let networkIngestRunId = 0;
 
 // Promisify DB run
 const dbRun = util.promisify(db.run.bind(db));
 const dbGet = util.promisify(db.get.bind(db));
+const dbAll = util.promisify(db.all.bind(db));
 
 async function getPragmaValue(name) {
     const row = await dbGet(`PRAGMA ${name}`);
@@ -43,13 +45,7 @@ async function ingestData() {
     try {
         logger.info('Starting full data ingestion...');
 
-        const attrFiles = config.nodeAttributeFiles;
-        if (!attrFiles || attrFiles.length === 0) {
-            throw new Error(
-                'NODE_ATTRIBUTE_FILES is not set. Specify which .nodes.attr files to ingest, ' +
-                'e.g. NODE_ATTRIBUTE_FILES=e.nodes.attr,p.nodes.attr'
-            );
-        }
+        const attrFiles = resolveSingleNodeAttributeFile();
 
         previousPragmas = {
             foreign_keys: await getPragmaValue('foreign_keys'),
@@ -84,6 +80,76 @@ async function ingestData() {
     }
 }
 
+function getNodeAttributeFiles() {
+    if (!fs.existsSync(NODES_ATTR_DIR)) {
+        throw new Error(
+            `Node attributes directory not found: ${NODES_ATTR_DIR}. ` +
+            'Create it and place exactly one .nodes.attr file there.'
+        );
+    }
+
+    return fs.readdirSync(NODES_ATTR_DIR)
+        .filter(file => file.endsWith('.nodes.attr'))
+        .sort();
+}
+
+function resolveSingleNodeAttributeFile() {
+    const files = getNodeAttributeFiles();
+
+    if (files.length !== 1) {
+        const found = files.length > 0 ? files.join(', ') : 'none';
+        throw new Error(
+            `Expected exactly one .nodes.attr file in ${NODES_ATTR_DIR}, found ${files.length}: ${found}. ` +
+            'Place exactly one properly formatted .nodes.attr file there and restart.'
+        );
+    }
+
+    return files;
+}
+
+async function readFirstNonEmptyLine(filePath) {
+    return new Promise((resolve, reject) => {
+        const stream = fs.createReadStream(filePath, { encoding: 'utf8' });
+        let buffer = '';
+        let settled = false;
+
+        function finish(value) {
+            if (settled) return;
+            settled = true;
+            resolve(value);
+        }
+
+        stream.on('data', chunk => {
+            buffer += chunk;
+            const lines = buffer.split(/\r?\n/);
+            const completeLines = buffer.endsWith('\n') || buffer.endsWith('\r')
+                ? lines
+                : lines.slice(0, -1);
+            const first = completeLines.find(line => line.trim());
+
+            if (first !== undefined) {
+                stream.destroy();
+                finish(first);
+            }
+        });
+        stream.on('end', () => finish(buffer.split(/\r?\n/).find(line => line.trim()) || ''));
+        stream.on('error', reject);
+    });
+}
+
+async function validateNodeAttributeHeader(filename, filePath) {
+    const headerLine = await readFirstNonEmptyLine(filePath);
+    const columns = headerLine.split(',').map(column => column.trim());
+    const hasRequiredPrefix = REQUIRED_ATTR_HEADER_PREFIX.every((column, index) => columns[index] === column);
+
+    if (!hasRequiredPrefix) {
+        throw new Error(
+            `${filename} has an invalid .nodes.attr header. Expected first columns: ` +
+            REQUIRED_ATTR_HEADER_PREFIX.join(', ')
+        );
+    }
+}
+
 /**
  * Ingest node attributes from an explicit list of .nodes.attr files.
  *
@@ -92,7 +158,7 @@ async function ingestData() {
 async function ingestNodeAttributes(files) {
     if (!files || files.length === 0) {
         throw new Error(
-            'No attribute files specified. Set NODE_ATTRIBUTE_FILES=file1.nodes.attr,file2.nodes.attr ' +
+            'No attribute files specified. Place exactly one .nodes.attr file in the node attributes directory ' +
             'or pass an explicit non-empty file list to ingestNodeAttributes().'
         );
     }
@@ -108,6 +174,7 @@ async function ingestNodeAttributes(files) {
         if (!fs.existsSync(filePath)) {
             throw new Error(`Attribute file not found: ${name} (looked in ${NODES_ATTR_DIR})`);
         }
+        await validateNodeAttributeHeader(name, filePath);
     }
 
     // Preflight: reject if any UniProt AC appears more than once across the selected files
@@ -434,6 +501,31 @@ async function cleanupOrphans() {
     }
 }
 
+async function syncMissingNetworks(ingestFn = ingestNetworks) {
+    if (!fs.existsSync(NETWORKS_DIR)) {
+        logger.warn(`Networks directory not found: ${NETWORKS_DIR}`);
+        return [];
+    }
+
+    const diskFiles = fs.readdirSync(NETWORKS_DIR).filter(f => f.endsWith('.csv'));
+    if (diskFiles.length === 0) return [];
+
+    const rows = await dbAll(`
+        SELECT source FROM edges WHERE source IS NOT NULL
+        UNION
+        SELECT source FROM network_nodes WHERE source IS NOT NULL
+    `);
+    const knownSources = new Set(rows.map(row => row.source));
+    const missingFiles = diskFiles.filter(file => !knownSources.has(file));
+
+    for (const file of missingFiles) {
+        logger.info(`Startup sync: ingesting network missing from database: ${file}`);
+        await ingestFn(file);
+    }
+
+    return missingFiles;
+}
+
 // Run if called directly
 if (require.main === module) {
     ingestData();
@@ -444,6 +536,8 @@ module.exports = {
     ingestNodeAttributes,
     ingestNetworks,
     cleanupOrphans,
+    syncMissingNetworks,
+    resolveSingleNodeAttributeFile,
     validateNodeAttributeFiles,
     restoreIngestPragmas,
 };

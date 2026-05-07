@@ -35,11 +35,11 @@ All tests are backend-only. There are no frontend tests.
 - The reconcile `UPDATE` clears all non-empty protein rows unconditionally (`attributes_json != '{}'`, no per-file filtering)
 
 **Argument validation**
-- Empty array, `null`, `undefined` all throw with a message mentioning `NODE_ATTRIBUTE_FILES`
+- Empty array, `null`, `undefined` all throw with a message mentioning the node attributes directory
 
-**File-watcher attr-file filtering**
-- A `.nodes.attr` file not listed in `NODE_ATTRIBUTE_FILES` is ignored
-- A configured file change triggers re-ingestion of the full configured set
+**File-watcher attr-file handling**
+- A `.nodes.attr` change rescans the attribute directory and re-ingests the single discovered file
+- An invalid attribute directory state logs an error and skips re-ingestion
 
 ### Data ingestion — integration (`ingestData.integration.test.js`)
 
