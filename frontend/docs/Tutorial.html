@@ -608,6 +608,7 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
 
 
 
+
           &amp; Clusters</a> <a href="#highlights">Highlighting Nodes</a>
         <a href="#species">Species Filter</a> <a href="#edit-save">Edit
           and Save Networks</a> </nav>
@@ -622,6 +623,7 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
       </nav>
       <div class="sidebar-footer"> <a href="/index.html"
           class="sidebar-home">← Home</a> <a href="About%20SJI.html">About
+
 
 
 
@@ -687,66 +689,124 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
         <div class="step-header">
           <h2>First-Time Setup (Docker)</h2>
         </div>
-        <p>The platform is distributed as a Docker image. The image
-          includes the web server, the subnetwork extractor, and all
-          required runtime tools, but it does not include the data. Data
-          are provided by mounting a host directory into the container.</p>
+        <p>The SJI Network Explorer is distributed as a Docker image.
+          The image includes the web server, the subnetwork extractor,
+          and all required runtime tools, but it does not include the
+          data. Data are downloaded separately and mounted into the
+          container.</p>
         <ol class="setup-list">
-          <li><strong>Install Docker.</strong> Make sure Docker Desktop
-            (or Docker Engine on Linux) is installed and running. </li>
-          <li><strong>Download the data bundle.</strong> Grab the SJI
-            data archive from the project's release page and unpack it
-            somewhere convenient on your machine — for example <code>~/sji-data/</code>.
-            Inside you should see four folders: <code>networks/</code>,
-            <code>nodes_attr/</code>, <code>indexes/</code>, and <code>NCBI_txID/</code>.
-            Leave the folder names as-is. </li>
-          <li><strong>Pull the image.</strong> In a terminal:
+          <li><strong>Install Docker Desktop.</strong> Install Docker
+            Desktop if it is not already installed:
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Link</span>
+              </div>
+              <pre><code>https://www.docker.com/products/docker-desktop/</code></pre>
+            </div>
+            You may need to create or sign in to a Docker account during
+            installation. After installation, open Docker Desktop and
+            make sure it is running. </li>
+          <li><strong>Pull the Docker image.</strong> Open Terminal and
+            run:
             <div class="code-block">
               <div class="code-block-header"> <span class="code-lang">Shell</span>
               </div>
-              <pre><code>docker pull sji-network-explorer:latest</code></pre>
+              <pre><code>docker pull ghcr.io/gang-fang/sji-network-explorer:latest</code></pre>
             </div>
           </li>
-          <li><strong>Start the container</strong>, mounting your data
-            folder to <code>/data</code> inside the container:
+          <li><strong>Download the data files.</strong> Go to the GitHub
+            release page:
             <div class="code-block">
-              <div class="code-block-header"> <span class="code-lang">Shell
-
-
-
-
-
-
-
-
-
-
-
-
-                  — replace ~/sji-data with your path</span> </div>
-              <pre><code>docker run -d --name sji \
+              <div class="code-block-header"> <span class="code-lang">Link</span>
+              </div>
+              <pre><code>https://github.com/gang-fang/network-viz-platform/releases/tag/qfo-reference-proteomes-data-2026</code></pre>
+            </div>
+            Download all <code>.gz</code> files from the release assets
+            into an <b>empty</b> folder. Also download <code>install_data.sh</code>
+            to the same folder. <b>Your folder should contain the
+              downloaded </b><b><code>.gz</code></b><b> files and </b><b><code>install_data.sh</code></b><b>.
+            </b></li>
+          <li><strong>Decompress and organize the data.</strong> In
+            Terminal, go to the folder containing the downloaded files:
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>cd /path/to/your/downloaded/files</code></pre>
+            </div>
+            Make the installation script executable:
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>chmod 755 install_data.sh</code></pre>
+            </div>
+            Run the script:
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>./install_data.sh</code></pre>
+            </div>
+            This will create a <code>data/</code> folder with the
+            required structure. </li>
+          <li><strong>Start the server.</strong> Stay in the <b>same</b>
+            folder that contains the <code>data/</code> folder, then
+            run:
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>docker run --rm \
+  --name sji-network-explorer \
   -p 3000:3000 \
-  -v ~/sji-data:/data \
-  sji-network-explorer:latest</code></pre>
+  -v "$PWD/data:/app/data" \
+  ghcr.io/gang-fang/sji-network-explorer:latest</code></pre>
+            </div>
+            When the server starts successfully, open Chrome or Firefox
+            and visit <code>http://localhost:3000</code>. Chrome or
+            Firefox is recommended. Safari may be slower when handling
+            large interactive network views. </li>
+          <li><strong>Stop the server.</strong> To stop the server, open
+            another Terminal window and run:
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>docker stop sji-network-explorer</code></pre>
             </div>
           </li>
-          <li><strong>Open the app</strong> in your browser at <code>http://localhost:3000</code>.
-            The first launch ingests the data into an internal database;
-            this can take up to a minute. When it finishes, the landing
-            page in the next section appears. </li>
+          <li><strong>Restart the server.</strong> To restart the
+            server, go back to the folder that contains the <code>data/</code>
+            folder and run:
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>docker run --rm \
+  --name sji-network-explorer \
+  -p 3000:3000 \
+  -v "$PWD/data:/app/data" \
+  ghcr.io/gang-fang/sji-network-explorer:latest</code></pre>
+            </div>
+          </li>
         </ol>
         <div class="callout tip">
-          <div class="callout-label">Tip — Where your data lives</div>
-          <p>Anything inside <code>~/sji-data</code> on your host is
-            what the container reads. Adding a new CSV under <code>~/sji-data/networks/</code>
-            while the container is running makes it available in the
-            viewer automatically — no restart needed. </p>
+          <div class="callout-label">Optional — Shortcut command</div>
+          <p>You can create your own shell alias to start the server
+            more easily:</p>
+          <div class="code-block">
+            <div class="code-block-header"> <span class="code-lang">Shell</span>
+            </div>
+            <pre><code>alias start-sji='docker run --rm --name sji-network-explorer -p 3000:3000 -v "$PWD/data:/app/data" ghcr.io/gang-fang/sji-network-explorer:latest'</code></pre>
+          </div>
+          <p>Then start the server by running:</p>
+          <div class="code-block">
+            <div class="code-block-header"> <span class="code-lang">Shell</span>
+            </div>
+            <pre><code>start-sji</code></pre>
+          </div>
+          <p>Run this shortcut from the folder that contains the <code>data/</code>
+            folder. </p>
         </div>
         <div class="callout warn">
-          <div class="callout-label">Stopping &amp; restarting</div>
-          <p>Use <code>docker stop sji</code> to stop and <code>docker
-              start sji</code> to resume. Your data and any subnetworks
-            you extracted persist in the mounted folder. </p>
+          <div class="callout-label">Browser note</div>
+          <p>Chrome or Firefox is recommended for large interactive
+            network views. Safari may be slower with larger subnetworks.
+          </p>
         </div>
       </section>
       <!-- 02 Landing page tour -->
@@ -808,6 +868,7 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
             <div>&nbsp;<strong>Domain</strong> — select <em>Bacteria</em>
               or <em>Eukaryotes</em> based on where your proteins live.
               This selects the correct pre-built index. See the <b>Advanced
+
 
 
 
@@ -895,8 +956,10 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
 
 
 
+
               Network</strong>. The status line below confirms the
             loaded counts (e.g. <em>"Loaded: 61 nodes, 1364 edges"</em>).
+
 
 
 
@@ -916,6 +979,7 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
             as a new subnetwork.
             <meta charset="utf-8">
             Use <strong>Highlight by Species</strong> and <strong>Clear
+
 
 
 
@@ -963,6 +1027,7 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
           <div class="figure-caption"> <strong>Collapsed view.</strong>
             The three large gray nodes are neighborhoods (NH) — node
             size scales with the number of members. Click the orange <strong>Expand
+
 
 
 
@@ -1026,6 +1091,7 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
           <h2>Highlighting Proteins</h2>
         </div>
         <p>You can color-mark proteins of interest in two ways: by <strong>UniProt
+
 
 
 
@@ -1187,6 +1253,7 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
 
 
 
+
                 Edges Below</span> <code>0.5</code> removes edges with
               SJI below 0.5, while <span class="ui-label">Restore Edges
                 Above</span> <code>0.3</code> can restore previously
@@ -1230,6 +1297,7 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
           exported. Toggle the blue star <span
             class="viewer-icon-inline" aria-label="Select Nodes">★</span>
           button so that it turns gold; this switches the system to <strong>export
+
 
 
 
@@ -1725,7 +1793,8 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
       <hr class="divider">
       <div class="footer-note"> Network Visualization Platform ·
         Tutorial Complete<br>
-        <a href="#" class="help-placeholder">→ Continue to the Help →</a> </div>
+        <a href="#" class="help-placeholder">→ Continue to the Help →</a>
+      </div>
     </main>
     <script src="help-placeholder.js"></script>
   </body>
