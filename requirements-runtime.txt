@@ -1,0 +1,2 @@
+# Runtime extraction dependency used by tools/runtime/extract_subnetwork.py.
+numpy>=1.26

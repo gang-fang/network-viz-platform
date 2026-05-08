@@ -1467,6 +1467,16 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
         <div class="step-header">
           <h2>Build Your Own SJI Network</h2>
         </div>
+        <div class="callout info">
+          <div class="callout-label">Get the source</div>
+          <p>This workflow runs outside the Docker container. Clone the
+            repository to access and edit the pipeline scripts:</p>
+          <div class="code-block">
+            <div class="code-block-header"> <span class="code-lang">Shell</span>
+            </div>
+            <pre><code>git clone https://github.com/gang-fang/network-viz-platform.git</code></pre>
+          </div>
+        </div>
         <p>The package also includes a template workflow for building a
           custom SJI network from a selected set of UniProt reference
           proteomes. The detailed scripts are located in:</p>
@@ -1488,8 +1498,9 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
           <li>
             <div class="bullet">2</div>
             <div><code>02_run_topn_all_vs_all.sh</code> runs
-              all-against-all <code>topN</code> comparisons. The Docker
-              package ships the compiled executable under <code>tools/bin/topn</code>.</div>
+              all-against-all <code>topN</code> comparisons. Build or
+              install the <code>topn</code> executable from the cloned
+              repository before running this step.</div>
           </li>
           <li>
             <div class="bullet">3</div>
@@ -1558,8 +1569,8 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
             input proteome locations, output folders, Python environment
             activation, and script paths such as <code>MAKE_2D</code>,
             <code>SON</code>, <code>SJI_NET</code>, Leiden scripts, <code>CT_ATTR</code>,
-            and <code>PREPROCESS_GRAPH</code>. Supporting tools are
-            shipped under directories such as <code>tools/bin</code>
+            and <code>PREPROCESS_GRAPH</code>. Supporting tools live in
+            the cloned repository under directories such as <code>tools/bin</code>
             and <code>tools/preprocessing</code>, but the analysis data
             directories should point to your own mounted volume or
             working filesystem.</p>
@@ -1588,6 +1599,16 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
         <div class="step-header">
           <h2>Annotate Your Own Proteins</h2>
         </div>
+        <div class="callout info">
+          <div class="callout-label">Get the source</div>
+          <p>This workflow runs outside the Docker container. Clone the
+            repository to access and edit the pipeline scripts:</p>
+          <div class="code-block">
+            <div class="code-block-header"> <span class="code-lang">Shell</span>
+            </div>
+            <pre><code>git clone https://github.com/gang-fang/network-viz-platform.git</code></pre>
+          </div>
+        </div>
         <p>A second workflow lets you attach your own proteins to a
           pre-built SJI network. This is useful when you have proteins
           of interest that are not part of the SJI network and want to
@@ -1614,8 +1635,9 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
             <div class="bullet">1</div>
             <div><code>01_addP_topn_targets.sh</code> runs <code>topN</code>
               from your query protein FASTA against the target reference
-              proteome files. The Docker package ships the compiled
-              executable under <code>tools/bin/topn</code>.</div>
+              proteome files. Build or install the <code>topn</code>
+              executable from the cloned repository before running this
+              step.</div>
           </li>
           <li>
             <div class="bullet">2</div>
@@ -1660,9 +1682,10 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
             <code>QUERY_DIR</code>, <code>SIGNAL_DIR</code>, Python
             environment activation, and script paths such as <code>MAKE_2D</code>,
             <code>SON</code>, and <code>SJI_NET</code>. Supporting
-            tools are shipped under <code>tools/bin</code> and <code>tools/preprocessing</code>,
-            but the input and output directories should point to your
-            own mounted volume or working filesystem.</p>
+            tools live in the cloned repository under <code>tools/bin</code>
+            and <code>tools/preprocessing</code>, but the input and
+            output directories should point to your own mounted volume
+            or working filesystem.</p>
         </div>
         <div class="callout info">
           <div class="callout-label">Use the result</div>
@@ -1676,6 +1699,16 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
       <section id="annotate-your-own-proteome" class="step">
         <div class="step-header">
           <h2>Annotate Your Own Proteome</h2>
+        </div>
+        <div class="callout info">
+          <div class="callout-label">Get the source</div>
+          <p>This workflow runs outside the Docker container. Clone the
+            repository to access and edit the pipeline scripts:</p>
+          <div class="code-block">
+            <div class="code-block-header"> <span class="code-lang">Shell</span>
+            </div>
+            <pre><code>git clone https://github.com/gang-fang/network-viz-platform.git</code></pre>
+          </div>
         </div>
         <p>This workflow lets you attach an entire user-supplied
           proteome to a pre-built SJI network. It is useful when you
@@ -1765,9 +1798,10 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
             <code>OUT_FOLDER</code>, <code>TOPN_OUT</code>, <code>TWO_D_ROOT</code>,
             <code>VENV_ACT</code>, and script paths such as <code>MAKE_2D</code>,
             <code>SON</code>, and <code>SJI_NET</code>. Supporting
-            tools are shipped under <code>tools/bin</code> and <code>tools/preprocessing</code>,
-            but the input and output directories should point to your
-            own mounted volume or working filesystem.</p>
+            tools live in the cloned repository under <code>tools/bin</code>
+            and <code>tools/preprocessing</code>, but the input and
+            output directories should point to your own mounted volume
+            or working filesystem.</p>
         </div>
         <div class="callout info">
           <div class="callout-label">Large-scale runs</div>

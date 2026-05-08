@@ -1,16 +1,5 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20-bookworm-slim AS topn-builder
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential make \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /build
-COPY tools/preprocessing/topN_cpp ./tools/preprocessing/topN_cpp
-RUN make -C tools/preprocessing/topN_cpp
-
-
 FROM node:20-bookworm-slim AS runtime
 
 ENV NODE_ENV=production \
@@ -44,15 +33,14 @@ COPY package*.json ./
 RUN npm ci --omit=dev \
     && npm cache clean --force
 
-COPY requirements.txt ./
+COPY requirements-runtime.txt ./
 RUN python3 -m venv /opt/venv \
     && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
-    && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+    && /opt/venv/bin/pip install --no-cache-dir -r requirements-runtime.txt
 
 COPY backend ./backend
 COPY frontend ./frontend
-COPY tools ./tools
-COPY --from=topn-builder /build/tools/bin/topn ./tools/bin/topn
+COPY tools/runtime ./tools/runtime
 
 RUN mkdir -p \
         /app/data/networks \

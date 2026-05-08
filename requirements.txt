@@ -1,4 +1,7 @@
-# Runtime extraction
+# Preprocessing pipelines and cloned-repo workflows.
+# The Docker image uses requirements-runtime.txt instead.
+
+# Binary graph extraction
 numpy>=1.26
 
 # Preprocessing pipelines

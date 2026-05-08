@@ -29,6 +29,10 @@ Doc
 .cursor
 .vscode
 .idea
+*.zip
+*.tar
+*.tar.gz
+*.tgz
 
 # Local environment files
 .env
