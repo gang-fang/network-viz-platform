@@ -124,24 +124,37 @@ The advanced workflows described in `frontend/docs/Tutorial.html` run outside th
 # 1. Install dependencies
 npm install
 
-# 2. Download and organize the release data
+# 2. Install Python runtime dependencies for subnetwork extraction
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-runtime.txt
+
+# 3. Download and organize the release data
 # Follow frontend/docs/Tutorial.html#first-run:
 # download all .gz release assets plus install_data.sh, then run:
 chmod 755 install_data.sh
 ./install_data.sh
 
-# 3. Configure environment
+# 4. Configure environment
 cp .env.example .env
-# Edit .env as needed (PORT, DB_PATH, DATA_PATH, etc.)
+# Edit .env as needed (PORT, DB_PATH, DATA_PATH, PYTHON_COMMAND, etc.)
+# If using the virtual environment above, set:
+# PYTHON_COMMAND=.venv/bin/python
 
-# 4. Ingest data files into the database
+# 5. Ingest data files into the database
 npm run ingest
 
-# 5. Start the server
+# 6. Start the server
 npm start
 
-# Or combine steps 4 and 5:
+# Or combine steps 5 and 6:
 npm run start:ingest-and-serve
+```
+
+For advanced preprocessing workflows, install the larger Python dependency set:
+
+```bash
+pip install -r requirements.txt
 ```
 
 ## Data Files

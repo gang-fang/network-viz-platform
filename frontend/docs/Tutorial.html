@@ -591,7 +591,8 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
       <nav> <a href="About%20SJI.html">About SJI</a> </nav>
       <div class="sidebar-section">Getting Started</div>
       <nav> <a href="#overview" class="active">Overview</a> <a
-          href="#first-run">First-Time Setup</a> <a href="#landing">The
+          href="#first-run">First-Time Setup</a> <a
+          href="#local-run">Run from Git Clone</a> <a href="#landing">The
           Landing Page</a> </nav>
       <div class="sidebar-section">Using the Viewer</div>
       <nav> <a href="#subnetwork">Extract a Subnetwork</a> <a
@@ -807,6 +808,89 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
           <p>Chrome or Firefox is recommended for large interactive
             network views. Safari may be slower with larger subnetworks.
           </p>
+        </div>
+      </section>
+      <!-- 01b Local npm setup -->
+      <section id="local-run" class="step">
+        <div class="step-header">
+          <h2>Run from a Git Clone</h2>
+        </div>
+        <p>Use this path if you want to run the server directly from the
+          repository, modify the source code, or use the advanced
+          preprocessing scripts. The Docker path above is usually
+          simpler for first-time use.</p>
+        <ol class="setup-list">
+          <li><strong>Clone the repository.</strong>
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>git clone https://github.com/gang-fang/network-viz-platform.git
+cd network-viz-platform</code></pre>
+            </div>
+          </li>
+          <li><strong>Install Node.js dependencies.</strong>
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>npm install</code></pre>
+            </div>
+          </li>
+          <li><strong>Install Python runtime dependencies.</strong>
+            These are needed for subnetwork extraction when running from
+            a cloned repository. They are not installed by <code>npm
+              install</code>.
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-runtime.txt</code></pre>
+            </div>
+          </li>
+          <li><strong>Download and organize the release data.</strong>
+            Follow the data-download steps in the Docker setup section
+            above: download all <code>.gz</code> files and <code>install_data.sh</code>
+            into an empty folder, then run:
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>chmod 755 install_data.sh
+./install_data.sh</code></pre>
+            </div>
+            This creates the <code>data/</code> folder used by the local
+            server. </li>
+          <li><strong>Configure the environment.</strong>
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>cp .env.example .env</code></pre>
+            </div>
+            Edit <code>.env</code> as needed. If you created the virtual
+            environment above, set <code>PYTHON_COMMAND=.venv/bin/python</code>.
+          </li>
+          <li><strong>Ingest the data and start the server.</strong>
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>npm run ingest
+npm start</code></pre>
+            </div>
+            Or combine ingestion and startup:
+            <div class="code-block">
+              <div class="code-block-header"> <span class="code-lang">Shell</span>
+              </div>
+              <pre><code>npm run start:ingest-and-serve</code></pre>
+            </div>
+            Then open <code>http://localhost:3000</code> in Chrome or
+            Firefox. </li>
+        </ol>
+        <div class="callout info">
+          <div class="callout-label">Advanced Python dependencies</div>
+          <p>The minimal runtime file <code>requirements-runtime.txt</code>
+            is enough for subnetwork extraction. If you run the
+            preprocessing workflows under <code>tools/preprocessing</code>,
+            install the larger dependency set with <code>pip install -r
+              requirements.txt</code>. </p>
         </div>
       </section>
       <!-- 02 Landing page tour -->
