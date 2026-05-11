@@ -118,6 +118,65 @@ cd network-viz-platform
 
 The advanced workflows described in `frontend/docs/Tutorial.html` run outside the Docker container and use scripts under `tools/preprocessing` and `tools/bin`.
 
+## Running Locally
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Download and organize the release data
+# Follow frontend/docs/Tutorial.html#first-run:
+# download all .gz release assets plus install_data.sh, then run:
+chmod 755 install_data.sh
+./install_data.sh
+
+# 3. Configure environment
+cp .env.example .env
+# Edit .env as needed (PORT, DB_PATH, DATA_PATH, etc.)
+
+# 4. Ingest data files into the database
+npm run ingest
+
+# 5. Start the server
+npm start
+
+# Or combine steps 4 and 5:
+npm run start:ingest-and-serve
+```
+
+## Data Files
+
+Place your data files in the following directories before running ingestion.
+All paths are configurable via environment variables (see Configuration below).
+For the published data release, these directories and files are created by `install_data.sh`.
+
+| Directory | Env var | File format |
+|---|---|---|
+| `data/networks/` | `DATA_PATH` | `*.csv` — one edge per line: `node1,node2,weight` |
+| `data/indexes/` | `INDEXES_PATH` | Preprocessed graph index triplets such as `eu.adj.bin`, `eu.adj.index.bin`, `eu.node_ids.tsv` |
+| `data/nodes_attr/` | `NODE_ATTRIBUTES_PATH` | Exactly one `*.nodes.attr` file — comma-separated, with a header row: `node_id`, `NCBI_txID`, `NH_ID`, `NH_Size`, … |
+| `data/NCBI_txID/NCBI_txID.csv` | `SPECIES_PATH` | Two columns: `ncbi_txid,species_name` |
+
+## Configuration
+
+Copy `.env.example` to `.env` and override as needed. Key variables:
+
+| Variable | Default | Description |
+|---|---|---|
+| `START_MODE` | `serve` | `serve` · `ingest` · `ingest-and-serve` |
+| `DB_PATH` | `./data/network_viz.db` | SQLite file path — point to a volume mount in Docker |
+| `DATA_PATH` | `./data/networks` | Directory containing network CSV files |
+| `INDEXES_PATH` | `./data/indexes` | Directory containing preprocessed extraction indexes |
+| `NODE_ATTRIBUTES_PATH` | `./data/nodes_attr` | Directory containing exactly one `.nodes.attr` file |
+| `SPECIES_PATH` | `./data/NCBI_txID/NCBI_txID.csv` | NCBI taxonomy mapping CSV |
+| `PYTHON_COMMAND` | `python3` | Python executable used for subnetwork extraction |
+| `SUBNETWORK_SCRIPT_PATH` | `./tools/runtime/extract_subnetwork.py` | Extraction CLI path |
+| `SUBNETWORK_JOB_TEMP_PATH` | `./data/tmp/subnetwork-jobs` | Controlled temp directory for extraction jobs |
+| `SUBNETWORK_TIMEOUT_MS` | `120000` | Extraction timeout in milliseconds |
+| `FILE_WATCH_ENABLED` | `true` | Set to `false` to disable hot-reload of data files |
+| `PORT` | `3000` | HTTP port |
+| `CORS_ORIGIN` | `*` | Allowed origin — restrict in production |
+
 ## Architecture Overview
 
 The platform uses a clean separation between a backend data pipeline and a frontend visualization layer.
@@ -196,66 +255,7 @@ backend/
 └── entrypoint.js                # Startup mode router
 ```
 
-### Running Locally
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Download and organize the release data
-# Follow frontend/docs/Tutorial.html#first-run:
-# download all .gz release assets plus install_data.sh, then run:
-chmod 755 install_data.sh
-./install_data.sh
-
-# 3. Configure environment
-cp .env.example .env
-# Edit .env as needed (PORT, DB_PATH, DATA_PATH, etc.)
-
-# 4. Ingest data files into the database
-npm run ingest
-
-# 5. Start the server
-npm start
-
-# Or combine steps 4 and 5:
-npm run start:ingest-and-serve
-```
-
-### Data Files
-
-Place your data files in the following directories before running ingestion.
-All paths are configurable via environment variables (see Configuration below).
-For the published data release, these directories and files are created by `install_data.sh`.
-
-| Directory | Env var | File format |
-|---|---|---|
-| `data/networks/` | `DATA_PATH` | `*.csv` — one edge per line: `node1,node2,weight` |
-| `data/indexes/` | `INDEXES_PATH` | Preprocessed graph index triplets such as `eu.adj.bin`, `eu.adj.index.bin`, `eu.node_ids.tsv` |
-| `data/nodes_attr/` | `NODE_ATTRIBUTES_PATH` | Exactly one `*.nodes.attr` file — comma-separated, with a header row: `node_id`, `NCBI_txID`, `NH_ID`, `NH_Size`, … |
-| `data/NCBI_txID/NCBI_txID.csv` | `SPECIES_PATH` | Two columns: `ncbi_txid,species_name` |
-
-### Configuration
-
-Copy `.env.example` to `.env` and override as needed. Key variables:
-
-| Variable | Default | Description |
-|---|---|---|
-| `START_MODE` | `serve` | `serve` · `ingest` · `ingest-and-serve` |
-| `DB_PATH` | `./data/network_viz.db` | SQLite file path — point to a volume mount in Docker |
-| `DATA_PATH` | `./data/networks` | Directory containing network CSV files |
-| `INDEXES_PATH` | `./data/indexes` | Directory containing preprocessed extraction indexes |
-| `NODE_ATTRIBUTES_PATH` | `./data/nodes_attr` | Directory containing exactly one `.nodes.attr` file |
-| `SPECIES_PATH` | `./data/NCBI_txID/NCBI_txID.csv` | NCBI taxonomy mapping CSV |
-| `PYTHON_COMMAND` | `python3` | Python executable used for subnetwork extraction |
-| `SUBNETWORK_SCRIPT_PATH` | `./tools/runtime/extract_subnetwork.py` | Extraction CLI path |
-| `SUBNETWORK_JOB_TEMP_PATH` | `./data/tmp/subnetwork-jobs` | Controlled temp directory for extraction jobs |
-| `SUBNETWORK_TIMEOUT_MS` | `120000` | Extraction timeout in milliseconds |
-| `FILE_WATCH_ENABLED` | `true` | Set to `false` to disable hot-reload of data files |
-| `PORT` | `3000` | HTTP port |
-| `CORS_ORIGIN` | `*` | Allowed origin — restrict in production |
-
-### API Endpoints
+## API Endpoints
 
 | Endpoint | Description |
 |---|---|
@@ -269,7 +269,7 @@ Copy `.env.example` to `.env` and override as needed. Key variables:
 | `GET /api/species-names` | NCBI taxonomy ID → species name mappings |
 | `GET /api/uniprot/:accession` | UniProt protein data |
 
-### Key Design Principles
+## Key Design Principles
 
 1. **Single Source of Truth**: Each data type has one authoritative storage location
 2. **Exact Matching**: All node operations use exact string matching only
