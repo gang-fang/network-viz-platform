@@ -13,7 +13,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
-RUN npm_config_build_from_source=true npm ci --omit=dev \
+RUN npm ci --omit=dev --build-from-source=sqlite3 \
     && npm cache clean --force
 
 FROM node:20-bookworm-slim AS runtime
