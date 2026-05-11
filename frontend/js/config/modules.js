@@ -7,6 +7,7 @@ const ModuleConfig = {
     activeModules: [
         'search-highlight',
         'species-selector',
+        'sji-edge-highlight',
         'network-editor',
         'clear-highlights',
         'uniprot-tooltip',

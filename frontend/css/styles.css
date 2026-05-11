@@ -710,6 +710,29 @@ input[type="range"] {
     flex-direction: column;
 }
 
+.sji-edge-highlight-panel {
+    flex-direction: column;
+    width: 420px;
+    max-width: min(90vw, 520px);
+    max-height: 92vh;
+    overflow: hidden;
+    color: #1f2933;
+}
+
+.sji-edge-highlight-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.sji-edge-highlight-actions {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
 /* Panel header */
 .panel-header {
     display: flex;

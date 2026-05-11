@@ -242,7 +242,7 @@ class D3Adapter {
 
     setupListeners() {
         this.appState.on('graphUpdated', (detail) => this.updateVisualization(detail));
-        this.appState.on('graphVisualsUpdated', () => this.updateNodeVisuals());
+        this.appState.on('graphVisualsUpdated', (detail) => this.updateVisuals(detail));
         this.appState.on('clusterExpanded', (detail) => this.updateVisualization(detail));
         this.appState.on('clusterCollapsed', (detail) => this.updateVisualization(detail));
 
@@ -399,9 +399,7 @@ class D3Adapter {
             // Visible line
             linkEnter.append("line")
                 .attr("class", "visible-line")
-                .attr("stroke", "#ccc")
-                .attr("stroke-opacity", 0.6)
-                .attr("stroke-width", d => Math.max(1, Math.sqrt(d.weight || 1)));
+                .each((d, i, nodes) => this.applyEdgeStyle(d3.select(nodes[i]), d));
 
             // Hit area (transparent, thicker)
             linkEnter.append("line")
@@ -419,9 +417,9 @@ class D3Adapter {
 
             // Update visuals after the fixed-tick layout has assigned final positions.
             try {
-                this.updateNodeVisuals();
+                this.updateVisuals();
             } catch (visualErr) {
-                console.error("Error updating node visuals:", visualErr);
+                console.error("Error updating graph visuals:", visualErr);
             }
 
             if (options.fitView) {
@@ -1368,6 +1366,33 @@ class D3Adapter {
         // viewport. Only nodes whose geometric radius pushes past the floor
         // get extra room — the rare oversized cluster, not all clusters.
         return Math.max(NODE_COLLISION_BASE_RADIUS, this.getNodeRadius(d) + NODE_COLLISION_PADDING);
+    }
+
+    updateVisuals(detail = null) {
+        if (!detail || detail.nodes !== false) this.updateNodeVisuals();
+        if (!detail || detail.edges !== false) this.updateEdgeVisuals();
+    }
+
+    getEdgeStrokeWidth(d) {
+        return Math.max(1, Math.sqrt(d.weight || 1));
+    }
+
+    applyEdgeStyle(line, d) {
+        const style = this.appState.getEdgeHighlightStyle(d);
+        const baseWidth = this.getEdgeStrokeWidth(d);
+
+        line
+            .attr("stroke", style ? style.color : "#ccc")
+            .attr("stroke-opacity", style ? 0.95 : 0.6)
+            .attr("stroke-width", style ? baseWidth + 3 : baseWidth);
+    }
+
+    updateEdgeVisuals() {
+        if (!this.linkSelection) return;
+        this.linkSelection.select(".visible-line")
+            .each((d, i, nodes) => {
+                this.applyEdgeStyle(d3.select(nodes[i]), d);
+            });
     }
 
     updateNodeVisuals() {

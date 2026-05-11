@@ -53,6 +53,49 @@ describe('AppState edge edit bookkeeping', () => {
     expect(state.getEdgeIdsBelowWeight('0.5')).toEqual(['P1|P2', 'P2|P3']);
   });
 
+  test('tracks SJI edge highlight as a replaceable visual layer', () => {
+    const state = createState();
+    const visualUpdates = [];
+    state.on('graphVisualsUpdated', detail => visualUpdates.push(detail));
+
+    state.addEdgeHighlightLayer('sji-edge-highlight:main', { min: 0.3, max: 0.9 }, '#e74c3c');
+    expect(state.edgeHighlightLayers.size).toBe(1);
+    expect(state.getEdgeHighlightStyle({ weight: 0.4 })).toEqual({ color: '#e74c3c' });
+    expect(state.getEdgeHighlightStyle({ weight: 0.2 })).toBeNull();
+
+    state.addEdgeHighlightLayer('sji-edge-highlight:main', { min: 0.7, max: 1 }, '#2ecc71');
+    expect(state.edgeHighlightLayers.size).toBe(1);
+    expect(state.getEdgeHighlightStyle({ weight: 0.4 })).toBeNull();
+    expect(state.getEdgeHighlightStyle({ weight: 0.8 })).toEqual({ color: '#2ecc71' });
+
+    expect(visualUpdates).toEqual([
+      { nodes: false, edges: true },
+      { nodes: false, edges: true },
+    ]);
+  });
+
+  test('clears SJI edge highlights with other highlight layers', () => {
+    const state = createState();
+    const visualUpdates = [];
+    state.on('graphVisualsUpdated', detail => visualUpdates.push(detail));
+
+    state.addEdgeHighlightLayer('sji-edge-highlight:main', { min: 0.3, max: 0.9 }, '#e74c3c');
+    state.clearHighlightLayers();
+
+    expect(state.edgeHighlightLayers.size).toBe(0);
+    expect(state.getEdgeHighlightStyle({ weight: 0.4 })).toBeNull();
+    expect(visualUpdates[visualUpdates.length - 1]).toEqual({ nodes: true, edges: true });
+  });
+
+  test('validates SJI edge highlight range boundaries', () => {
+    const state = createState();
+
+    expect(() => state.addEdgeHighlightLayer('sji-edge-highlight:main', { min: -0.1, max: 0.5 }, '#e74c3c')).toThrow('between 0 and 1');
+    expect(() => state.addEdgeHighlightLayer('sji-edge-highlight:main', { min: 0.5, max: 1.1 }, '#e74c3c')).toThrow('between 0 and 1');
+    expect(() => state.addEdgeHighlightLayer('sji-edge-highlight:main', { min: 0.8, max: 0.2 }, '#e74c3c')).toThrow('between 0 and 1');
+    expect(() => state.addEdgeHighlightLayer('sji-edge-highlight:main', { min: Number.NaN, max: 0.2 }, '#e74c3c')).toThrow('between 0 and 1');
+  });
+
   test('canonicalizes direct edge IDs and returns booleans', () => {
     const state = createState();
 

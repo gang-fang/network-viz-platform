@@ -10,6 +10,7 @@ class AppState {
         this.expandedClusters = new Set(); // Set of expanded cluster IDs
         this.nodeColors = new Map(); // Map of NodeID -> Array<Color>
         this.highlightLayers = new Map(); // Map of LayerID -> { matches: Array, color: String }
+        this.edgeHighlightLayers = new Map(); // Map of LayerID -> { min: Number, max: Number, color: String }
         this.hiddenNodes = new Set(); // Set of hidden core protein node IDs
         this.hiddenEdges = new Set(); // Set of hidden core edge IDs
         this.hiddenEdgeWeightRanges = []; // Compact threshold rules: [{ min, max }]
@@ -46,6 +47,7 @@ class AppState {
         this.expandedClusters.clear(); // Reset expansion state
         this.hiddenNodes.clear(); // Reset hidden state
         this.hiddenEdges.clear(); // Reset hidden edge state
+        this.edgeHighlightLayers.clear(); // Reset edge highlight state
         this.hiddenEdgeWeightRanges = [];
         this.editRevision = 0;
         this.topologyRevision += 1;
@@ -167,7 +169,7 @@ class AppState {
     addHighlightLayer(layerId, matches, color) {
         this.highlightLayers.set(layerId, { matches, color });
         this.updateDerivedHighlights();
-        this.emit('graphVisualsUpdated');
+        this.emit('graphVisualsUpdated', { nodes: true, edges: false });
     }
 
     /**
@@ -178,7 +180,7 @@ class AppState {
             const layer = this.highlightLayers.get(layerId);
             layer.color = color;
             this.updateDerivedHighlights();
-            this.emit('graphVisualsUpdated');
+            this.emit('graphVisualsUpdated', { nodes: true, edges: false });
         }
     }
 
@@ -189,7 +191,7 @@ class AppState {
         if (this.highlightLayers.has(layerId)) {
             this.highlightLayers.delete(layerId);
             this.updateDerivedHighlights();
-            this.emit('graphVisualsUpdated');
+            this.emit('graphVisualsUpdated', { nodes: true, edges: false });
         }
     }
 
@@ -199,12 +201,42 @@ class AppState {
     clearHighlightLayers() {
         this.highlightLayers.clear();
         this.nodeColors.clear();
-        this.emit('graphVisualsUpdated');
+        this.edgeHighlightLayers.clear();
+        this.emit('graphVisualsUpdated', { nodes: true, edges: true });
     }
 
 
     clearHighlights() {
         this.clearHighlightLayers();
+    }
+
+    addEdgeHighlightLayer(layerId, range, color) {
+        const min = Number(range?.min);
+        const max = Number(range?.max);
+        if (!Number.isFinite(min) || !Number.isFinite(max) || min < 0 || max > 1 || min > max) {
+            throw new Error('SJI highlight range must be between 0 and 1.');
+        }
+        this.edgeHighlightLayers.set(layerId, { min, max, color });
+        this.emit('graphVisualsUpdated', { nodes: false, edges: true });
+    }
+
+    clearEdgeHighlightLayers() {
+        this.edgeHighlightLayers.clear();
+        this.emit('graphVisualsUpdated', { nodes: false, edges: true });
+    }
+
+    getEdgeHighlightStyle(edge) {
+        if (!edge || this.edgeHighlightLayers.size === 0) return null;
+        const weight = Number(edge.weight);
+        if (!Number.isFinite(weight)) return null;
+
+        let activeStyle = null;
+        for (const layer of this.edgeHighlightLayers.values()) {
+            if (weight >= layer.min && weight <= layer.max) {
+                activeStyle = { color: layer.color };
+            }
+        }
+        return activeStyle;
     }
 
     updateDerivedHighlights() {

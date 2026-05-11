@@ -81,6 +81,8 @@ class ModuleSystem {
             updateHighlightLayerColor: (layerId, color) => this.appState.updateHighlightLayerColor(layerId, color),
             removeHighlightLayer: (layerId) => this.appState.removeHighlightLayer(layerId),
             clearHighlightLayers: () => this.appState.clearHighlightLayers(),
+            addEdgeHighlightLayer: (layerId, range, color) => this.appState.addEdgeHighlightLayer(layerId, range, color),
+            clearEdgeHighlightLayers: () => this.appState.clearEdgeHighlightLayers(),
             hideNodes: (ids) => this.appState.hideNodes(ids),
             showNodes: (ids) => this.appState.showNodes(ids),
             showAllNodes: () => this.appState.showAllNodes(),
