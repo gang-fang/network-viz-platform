@@ -1,5 +1,21 @@
 # syntax=docker/dockerfile:1
 
+FROM node:20-bookworm-slim AS node-deps
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        g++ \
+        make \
+        python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY package*.json ./
+RUN npm_config_build_from_source=true npm ci --omit=dev \
+    && npm cache clean --force
+
 FROM node:20-bookworm-slim AS runtime
 
 ENV NODE_ENV=production \
@@ -30,8 +46,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
-RUN npm ci --omit=dev \
-    && npm cache clean --force
+COPY --from=node-deps /app/node_modules ./node_modules
 
 COPY requirements-runtime.txt ./
 RUN python3 -m venv /opt/venv \
