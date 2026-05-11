@@ -49,6 +49,11 @@ const EXPANDED_GROUP_MIN_DENSITY = 0.12;
 // other groups across the viewport, so we disable separation for it instead.
 const EXPANDED_GROUP_MAX_SPREAD_FRACTION = 0.25;
 
+function formatSjiValue(value) {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? numericValue.toFixed(4) : 'N/A';
+}
+
 /**
  * D3 Adapter
  * Bridges the Core Graph State to D3 Visualization.
@@ -405,7 +410,7 @@ class D3Adapter {
                 .attr("stroke-width", 10)
                 .style("cursor", "pointer")
                 .append("title")
-                .text(d => `Weight: ${d.weight ? Number(d.weight).toExponential(1).toUpperCase() : 'N/A'}`);
+                .text(d => `SJI: ${formatSjiValue(d.weight)}`);
 
             this.linkSelection = linkEnter.merge(this.linkSelection);
 

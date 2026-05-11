@@ -561,7 +561,7 @@ def write_output(
         for a, b, w in edges:
             na = graph.id_to_name.get(a, str(a))
             nb = graph.id_to_name.get(b, str(b))
-            w_csv.writerow([na, nb, f"{w:.6f}"])
+            w_csv.writerow([na, nb, f"{w:.4f}"])
 
 
 SEED_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")

@@ -234,8 +234,13 @@ function csvCell(value) {
   return `"${text.replace(/"/g, '""')}"`;
 }
 
+function formatSjiWeight(value) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue.toFixed(4) : '';
+}
+
 function edgeToCsv(edge) {
-  return [edge.node1, edge.node2, edge.weight].map(csvCell).join(',');
+  return [edge.node1, edge.node2, formatSjiWeight(edge.weight)].map(csvCell).join(',');
 }
 
 async function insertNetworkMembership(source, nodeIds) {

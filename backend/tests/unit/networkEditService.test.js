@@ -125,7 +125,7 @@ describe('networkEditService', () => {
       hiddenInSourceNodeCount: 1,
       submittedHiddenNodeCount: 2,
     });
-    expect(fs.readFileSync(path.join(config.dataPath, 'edited.csv'), 'utf8')).toBe('P1,P3,0.9\n');
+    expect(fs.readFileSync(path.join(config.dataPath, 'edited.csv'), 'utf8')).toBe('P1,P3,0.9000\n');
     expect(fileWatcher.suppressNetworkIngest).toHaveBeenCalledWith('edited.csv');
     expect(ingestNetworks).toHaveBeenCalledWith('edited.csv');
     expect(mockDb.run).toHaveBeenCalledWith(
@@ -164,7 +164,7 @@ describe('networkEditService', () => {
       hiddenInSourceEdgeCount: 1,
       submittedHiddenEdgeCount: 2,
     });
-    expect(fs.readFileSync(path.join(config.dataPath, 'edited.csv'), 'utf8')).toBe('P2,P3,0.7\nP1,P3,0.9\n');
+    expect(fs.readFileSync(path.join(config.dataPath, 'edited.csv'), 'utf8')).toBe('P2,P3,0.7000\nP1,P3,0.9000\n');
     expect(mockDb.run).toHaveBeenCalledWith(
       expect.stringContaining('INSERT OR IGNORE INTO network_nodes'),
       ['edited.csv', 'P1', 'edited.csv', 'P2', 'edited.csv', 'P3'],
@@ -203,7 +203,7 @@ describe('networkEditService', () => {
       submittedHiddenEdgeCount: 0,
       submittedHiddenEdgeRangeCount: 1,
     });
-    expect(fs.readFileSync(path.join(config.dataPath, 'edited.csv'), 'utf8')).toBe('P3,P4,0.8\n');
+    expect(fs.readFileSync(path.join(config.dataPath, 'edited.csv'), 'utf8')).toBe('P3,P4,0.8000\n');
   });
 
   test('createEditedNetwork appends suffixes for existing names', async () => {

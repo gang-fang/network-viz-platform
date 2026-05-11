@@ -1,6 +1,122 @@
-# Network Visualization Platform
+# SJI Network Explorer
 
-A powerful and flexible visualization platform for rendering complex network data with physics-based layouts and advanced clustering capabilities.
+SJI Network Explorer is a local web application for extracting, visualizing, editing, and exporting protein similarity subnetworks from pre-built Signal Jaccard Index (SJI) networks.
+
+The package includes a Node.js/Express server, a D3-based interactive network viewer, a fast Python subnetwork extractor, and preprocessing scripts for users who want to attach their own proteins or build custom SJI networks.
+
+## What Is the Signal Jaccard Index?
+
+The **Signal Jaccard Index (SJI)** is a protein-similarity metric based on shared homolog neighborhoods. Instead of comparing two proteins only by direct pairwise sequence similarity, SJI compares the sets of **signal proteins** associated with each protein.
+
+For a given seed protein, top similar proteins are retrieved across many proteomes and placed on a two-dimensional plot. The x-axis represents length ratio relative to the seed protein, and the y-axis represents full-length sequence similarity. In most cases, homologs separate into two groups: a closer **signal** group and a more distant **noise** group. The boundary is not a fixed similarity cutoff. It is inferred from the local density structure of each plot, so each protein has its own protein-specific signal/noise separation.
+
+Given two proteins A and B, SJI is the Jaccard index of their signal sets:
+
+```text
+SJI(A, B) = |signal(A) ∩ signal(B)| / |signal(A) ∪ signal(B)|
+```
+
+A high SJI means two proteins share much of the same signal homolog neighborhood across proteomes. This makes SJI sensitive to broader evolutionary and genomic context, including cases where one-to-one orthology or a single pairwise alignment score is not enough.
+
+SJI was developed to address inconsistencies among ortholog databases. When different ortholog databases annotate the same sequences differently, downstream functional interpretation can diverge. The SJI framework treats those inconsistencies as informative signals about protein evolutionary space. In this view, stable orthology predictions tend to form a network core, while proteins with more inconsistent database assignments often appear toward the network periphery.
+
+## What This Package Provides
+
+- **Pre-built SJI exploration**: extract focused subnetworks from a large pre-built SJI network by entering UniProt accessions.
+- **Interactive network viewer**: load saved networks, expand or collapse neighborhood clusters, zoom, pan, and inspect local topology.
+- **Species-aware filtering**: use NCBI taxonomy mappings and the common tree to highlight or filter proteins by species or clade.
+- **Protein highlighting**: locate seed proteins or proteins of interest by UniProt accession.
+- **Network editing**: remove selected proteins, remove edges by SJI threshold, and save edited networks as new CSV files.
+- **Export and downstream analysis**: export views and protein lists for additional structural, functional, or evolutionary analysis.
+- **Advanced workflows**: use `topN` and Python preprocessing scripts to attach user-supplied proteins/proteomes or build custom SJI networks.
+
+## Currently Available Data
+
+The current pre-built release covers **406 UniProt reference proteomes**:
+
+- **51 eukaryotic reference proteomes**
+- **355 bacterial reference proteomes**
+
+The installed data bundle is organized into network CSV files, binary extraction indexes, node attributes, and taxonomy files. The current taxonomy files are:
+
+- `data/NCBI_txID/NCBI_txID.csv` — two-column mapping: `ncbi_txid,species_name`
+- `data/NCBI_txID/commontree.txt` — NCBI common tree used by the species selector
+
+The pre-built network represents proteins by UniProt accession. Queries against the pre-built network and subnetwork extraction are therefore accession-based.
+
+Data are distributed separately from the Docker image. Download and organize the release assets from:
+
+```text
+https://github.com/gang-fang/network-viz-platform/releases/tag/qfo-reference-proteomes-data-2026
+```
+
+The tutorial gives the step-by-step data setup workflow, including `install_data.sh`:
+
+```text
+frontend/docs/Tutorial.html
+```
+
+## Basic Workflow
+
+1. Install the application with Docker or from a cloned repository.
+2. Download the pre-built data release and run `install_data.sh` to create the required `data/` directory structure.
+3. Start the server.
+4. Open `http://localhost:3000` in Chrome or Firefox.
+5. Extract a subnetwork by entering up to 10 UniProt accessions, selecting `Bacteria` or `Eukaryotes`, and choosing a maximum node count.
+6. Explore the resulting network in the viewer.
+7. Expand neighborhood clusters to inspect individual proteins.
+8. Highlight proteins by accession or by species.
+9. Remove less relevant proteins or weak SJI edges, then save edited networks under new names.
+10. Export protein lists or network views for downstream analysis.
+
+## Installation Options
+
+### Docker
+
+Install Docker Desktop:
+
+```text
+https://www.docker.com/products/docker-desktop/
+```
+
+Pull the Docker image:
+
+```bash
+docker pull ghcr.io/gang-fang/sji-network-explorer:latest
+```
+
+After downloading and organizing the data files, run the server from the folder that contains the `data/` directory:
+
+```bash
+docker run --rm \
+  --name sji-network-explorer \
+  -p 3000:3000 \
+  -v "$PWD/data:/app/data" \
+  ghcr.io/gang-fang/sji-network-explorer:latest
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
+Stop the server with:
+
+```bash
+docker stop sji-network-explorer
+```
+
+### Git Clone
+
+Clone the repository if you want the source code, advanced preprocessing scripts, or a local development setup:
+
+```bash
+git clone https://github.com/gang-fang/network-viz-platform.git
+cd network-viz-platform
+```
+
+The advanced workflows described in `frontend/docs/Tutorial.html` run outside the Docker container and use scripts under `tools/preprocessing` and `tools/bin`.
 
 ## Architecture Overview
 
@@ -14,25 +130,20 @@ The platform uses a clean separation between a backend data pipeline and a front
 - **`graph-view.js`** (`GraphView`) — Computes the *visible* graph from the core graph and the set of expanded clusters. Implements drill-down/roll-up: collapsed clusters are represented by a single cluster node; expanded clusters show individual protein nodes.
 - **`module-system.js`** (`ModuleSystem`) — Plugin-style module loader. Modules register themselves and receive lifecycle calls (init, network-load, selection-change, etc.).
 
-### Frontend Adapters & Modules
+### Frontend Adapters, Components, and Modules
 
 - **`adapters/d3-adapter.js`** — Bridges `AppState`/`GraphView` to D3.js force simulation and SVG rendering.
-- **`modules/`** — Self-contained feature modules: `species-selector`, `search-highlight`, `clear-highlights`, `uniprot-tooltip`, `export-panel`.
+- **`components/species-tree-view.js`** — Renders the species tree UI used by taxonomy filtering.
+- **`modules/`** — Self-contained feature modules: species selection, search highlighting, clear highlights, UniProt tooltip, export panel, and network editing.
 - **`config/modules.js`** — Declares which modules are active for a given deployment.
 
 ### Backend
 
 - **`scripts/ingestData.js`** — Data ingestion pipeline. Reads the single `.nodes.attr` file and network CSVs into SQLite. Node attribute ingestion is transactional: reconcile (clear all non-empty protein rows) then rewrite from the current attribute file.
-- **`services/fileWatcher.js`** — Chokidar-based hot-reload watcher. Re-triggers attribute ingestion when the `.nodes.attr` file changes.
-- **`controllers/networkController.js`** — Query layer over the SQLite DB; exposes network lists, node/edge data with attributes, protein search by accession or species.
+- **`services/`** — Runtime services for file watching, subnetwork extraction, edited-network saving, and grouped exports.
+- **`controllers/`** — Query and orchestration layer for network data, subnetwork jobs, and UniProt lookups.
+- **`routes/`** — HTTP API routes for networks, subnetworks, species names, species tree data, and UniProt records.
 - **`config/database.js`** — Opens the SQLite connection and initialises the schema (`nodes`, `edges` tables; `attribute_source` migration).
-
-## Key Features
-
-- **Attribute-based clustering**: Nodes are grouped by `NH_ID`. Clusters can be expanded/collapsed individually or in bulk.
-- **Module system**: Feature modules (species selector, UniProt tooltip, search highlight, export) are loaded declaratively via `config/modules.js` and can be added or removed without touching core code.
-- **Transactional ingestion**: Node attributes are ingested atomically — reconcile clears all existing protein attribute rows, then rewrites from the current file set. A mid-write failure rolls back to the previous state.
-- **Hot-reload**: `fileWatcher.js` detects changes to the single `.nodes.attr` file and re-triggers ingestion automatically.
 
 ## Development
 
@@ -42,8 +153,11 @@ The platform uses a clean separation between a backend data pipeline and a front
 frontend/
 ├── js/
 │   ├── app.js                    # Application bootstrap
+│   ├── landing.js                # Landing page behaviour
 │   ├── config/
 │   │   └── modules.js            # Active module declarations
+│   ├── components/
+│   │   └── species-tree-view.js  # Species tree UI component
 │   ├── core/
 │   │   ├── graph.js              # Graph data structure (nodes, edges, adjacency)
 │   │   ├── graph-view.js         # Visible-graph computation (drill-down/roll-up)
@@ -54,21 +168,31 @@ frontend/
 │   └── modules/                  # Self-contained feature modules
 │       ├── clear-highlights.js
 │       ├── export-panel.js
+│       ├── network-editor.js
 │       ├── search-highlight.js
 │       ├── species-selector.js
 │       └── uniprot-tooltip.js
 backend/
 ├── controllers/
 │   ├── networkController.js     # Network and attribute data handling
+│   ├── subnetworkController.js  # Subnetwork extraction API handling
 │   └── uniprotController.js     # UniProt API integration
 ├── routes/
 │   ├── networks.js              # Network data API endpoints
+│   ├── subnetworks.js           # Subnetwork extraction endpoints
+│   ├── species-tree.js          # Taxonomy tree endpoint
 │   ├── species.js               # NCBI taxonomy name mappings
 │   └── uniprot.js               # UniProt API endpoints
 ├── scripts/
 │   ├── ingestData.js            # Data ingestion pipeline
 ├── services/
-│   └── fileWatcher.js           # Hot-reload watcher for data files
+│   ├── fileWatcher.js           # Hot-reload watcher for data files
+│   ├── groupExportService.js    # Grouped protein export writer
+│   ├── networkEditService.js    # Edited-network save workflow
+│   └── subnetworkService.js     # Subnetwork job orchestration
+├── utils/
+│   ├── requestValidation.js     # Shared API validation helpers
+│   └── taxon-tree-parser.js     # NCBI common tree parser
 └── entrypoint.js                # Startup mode router
 ```
 
@@ -78,7 +202,11 @@ backend/
 # 1. Install dependencies
 npm install
 
-# 2. Place your data files (see Data Files section below)
+# 2. Download and organize the release data
+# Follow frontend/docs/Tutorial.html#first-run:
+# download all .gz release assets plus install_data.sh, then run:
+chmod 755 install_data.sh
+./install_data.sh
 
 # 3. Configure environment
 cp .env.example .env
@@ -94,15 +222,11 @@ npm start
 npm run start:ingest-and-serve
 ```
 
-> **Upgrading D3**: `frontend/vendor/d3.min.js` is a committed vendor file. If you bump `d3` in `package.json`, refresh it manually:
-> ```bash
-> cp node_modules/d3/dist/d3.min.js frontend/vendor/d3.min.js
-> ```
-
 ### Data Files
 
 Place your data files in the following directories before running ingestion.
 All paths are configurable via environment variables (see Configuration below).
+For the published data release, these directories and files are created by `install_data.sh`.
 
 | Directory | Env var | File format |
 |---|---|---|
@@ -155,26 +279,25 @@ Copy `.env.example` to `.env` and override as needed. Key variables:
 
 ## Testing
 
-Backend data pipeline tests (unit + integration against a real in-memory SQLite DB):
+The Git repository includes backend unit and integration tests under `backend/tests/`.
 
 ```bash
 npm test
 ```
 
-Coverage includes: attribute file validation, reconcile SQL shape, argument validation, file-watcher filtering, legacy-row migration, NH-row cleanup, removed/moved protein scenarios, full-selection atomicity (rollback on mid-write failure); network edge ingestion (stale-edge removal, FK-safe node insertion, mid-write rollback, malformed-row skipping).
+Coverage includes data ingestion, route behavior, network editing, subnetwork job handling, species-tree parsing, frontend state logic that is tested in Node, and server startup behavior.
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome. Please keep changes aligned with the existing architecture and update documentation when behavior or setup steps change.
 
 When contributing:
-1. Follow the zero-redundancy principle
-2. Use exact string matching for node operations
-3. Maintain the three-tier data architecture
-4. Add appropriate tests for new features
-5. Update documentation for architectural changes
+1. Use exact string matching for node operations.
+2. Keep data ownership and runtime paths unambiguous.
+3. Add appropriate tests for new behavior.
+4. Update documentation for architectural or setup changes.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the ISC license, as declared in `package.json`.
  
