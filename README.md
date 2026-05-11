@@ -124,37 +124,36 @@ The advanced workflows described in `frontend/docs/Tutorial.html` run outside th
 # 1. Install dependencies
 npm install
 
-# 2. Install Python runtime dependencies for subnetwork extraction
+# 2. Install Python dependencies
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements-runtime.txt
+pip install -r requirements.txt
 
-# 3. Download and organize the release data
+# 3. Build topN for preprocessing workflows
+cd tools/preprocessing/topN_cpp
+make
+cd ../../..
+
+# 4. Download and organize the release data
 # Follow frontend/docs/Tutorial.html#first-run:
 # download all .gz release assets plus install_data.sh, then run:
 chmod 755 install_data.sh
 ./install_data.sh
 
-# 4. Configure environment
+# 5. Configure environment
 cp .env.example .env
 # Edit .env as needed (PORT, DB_PATH, DATA_PATH, PYTHON_COMMAND, etc.)
 # If using the virtual environment above, set:
 # PYTHON_COMMAND=.venv/bin/python
 
-# 5. Ingest data files into the database
+# 6. Ingest data files into the database
 npm run ingest
 
-# 6. Start the server
+# 7. Start the server
 npm start
 
-# Or combine steps 5 and 6:
+# Or combine steps 6 and 7:
 npm run start:ingest-and-serve
-```
-
-For advanced preprocessing workflows, install the larger Python dependency set:
-
-```bash
-pip install -r requirements.txt
 ```
 
 ## Data Files
