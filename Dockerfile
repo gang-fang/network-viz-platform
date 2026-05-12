@@ -25,7 +25,6 @@ ENV NODE_ENV=production \
     DATA_PATH=/app/data/networks \
     INDEXES_PATH=/app/data/indexes \
     NODE_ATTRIBUTES_PATH=/app/data/nodes_attr \
-    SPECIES_PATH=/app/data/NCBI_txID/NCBI_txID.csv \
     TAXON_NAMES_PATH=/app/data/NCBI_txID/NCBI_txID.csv \
     TAXON_TREE_PATH=/app/data/NCBI_txID/commontree.txt \
     EXPORTS_PATH=/app/data/exports \

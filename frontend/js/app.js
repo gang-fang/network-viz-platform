@@ -32,7 +32,7 @@ async function initApp() {
     }
 
     // 3. Initialize Visualization Adapter
-    const d3Adapter = new D3Adapter(appState, 'cy');
+    const d3Adapter = new D3Adapter(appState, 'graph-canvas');
     window.d3Adapter = d3Adapter; // Expose for debugging
 
     // 4. UI Controls

@@ -33,7 +33,6 @@
     "winston": "^3.10.0"
   },
   "devDependencies": {
-    "d3": "^7.9.0",
     "jest": "^30.4.2",
     "nodemon": "^3.1.9",
     "supertest": "^7.2.2"

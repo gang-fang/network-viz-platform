@@ -53,15 +53,6 @@ class ModuleSystem {
             getSpeciesNames: () => ModuleSystem.getSpeciesNames(),
             getSpeciesTree: () => ModuleSystem.getSpeciesTree(),
 
-            // Allow modules to add attributes to nodes/edges
-            updateNodeAttribute: (nodeId, key, value) => {
-                const node = this.appState.graph.nodes.get(nodeId);
-                if (node) {
-                    node[key] = value;
-                    this.appState.emit('nodeAttributeUpdated', { nodeId, key, value, source: moduleId });
-                }
-            },
-
             // Allow modules to add controls to the left panel
             addPanelControl: (element) => {
                 const controlPanel = document.getElementById('control-panel');

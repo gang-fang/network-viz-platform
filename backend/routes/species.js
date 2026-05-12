@@ -12,11 +12,11 @@ const config = require('../config/config');
  */
 router.get('/', async (req, res) => {
   try {
-    const filePath = config.speciesPath;
+    const filePath = config.taxonNamesPath;
     logger.info(`Reading species names from: ${filePath}`);
-    
+
     const fileData = await fs.readFile(filePath, 'utf8');
-    
+
     // Parse CSV data
     const records = parse(fileData, {
       columns: ['ncbi_txid', 'species_name'],
@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
       trim: true,
       skip_records_with_error: true
     });
-    
+
     logger.info(`Loaded ${records.length} species name mappings`);
     res.json(records);
   } catch (error) {
@@ -33,4 +33,4 @@ router.get('/', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

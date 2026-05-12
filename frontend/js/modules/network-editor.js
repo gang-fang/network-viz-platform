@@ -66,7 +66,7 @@ const NetworkEditorModule = {
     },
 
     bindContextMenu() {
-        const target = document.getElementById('cy');
+        const target = document.getElementById('graph-canvas');
         if (!target) return;
         target.addEventListener('contextmenu', event => {
             event.preventDefault();

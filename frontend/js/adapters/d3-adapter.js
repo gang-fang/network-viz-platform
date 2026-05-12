@@ -331,10 +331,6 @@ class D3Adapter {
 
             nodeEnter.append("g").attr("class", "node-visual");
 
-        // Add title for hover - REMOVED for custom tooltip
-        // nodeEnter.append("title")
-        //     .text(d => d.id + (d._isCluster ? ` (Size: ${d.size})` : ""));
-
         // Add mouse events for custom tooltip
         nodeEnter.on("mouseover", (event, d) => {
             this.appState.emit('nodeHover', {
@@ -521,11 +517,6 @@ class D3Adapter {
 
             const brush = d3.brush()
                 .extent([[0, 0], [this.width, this.height]])
-                .on("start brush", (event) => {
-                    // Optional: Live update during brush?
-                    // Might be too heavy. Let's stick to "end" for selection logic,
-                    // or "brush" if we want immediate feedback.
-                })
                 .on("end", (event) => {
                     if (!event.selection) return;
                     const [[x0, y0], [x1, y1]] = event.selection;
@@ -1403,7 +1394,6 @@ class D3Adapter {
             const colors = this.appState.nodeColors.get(d.id);
             const r = this.getNodeRadius(d);
 
-            // Remove old content
             visualGroup.selectAll("circle").remove();
             visualGroup.selectAll("path.pie-slice").remove();
 

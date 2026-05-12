@@ -596,20 +596,6 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
       <div class="sidebar-section">Using the Viewer</div>
       <nav> <a href="#subnetwork">Extract a Subnetwork</a> <a
           href="#loading">Loading a Network</a> <a href="#navigation">Navigation
-
-
-
-
-
-
-
-
-
-
-
-
-
-
           &amp; Clusters</a> <a href="#highlights">Highlighting Nodes</a>
         <a href="#species">Species Filter</a> <a
           href="#sji-edge-highlight">Highlight SJI Edges</a> <a
@@ -625,20 +611,6 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
       </nav>
       <div class="sidebar-footer"> <a href="/index.html"
           class="sidebar-home">← Home</a> <a href="About%20SJI.html">About
-
-
-
-
-
-
-
-
-
-
-
-
-
-
           SJI</a> <a href="#" class="help-placeholder">→ Help</a> </div>
     </aside>
     <!-- ── Main ─────────────────────────────────────────────────────── -->
@@ -929,8 +901,7 @@ npm start</code></pre>
         <p>You can add or delete subnetworks directly in <code>/data/subnetworks</code>,
           then open them by selecting <span class="ui-label">Open
             existing networks in viewer</span> from the left panel to go
-          directly to the viewer. See the <span class="ui-label"><font
-              color="#c8d4ec">Advanced</font> <font color="#c8d4ec">Topics</font></span>
+          directly to the viewer. See the <span class="ui-label">Advanced Topics</span>
           section below for details.</p>
       </section>
       <hr class="divider"><!-- 03 Subnetwork -->
@@ -964,20 +935,6 @@ npm start</code></pre>
             <div>&nbsp;<strong>Domain</strong> — select <em>Bacteria</em>
               or <em>Eukaryotes</em> based on where your proteins live.
               This selects the correct pre-built index. See the <b>Advanced
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                 Topics </b>section below for instructions on building
               custom indexes.</div>
           </li>
@@ -1001,11 +958,9 @@ npm start</code></pre>
           directory, such as <code>data/networks/</code>, and the <span
             class="ui-label">Open in Viewer</span> button will appear.
           Click this button to inspect the subnetwork interactively.
-          Your seed protein will be automatically filled into the <strong
-            data-start="57" data-end="79"><font color="#3dffa0">Highlight</font>
-            <font color="#3dffa0">Proteins</font></strong> box in the
+          Your seed protein will be automatically filled into the <strong><span class="hl-green">Highlight</span>
+            <span class="hl-green">Proteins</span></strong> box in the
           viewer.
-          <meta charset="utf-8">
         </p>
         <p>To highlight your seed proteins, click <span
             class="ui-label">Highlight Proteins (UniProt AC)</span>,
@@ -1041,65 +996,20 @@ npm start</code></pre>
             annotated">
           <div class="figure-caption"> <strong>Controls panel.</strong>
             Pick a CSV from <em>Select Network</em> and click <strong>Load
-
-
-
-
-
-
-
-
-
-
-
-
-
-
               Network</strong>. The status line below confirms the
             loaded counts (e.g. <em>"Loaded: 61 nodes, 1364 edges"</em>).
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             Use <strong>Edit &amp; Save Network </strong>to modify a
             network. For example, when a subnetwork is too large or
             contains clearly unrelated proteins, you can remove
             irrelevant clusters or proteins and save the edited version
             as a new subnetwork.
-            <meta charset="utf-8">
             Use <strong>Highlight by Species</strong> and <strong>Clear
-
-
-
-
-
-
-
-
-
-
-
-
-
-
               Highlights</strong> to locate proteins of interest. Note
             that you need to know the protein identifiers; by default,
             these are UniProt ACs.
-            <meta charset="utf-8">
           </div>
         </div>
-        <p>The <strong><font color="#3dffa0">Load</font> <font
-              color="#3dffa0"> Network</font> </strong>button renders a
+        <p>The <strong><span class="hl-green">Load</span> <span class="hl-green"> Network</span> </strong>button renders a
           physics-based force layout that runs briefly and then settles.
           The status line under the dropdown confirms how many nodes and
           edges loaded.</p>
@@ -1107,7 +1017,6 @@ npm start</code></pre>
           <div class="callout-label">Refresh the network list</div>
           <p>If you have just extracted a&nbsp; subnetwork and it does
             not appear in the dropdown list,
-            <meta charset="utf-8">
             click the small <strong>↻</strong> button next to the
             dropdown (red circle) to refresh the list without reloading
             the page. </p>
@@ -1127,20 +1036,6 @@ npm start</code></pre>
           <div class="figure-caption"> <strong>Collapsed view.</strong>
             The three large gray nodes are neighborhoods (NH) — node
             size scales with the number of members. Click the orange <strong>Expand
-
-
-
-
-
-
-
-
-
-
-
-
-
-
               All</strong> sun-icon (red circle, bottom-right) to expand
             every cluster at once. Use <strong>+/−</strong> to zoom and
             the <strong>↺</strong> button to fit-to-screen. </div>
@@ -1192,22 +1087,6 @@ npm start</code></pre>
           <h2>Highlighting Proteins</h2>
         </div>
         <p>You can color-mark proteins of interest in two ways: by <strong>UniProt
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             accession</strong><strong>s</strong> (the input field in the
           left panel) or by <strong>species</strong> (next section). </p>
         <ul class="step-list">
@@ -1259,28 +1138,20 @@ npm start</code></pre>
         <div class="step-header">
           <h2>Filtering by Species</h2>
         </div>
-        <p>Click <strong><font color="#3dffa0">Highlight</font> <font
-              color="#3dffa0">by</font> <font color="#3dffa0">Species</font></strong>
+        <p>Click <strong><span class="hl-green">Highlight</span> <span class="hl-green">by</span> <span class="hl-green">Species</span></strong>
           on the left panel to open a draggable taxonomic tree. Drill
           down through the taxonomy, check the species you care about,
-          then pick a color and click <font color="#3dffa0"><strong>Highlight</strong></font>.</p>
-        <p>Note that the species panel includes <strong data-start="37"
-            data-end="51"><font color="#3dffa0">Select</font> <font
-              color="#3dffa0">All</font></strong> and <strong
-            data-start="56" data-end="72"><font color="#3dffa0">Deselect</font>
-            <font color="#3dffa0">All</font></strong> buttons. For
+          then pick a color and click <span class="hl-green"><strong>Highlight</strong></span>.</p>
+        <p>Note that the species panel includes <strong><span class="hl-green">Select</span> <span class="hl-green">All</span></strong> and <strong><span class="hl-green">Deselect</span>
+            <span class="hl-green">All</span></strong> buttons. For
           example, if you want to retain only human and mouse proteins
           in your subnetwork and remove proteins from all other species,
-          first click <strong data-start="222" data-end="236"><font
-              color="#3dffa0">Select</font> <font color="#3dffa0">All</font></strong>,
-          then uncheck only human and mouse. Next, click <font
-            color="#3dffa0"><strong data-start="285" data-end="298">Highlight</strong></font>
+          first click <strong><span class="hl-green">Select</span> <span class="hl-green">All</span></strong>,
+          then uncheck only human and mouse. Next, click <span class="hl-green"><strong>Highlight</strong></span>
           so that proteins from all other species are selected. You can
-          then click <strong data-start="372" data-end="395"><font
-              color="#3dffa0">Edit</font> <font color="#3dffa0">&amp;</font>
-            <font color="#3dffa0">Save</font> <font color="#3dffa0">Network</font></strong>
+          then click <strong><span class="hl-green">Edit</span> <span class="hl-green">&amp;</span>
+            <span class="hl-green">Save</span> <span class="hl-green">Network</span></strong>
           to generate a new species-focused subnetwork.
-          <meta charset="utf-8">
         </p>
         <div class="figure"> <img src="./tantiSpecies.png"
             alt="Highlight by Species panel showing taxonomic tree with
@@ -1408,15 +1279,6 @@ npm start</code></pre>
             <div class="bullet">3</div>
             <div>Use <span class="ui-label">Edges by SJI Weight</span>
               to trim weak links. For example, <span class="ui-label">Remove
-
-
-
-
-
-
-
-
-
                 Edges Below</span> <code>0.5</code> removes edges with
               SJI below 0.5, while <span class="ui-label">Restore Edges
                 Above</span> <code>0.3</code> can restore previously
@@ -1460,13 +1322,6 @@ npm start</code></pre>
           exported. Toggle the blue star <span
             class="viewer-icon-inline" aria-label="Select Nodes">★</span>
           button so that it turns gold; this switches the system to <strong>export
-
-
-
-
-
-
-
             mode</strong>. In this mode, clicking a node no longer
           collapses or expands a cluster. Instead, it selects or
           deselects the node.</p>
@@ -1486,14 +1341,12 @@ npm start</code></pre>
               panel.</strong> The top box lists all selected proteins
             and clusters. When valid entries are available, proteins are
             automatically linked to their corresponding UniProt records.
-            <meta charset="utf-8">
             The <strong>UniProt section buttons</strong> below
             (Function, Names &amp; Taxonomy, Expression, …) re-target
             every link in the list to that section of UniProt — handy
             for quickly comparing, say, expression data across the whole
             selection. Click <em>Function</em> to return to the top of
             entry link.
-            <meta charset="utf-8">
           </div>
         </div>
         <div class="figure fig-medium"> <img src="./tsortProtDC.png"
@@ -1609,7 +1462,6 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
         </table>
         <p>Example — open the viewer on a specific network with two
           proteins pre-filled in the highlight box
-          <meta charset="utf-8">
           :</p>
         <div class="code-block">
           <div class="code-block-header"> <span class="code-lang">URL</span>
@@ -1620,10 +1472,8 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
         <div class="callout tip">
           <div class="callout-label">Tip — Bookmarking sessions</div>
           <p>Copy the viewer URL containing
-            <meta charset="utf-8">
             <code>?network=</code> to access a specific network and
             easily highlight seed proteins.
-            <meta charset="utf-8">
           </p>
         </div>
       </section>
@@ -1823,13 +1673,11 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
               query protein has an SJI edge report that lists its
               neighbors in the pre-built network, ordered from closest
               to farthest.
-              <meta charset="utf-8">
               Use the closest neighbors as seeds to extract subnetworks,
               then concatenate the edge reports with the extracted
-              subnetworks using the <code data-start="76" data-end="81">cat</code>
+              subnetworks using the <code>cat</code>
               command or any plain-text editor to attach your proteins
               to the networks.
-              <meta charset="utf-8">
               Move your custom networks to <code>/data/networks</code>
               and load them from <code>viewer.html</code>. Enter your
               own protein IDs in the <span class="ui-label">Highlight
@@ -1950,7 +1798,6 @@ href="https://colab.research.google.com/drive/1tKFCOIPJClFbR08L9qIomxVQKvWKDIu-"
               can also be used as a standalone script, allowing this
               workflow to be automated for proteome annotation by
               training a parameter-selection system.
-              <meta charset="utf-8">
             </div>
           </li>
         </ul>

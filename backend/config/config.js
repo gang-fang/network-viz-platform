@@ -24,15 +24,13 @@ const config = {
 
   // ── Species / taxonomy ────────────────────────────────────────────────────
   //
-  // speciesPath    (legacy, kept for /api/species-names backward compat)
-  //   The CSV that drives the flat species-name list.  After consolidation
-  //   this points to the same file as taxonNamesPath.
-  //
   // taxonNamesPath
   //   NCBI_txID.csv — two-column CSV with header "ncbi_txid,species_name".
   //   Contains ALL taxids found in commontree.txt (internal ranks + leaves).
+  //   This also drives the /api/species-names flat species-name endpoint.
   //   Users replace this file with their own NCBI download; no code changes
   //   are required — just set TAXON_NAMES_PATH in the .env file.
+  //   SPECIES_PATH is still accepted as a legacy alias.
   //
   // taxonTreePath
   //   commontree.txt — ASCII tree downloaded from the NCBI Common Tree tool.
@@ -41,8 +39,7 @@ const config = {
   // Both files default to data/NCBI_txID/ which is where NCBI downloads land
   // after the standard setup instructions.
   // ─────────────────────────────────────────────────────────────────────────
-  speciesPath:    process.env.SPECIES_PATH     || path.join(__dirname, '../../data/NCBI_txID/NCBI_txID.csv'),
-  taxonNamesPath: process.env.TAXON_NAMES_PATH || path.join(__dirname, '../../data/NCBI_txID/NCBI_txID.csv'),
+  taxonNamesPath: process.env.TAXON_NAMES_PATH || process.env.SPECIES_PATH || path.join(__dirname, '../../data/NCBI_txID/NCBI_txID.csv'),
   taxonTreePath:  process.env.TAXON_TREE_PATH  || path.join(__dirname, '../../data/NCBI_txID/commontree.txt'),
 
   // File watching (set FILE_WATCH_ENABLED=false to disable)

@@ -80,11 +80,6 @@ class AppState {
         const stats = this.getEditStats();
         this.emit('viewGraphUpdated', stats);
         this.emit('editUpdated', stats);
-        // We don't necessarily need to emit here if D3Adapter is the one calling it,
-        // but it's good practice for other listeners.
-        // However, D3Adapter calls this inside updateVisualization, which is triggered by events.
-        // Emitting here might cause loops if not careful.
-        // For now, just update the data structure.
     }
 
     /**
@@ -265,14 +260,7 @@ class AppState {
                 }
 
                 const colors = this.nodeColors.get(targetId);
-                // Avoid duplicate colors for the same node from the same layer? 
-                // The user wants "split into n+1 slices" where n is number of species (layers).
-                // So if multiple proteins from same species map to this node, we still only want ONE slice for that species.
-                // So we check if this color is already in the list? 
-                // Or better, we check if we already processed this layer for this targetId.
-                // But `colors` is just an array of strings.
-                // Simple heuristic: If the color is not already in the array, add it.
-                // This assumes each layer has a unique color, or at least we want unique colors in the pie.
+                // One color slice per layer is enough when multiple matched proteins map to the same cluster.
                 if (!colors.includes(color)) {
                     colors.push(color);
                 }
@@ -634,10 +622,7 @@ class AppState {
             // Auto-select highlighted nodes
             this.autoSelectHighlightedNodes();
         } else {
-            // Clear selection when exiting mode? 
-            // User didn't specify, but usually good practice.
-            // Or keep it? The requirement says "revert to original appearance".
-            // Let's clear it to be safe and avoid confusion.
+            // Clear selection when exiting mode so the graph returns to its normal appearance.
             this.clearSelection();
         }
 

@@ -167,7 +167,7 @@ For the published data release, these directories and files are created by `inst
 | `data/networks/` | `DATA_PATH` | `*.csv` — one edge per line: `node1,node2,weight` |
 | `data/indexes/` | `INDEXES_PATH` | Preprocessed graph index triplets such as `eu.adj.bin`, `eu.adj.index.bin`, `eu.node_ids.tsv` |
 | `data/nodes_attr/` | `NODE_ATTRIBUTES_PATH` | Exactly one `*.nodes.attr` file — comma-separated, with a header row: `node_id`, `NCBI_txID`, `NH_ID`, `NH_Size`, … |
-| `data/NCBI_txID/NCBI_txID.csv` | `SPECIES_PATH` | Two columns: `ncbi_txid,species_name` |
+| `data/NCBI_txID/NCBI_txID.csv` | `TAXON_NAMES_PATH` | Two columns: `ncbi_txid,species_name` |
 
 ## Configuration
 
@@ -180,7 +180,7 @@ Copy `.env.example` to `.env` and override as needed. Key variables:
 | `DATA_PATH` | `./data/networks` | Directory containing network CSV files |
 | `INDEXES_PATH` | `./data/indexes` | Directory containing preprocessed extraction indexes |
 | `NODE_ATTRIBUTES_PATH` | `./data/nodes_attr` | Directory containing exactly one `.nodes.attr` file |
-| `SPECIES_PATH` | `./data/NCBI_txID/NCBI_txID.csv` | NCBI taxonomy mapping CSV |
+| `TAXON_NAMES_PATH` | `./data/NCBI_txID/NCBI_txID.csv` | NCBI taxonomy mapping CSV. `SPECIES_PATH` is still accepted as a backward-compatible alias. |
 | `PYTHON_COMMAND` | `python3` | Python executable used for subnetwork extraction |
 | `SUBNETWORK_SCRIPT_PATH` | `./tools/runtime/extract_subnetwork.py` | Extraction CLI path |
 | `SUBNETWORK_JOB_TEMP_PATH` | `./data/tmp/subnetwork-jobs` | Controlled temp directory for extraction jobs |
