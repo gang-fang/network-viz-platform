@@ -4,7 +4,7 @@
  */
 class Graph {
     constructor() {
-        this.nodes = new Map(); // id -> { id, kind, ...attrs }
+        this.nodes = new Map(); // id -> { id, ...attrs }
         this.edges = new Map(); // id -> { id, source, target, weight, ...attrs }
         this.adjacency = new Map(); // nodeId -> Set(edgeId)
     }
@@ -57,36 +57,6 @@ class Graph {
     }
 
     /**
-     * Get all nodes as array
-     */
-    getNodes() {
-        return Array.from(this.nodes.values());
-    }
-
-    /**
-     * Get all edges as array
-     */
-    getEdges() {
-        return Array.from(this.edges.values());
-    }
-
-    /**
-     * Get neighbors of a node
-     */
-    getNeighbors(nodeId) {
-        const edgeIds = this.adjacency.get(nodeId);
-        if (!edgeIds) return [];
-
-        const neighbors = new Set();
-        edgeIds.forEach(edgeId => {
-            const edge = this.edges.get(edgeId);
-            if (edge.source === nodeId) neighbors.add(edge.target);
-            else neighbors.add(edge.source);
-        });
-        return Array.from(neighbors);
-    }
-
-    /**
      * Clear the graph
      */
     clear() {
@@ -113,7 +83,6 @@ class Graph {
     }
 }
 
-// Export for module system if using CommonJS, or global if using vanilla script tags
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = Graph;
 } else {

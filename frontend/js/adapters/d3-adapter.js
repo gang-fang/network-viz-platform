@@ -25,7 +25,7 @@ const COMPONENT_EXTENT_MAX_TICKS = 120;
 const COMPONENT_SEED_BASE_RADIUS = 12;
 const COMPONENT_SEED_SPACING = 16;
 const DEFAULT_PROTEIN_NODE_RADIUS = 5;
-// Legacy floor on the collide radius. Keeping this at 15 preserves the tight
+// Minimum floor on the collide radius. Keeping this at 15 preserves the tight
 // cluster-only layout that the simulation produced before collide became
 // size-aware; the viewport stays compact and "fit-to-view" lands at a sensible
 // scale for collapsed networks. Larger clusters still grow past this floor via
@@ -97,10 +97,6 @@ class D3Adapter {
 
     zoomOut() {
         this.svg.transition().duration(300).call(this.zoomBehavior.scaleBy, 0.8);
-    }
-
-    resetZoom() {
-        this.fitToView(750);
     }
 
     resetLayout() {
@@ -205,7 +201,6 @@ class D3Adapter {
     }
 
     initD3() {
-        // Basic D3 setup (simplified for now)
         this.zoomBehavior = d3.zoom().on("zoom", (event) => {
             this.g.attr("transform", event.transform);
             this.scheduleHighlightPulseVisualUpdate();
@@ -222,7 +217,7 @@ class D3Adapter {
         this.simulation = d3.forceSimulation()
             .force("link", d3.forceLink().id(d => d.id).distance(50)) // Adjusted link distance
             .force("charge", d3.forceManyBody().strength(-150)) // Adjusted repulsion
-            .force("collide", d3.forceCollide().radius(d => this.getCollisionRadius(d))) // Prevent direct node overlap, with a legacy floor
+            .force("collide", d3.forceCollide().radius(d => this.getCollisionRadius(d))) // Prevent direct node overlap with a minimum radius
             .force("expandedGroupSeparation", this.createExpandedGroupSeparationForce())
             .force("x", d3.forceX(d => d._componentCenterX || this.width / 2).strength(FORCE_COMPONENT_STRENGTH))
             .force("y", d3.forceY(d => d._componentCenterY || this.height / 2).strength(FORCE_COMPONENT_STRENGTH))
@@ -1352,7 +1347,7 @@ class D3Adapter {
     }
 
     getCollisionRadius(d) {
-        // Honour the legacy compact spacing for small/typical nodes (proteins
+        // Honour the minimum compact spacing for small/typical nodes (proteins
         // and small clusters) so that "collapse all" stays inside the
         // viewport. Only nodes whose geometric radius pushes past the floor
         // get extra room — the rare oversized cluster, not all clusters.

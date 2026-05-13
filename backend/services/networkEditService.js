@@ -5,11 +5,18 @@ const db = require('../config/database');
 const config = require('../config/config');
 const logger = require('../utils/logger');
 const { ingestNetworks } = require('../scripts/ingestData');
+const {
+  DEFAULT_LOCK_STALE_MS,
+  DEFAULT_MAX_SUFFIX_ATTEMPTS,
+  makeErrorFactory,
+  normalizeCsvOutputName,
+  reserveOutputName: reserveFileOutputName,
+  suppressWatcherIngest: suppressFileWatcherIngest,
+} = require('../utils/fileReservation');
 
 const dbAll = util.promisify(db.all.bind(db));
 const dbRun = util.promisify(db.run.bind(db));
 
-const LOCK_STALE_MS = 10 * 60 * 1000;
 const MAX_HIDDEN_NODE_IDS = 200000;
 const MAX_HIDDEN_EDGE_IDS = 20000;
 const MAX_HIDDEN_EDGE_WEIGHT_RANGES = 1000;
@@ -20,7 +27,8 @@ function getMaxNameLength() {
 }
 
 function getMaxSuffixAttempts() {
-  return config.networkEdit?.maxSuffixAttempts || 1000;
+  const configured = config.networkEdit?.maxSuffixAttempts;
+  return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_MAX_SUFFIX_ATTEMPTS;
 }
 
 class NetworkEditError extends Error {
@@ -32,32 +40,13 @@ class NetworkEditError extends Error {
   }
 }
 
+const createNetworkEditError = makeErrorFactory(NetworkEditError);
+
 function normalizeOutputName(nameInput) {
-  if (typeof nameInput !== 'string' || nameInput.trim() === '') {
-    throw new NetworkEditError('name must be a non-empty string');
-  }
-
-  const trimmed = nameInput.trim();
-  const maxNameLength = getMaxNameLength();
-  if (trimmed.length > maxNameLength) {
-    throw new NetworkEditError(`name is limited to ${maxNameLength} characters`);
-  }
-
-  const normalized = trimmed.toLowerCase().endsWith('.csv')
-    ? `${trimmed.slice(0, -4)}.csv`
-    : `${trimmed}.csv`;
-
-  if (!/^[A-Za-z0-9_-][A-Za-z0-9_.-]*\.csv$/i.test(normalized)) {
-    throw new NetworkEditError(
-      'name may contain only letters, numbers, ".", "_" and "-", and must resolve to a .csv filename'
-    );
-  }
-
-  if (normalized === '.' || normalized === '..' || normalized.includes('/') || normalized.includes('\\')) {
-    throw new NetworkEditError('name must be a plain filename, not a path');
-  }
-
-  return normalized;
+  return normalizeCsvOutputName(nameInput, {
+    maxNameLength: getMaxNameLength(),
+    errorFactory: createNetworkEditError,
+  });
 }
 
 function normalizeHiddenNodeIds(value) {
@@ -131,82 +120,14 @@ function isEdgeHiddenByWeightRanges(edge, ranges) {
   return Number.isFinite(weight) && ranges.some(range => weight >= range.min && weight < range.max);
 }
 
-function splitOutputFilename(filename) {
-  const ext = path.extname(filename);
-  const basename = path.basename(filename, ext);
-  return { basename, ext };
-}
-
-async function hasConflictingNetworkFile(finalDir, canonicalBasename) {
-  try {
-    const existingFiles = await fs.promises.readdir(finalDir);
-    return existingFiles.some(name =>
-      !name.endsWith('.lock') && name.toLowerCase() === canonicalBasename
-    );
-  } catch (err) {
-    if (err.code === 'ENOENT') return false;
-    throw err;
-  }
-}
-
-async function clearStaleReservationLock(lockPath, finalDir, canonicalBasename) {
-  try {
-    const lockStat = await fs.promises.stat(lockPath);
-    const lockAgeMs = Date.now() - lockStat.mtimeMs;
-    if (lockAgeMs > LOCK_STALE_MS && !(await hasConflictingNetworkFile(finalDir, canonicalBasename))) {
-      await fs.promises.rm(lockPath, { force: true });
-    }
-  } catch (err) {
-    if (err.code !== 'ENOENT') throw err;
-  }
-}
-
-async function tryReserveOutputName(finalDir, finalBasename) {
-  const canonicalBasename = finalBasename.toLowerCase();
-  const lockPath = path.join(finalDir, `.${canonicalBasename}.lock`);
-
-  await clearStaleReservationLock(lockPath, finalDir, canonicalBasename);
-
-  try {
-    const handle = await fs.promises.open(lockPath, 'wx');
-    try {
-      if (await hasConflictingNetworkFile(finalDir, canonicalBasename)) {
-        throw new NetworkEditError(`A network named "${finalBasename}" already exists`, 409);
-      }
-    } catch (err) {
-      await handle.close().catch(() => {});
-      await fs.promises.rm(lockPath, { force: true }).catch(() => {});
-      throw err;
-    }
-
-    return {
-      outputFilename: finalBasename,
-      finalOutputPath: path.join(finalDir, finalBasename),
-      handle,
-      lockPath,
-    };
-  } catch (err) {
-    if (err.code === 'EEXIST') return null;
-    if (err instanceof NetworkEditError && err.status === 409) return null;
-    throw err;
-  }
-}
-
 async function reserveOutputName(requestedOutputName) {
-  const finalDir = config.dataPath;
-  const { basename, ext } = splitOutputFilename(requestedOutputName);
-  const maxAttempts = getMaxSuffixAttempts();
-
-  for (let suffix = 0; suffix < maxAttempts; suffix += 1) {
-    const candidateName = suffix === 0 ? requestedOutputName : `${basename}_${suffix}${ext}`;
-    const reservation = await tryReserveOutputName(finalDir, candidateName);
-    if (reservation) return reservation;
-  }
-
-  throw new NetworkEditError(
-    `Could not reserve a unique network name after ${maxAttempts} attempts`,
-    503
-  );
+  return reserveFileOutputName(requestedOutputName, {
+    finalDir: config.dataPath,
+    maxAttempts: getMaxSuffixAttempts(),
+    lockStaleMs: DEFAULT_LOCK_STALE_MS,
+    resourceLabel: 'network name',
+    errorFactory: createNetworkEditError,
+  });
 }
 
 async function getSourceNodeIds(source) {
@@ -278,19 +199,7 @@ async function removeNetworkFromDatabase(source) {
 }
 
 function suppressWatcherIngest(filename) {
-  try {
-    const fileWatcher = require('./fileWatcher');
-    if (fileWatcher && typeof fileWatcher.suppressNetworkIngest === 'function') {
-      fileWatcher.suppressNetworkIngest(filename);
-      return;
-    }
-    throw new Error('fileWatcher.suppressNetworkIngest is unavailable');
-  } catch (err) {
-    throw new NetworkEditError(
-      `Could not suppress watcher ingest for ${filename}: ${err.message}`,
-      500
-    );
-  }
+  suppressFileWatcherIngest(filename, createNetworkEditError);
 }
 
 async function createEditedNetwork({ source, name, hiddenNodeIds, hiddenEdgeIds, hiddenEdgeWeightRanges } = {}) {

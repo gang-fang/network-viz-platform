@@ -17,7 +17,6 @@ function createSchema(db) {
         db.serialize(() => {
             db.run(`CREATE TABLE IF NOT EXISTS nodes (
               id TEXT PRIMARY KEY,
-              kind TEXT NOT NULL,
               attributes_json TEXT,
               attribute_source TEXT
             )`);
@@ -86,7 +85,7 @@ describe('getNetworkData — integration tests (real SQLite)', () => {
 
     test('returns nodes and edges for a known source', async () => {
         await dbRun(testDb,
-            `INSERT INTO nodes (id, kind, attributes_json) VALUES ('A', 'protein', '{"NH_ID":"NH001"}'), ('B', 'protein', '{}')`
+            `INSERT INTO nodes (id, attributes_json) VALUES ('A', '{"NH_ID":"NH001"}'), ('B', '{}')`
         );
         await dbRun(testDb,
             `INSERT INTO edges (id, node1, node2, weight, source, attributes_json) VALUES ('A|B', 'A', 'B', 0.9, 'net.csv', '{}')`
@@ -101,7 +100,7 @@ describe('getNetworkData — integration tests (real SQLite)', () => {
 
     test('returns isolated network members registered in network_nodes', async () => {
         await dbRun(testDb,
-            `INSERT INTO nodes (id, kind, attributes_json) VALUES ('A', 'protein', '{}')`
+            `INSERT INTO nodes (id, attributes_json) VALUES ('A', '{}')`
         );
         await dbRun(testDb,
             `INSERT INTO network_nodes (source, node_id) VALUES ('isolated.csv', 'A')`
@@ -149,9 +148,9 @@ describe('searchProteins — integration tests (real SQLite)', () => {
     test('returns a match only for accessions present in the requested network', async () => {
         // P001 is in net-a.csv; P002 is in net-b.csv only
         await dbRun(testDb,
-            `INSERT INTO nodes (id, kind, attributes_json) VALUES
-             ('P001', 'protein', '{"NH_ID":"NH001"}'),
-             ('P002', 'protein', '{"NH_ID":"NH002"}')`
+            `INSERT INTO nodes (id, attributes_json) VALUES
+             ('P001', '{"NH_ID":"NH001"}'),
+             ('P002', '{"NH_ID":"NH002"}')`
         );
         await dbRun(testDb,
             `INSERT INTO edges (id, node1, node2, weight, source, attributes_json) VALUES
@@ -159,8 +158,8 @@ describe('searchProteins — integration tests (real SQLite)', () => {
              ('P002|Y', 'P002', 'Y', 1.0, 'net-b.csv', '{}')`
         );
         await dbRun(testDb,
-            `INSERT INTO nodes (id, kind, attributes_json) VALUES
-             ('X', 'protein', '{}'), ('Y', 'protein', '{}')`
+            `INSERT INTO nodes (id, attributes_json) VALUES
+             ('X', '{}'), ('Y', '{}')`
         );
 
         const result = await searchProteins('net-a.csv', ['P001', 'P002']);
@@ -173,14 +172,14 @@ describe('searchProteins — integration tests (real SQLite)', () => {
 
     test('returns nh_id from node attributes', async () => {
         await dbRun(testDb,
-            `INSERT INTO nodes (id, kind, attributes_json) VALUES ('P003', 'protein', '{"NH_ID":"NH099"}')`
+            `INSERT INTO nodes (id, attributes_json) VALUES ('P003', '{"NH_ID":"NH099"}')`
         );
         await dbRun(testDb,
             `INSERT INTO edges (id, node1, node2, weight, source, attributes_json) VALUES
              ('P003|Q', 'P003', 'Q', 1.0, 'net-a.csv', '{}')`
         );
         await dbRun(testDb,
-            `INSERT INTO nodes (id, kind, attributes_json) VALUES ('Q', 'protein', '{}')`
+            `INSERT INTO nodes (id, attributes_json) VALUES ('Q', '{}')`
         );
 
         const result = await searchProteins('net-a.csv', ['P003']);
@@ -224,13 +223,13 @@ describe('searchBySpecies — integration tests (real SQLite)', () => {
 
     test('returns only species matches from the requested network', async () => {
         await dbRun(testDb,
-            `INSERT INTO nodes (id, kind, attributes_json) VALUES
-             ('P001', 'protein', '{"NCBI_txID":"9606","NH_ID":"NH001"}'),
-             ('P002', 'protein', '{"NCBI_txID":"10090","NH_ID":"NH002"}'),
-             ('P003', 'protein', '{"NCBI_txID":"9606","NH_ID":"NH003"}'),
-             ('X', 'protein', '{}'),
-             ('Y', 'protein', '{}'),
-             ('Z', 'protein', '{}')`
+            `INSERT INTO nodes (id, attributes_json) VALUES
+             ('P001', '{"NCBI_txID":"9606","NH_ID":"NH001"}'),
+             ('P002', '{"NCBI_txID":"10090","NH_ID":"NH002"}'),
+             ('P003', '{"NCBI_txID":"9606","NH_ID":"NH003"}'),
+             ('X', '{}'),
+             ('Y', '{}'),
+             ('Z', '{}')`
         );
         await dbRun(testDb,
             `INSERT INTO edges (id, node1, node2, weight, source, attributes_json) VALUES

@@ -26,7 +26,6 @@ function initializeSchema() {
     // Nodes table
     db.run(`CREATE TABLE IF NOT EXISTS nodes (
       id TEXT PRIMARY KEY,
-      kind TEXT NOT NULL, -- 'protein' or 'nh'
       attributes_json TEXT,
       attribute_source TEXT -- filename that last wrote attributes for this protein node
     )`);
@@ -55,16 +54,7 @@ function initializeSchema() {
       FOREIGN KEY(node_id) REFERENCES nodes(id)
     )`);
 
-    // Migration: add attribute_source column to databases created before this column existed.
-    // Only run ALTER TABLE when the column is actually missing; ignore nothing else.
-    db.all(`PRAGMA table_info(nodes)`, (err, cols) => {
-      if (!err && cols && !cols.some(c => c.name === 'attribute_source')) {
-        db.run(`ALTER TABLE nodes ADD COLUMN attribute_source TEXT`);
-      }
-    });
-
     // Indexes for performance
-    db.run(`CREATE INDEX IF NOT EXISTS idx_nodes_kind ON nodes(kind)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_edges_node1 ON edges(node1)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_edges_node2 ON edges(node2)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source)`);

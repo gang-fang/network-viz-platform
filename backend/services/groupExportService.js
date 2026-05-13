@@ -1,6 +1,10 @@
 const fs = require('fs');
-const path = require('path');
 const config = require('../config/config');
+const {
+  DEFAULT_MAX_SUFFIX_ATTEMPTS,
+  createUniqueFile,
+  makeErrorFactory,
+} = require('../utils/fileReservation');
 
 const MAX_GROUP_NAME_LENGTH = 16;
 const MAX_GROUP_COUNT = 100;
@@ -14,6 +18,8 @@ class GroupExportError extends Error {
     this.details = details;
   }
 }
+
+const createGroupExportError = makeErrorFactory(GroupExportError);
 
 function parseUniProtTokens(value) {
   return String(value || '')
@@ -75,16 +81,28 @@ function normalizeGroups(groups) {
   });
 }
 
+function getMaxSuffixAttempts() {
+  const configured = config.groupExport && config.groupExport.maxSuffixAttempts;
+  return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_MAX_SUFFIX_ATTEMPTS;
+}
+
+async function createUniqueExportFile(requestedFilename, content) {
+  return createUniqueFile(requestedFilename, content, {
+    finalDir: config.exportsPath,
+    maxAttempts: getMaxSuffixAttempts(),
+    resourceLabel: 'export filename',
+    errorFactory: createGroupExportError,
+  });
+}
+
 async function saveGroupExports(groups) {
   const normalizedGroups = normalizeGroups(groups);
   await fs.promises.mkdir(config.exportsPath, { recursive: true });
 
   const savedFiles = [];
   for (const group of normalizedGroups) {
-    const filename = `${group.name}.txt`;
-    const outputPath = path.join(config.exportsPath, filename);
     const content = `${group.accessions.join('\n')}\n`;
-    await fs.promises.writeFile(outputPath, content, 'utf8');
+    const filename = await createUniqueExportFile(`${group.name}.txt`, content);
     savedFiles.push({
       name: group.name,
       filename,
@@ -100,7 +118,6 @@ async function saveGroupExports(groups) {
 
 module.exports = {
   GroupExportError,
-  MAX_GROUP_NAME_LENGTH,
   parseUniProtTokens,
   normalizeGroups,
   saveGroupExports,

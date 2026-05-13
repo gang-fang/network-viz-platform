@@ -4,7 +4,6 @@ const path = require('path');
 const config = {
   // Server configuration
   port: parseInt(process.env.PORT, 10) || 3000,
-  nodeEnv: process.env.NODE_ENV || 'development',
 
   // Startup mode: 'serve' | 'ingest' | 'ingest-and-serve'
   startMode: process.env.START_MODE || 'serve',
@@ -49,7 +48,6 @@ const config = {
   uniprotApi: {
     baseUrl:          'https://rest.uniprot.org/uniprotkb/',
     timeout:          10000,
-    retryAttempts:    3,
     cacheExpiry:      86400000,
     batchLimit:       100,
     concurrencyLimit: 5,
@@ -76,6 +74,11 @@ const config = {
     maxSuffixAttempts:   parseInt(process.env.NETWORK_EDIT_MAX_SUFFIX_ATTEMPTS,  10) || 1000,
     watcherSuppressMs:   parseInt(process.env.NETWORK_EDIT_WATCHER_SUPPRESS_MS,  10) || 300000,
     watcherSuppressEvents: parseInt(process.env.NETWORK_EDIT_WATCHER_SUPPRESS_EVENTS, 10) || 3,
+  },
+
+  // Grouped export saves
+  groupExport: {
+    maxSuffixAttempts: parseInt(process.env.GROUP_EXPORT_MAX_SUFFIX_ATTEMPTS, 10) || 1000,
   },
 
   // Logging configuration

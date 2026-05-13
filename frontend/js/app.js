@@ -4,7 +4,6 @@
 async function initApp() {
     // 1. Initialize State
     const appState = new AppState();
-    window.appState = appState; // For debugging
 
     // 2. Initialize Module System
     const moduleSystem = new ModuleSystem(appState);
@@ -12,11 +11,6 @@ async function initApp() {
     // Register modules based on configuration
     if (window.ModuleConfig && window.ModuleConfig.activeModules) {
         window.ModuleConfig.activeModules.forEach(moduleId => {
-            // Convention: Module object is available on window as PascalCase(moduleId) + "Module"
-            // e.g., "species-selector" -> window.SpeciesSelectorModule
-            // OR we can just look for the object if we know the naming convention.
-
-            // Helper to convert kebab-case to PascalCase
             const toPascalCase = (str) => str.replace(/(^\w|-\w)/g, (text) => text.replace(/-/, "").toUpperCase());
             const moduleName = toPascalCase(moduleId) + "Module";
 
@@ -33,7 +27,6 @@ async function initApp() {
 
     // 3. Initialize Visualization Adapter
     const d3Adapter = new D3Adapter(appState, 'graph-canvas');
-    window.d3Adapter = d3Adapter; // Expose for debugging
 
     // 4. UI Controls
     const networkSelect = document.getElementById('network-select');

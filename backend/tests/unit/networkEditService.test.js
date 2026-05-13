@@ -53,6 +53,7 @@ describe('networkEditService', () => {
     fs.rmSync(mockTestRoot, { recursive: true, force: true });
     fs.mkdirSync(config.dataPath, { recursive: true });
     fs.mkdirSync(config.tempDataPath, { recursive: true });
+    config.networkEdit.maxSuffixAttempts = 5;
 
     mockDb.run.mockImplementation((...args) => callbackOk(args));
     mockDb.prepare.mockReturnValue({
@@ -228,6 +229,28 @@ describe('networkEditService', () => {
 
     expect(result.network).toBe('edited_2.csv');
     expect(fs.existsSync(path.join(config.dataPath, 'edited_2.csv'))).toBe(true);
+  });
+
+  test('reserveOutputName treats existing network names case-insensitively', async () => {
+    fs.writeFileSync(path.join(config.dataPath, 'Edited.csv'), 'old\n');
+
+    const reservation = await service.reserveOutputName('edited.csv');
+
+    expect(reservation.outputFilename).toBe('edited_1.csv');
+    expect(fs.existsSync(path.join(config.dataPath, 'Edited.csv'))).toBe(true);
+    await reservation.handle.close();
+    await fs.promises.rm(reservation.lockPath, { force: true });
+  });
+
+  test('reserveOutputName returns 503 when no suffix candidate is available', async () => {
+    config.networkEdit.maxSuffixAttempts = 2;
+    fs.writeFileSync(path.join(config.dataPath, 'edited.csv'), 'old\n');
+    fs.writeFileSync(path.join(config.dataPath, 'edited_1.csv'), 'old\n');
+
+    await expect(service.reserveOutputName('edited.csv')).rejects.toMatchObject({
+      name: 'NetworkEditError',
+      status: 503,
+    });
   });
 
   test('createEditedNetwork rejects edits with no visible source nodes', async () => {

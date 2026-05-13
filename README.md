@@ -214,7 +214,7 @@ The platform uses a clean separation between a backend data pipeline and a front
 - **`services/`** — Runtime services for file watching, subnetwork extraction, edited-network saving, and grouped exports.
 - **`controllers/`** — Query and orchestration layer for network data, subnetwork jobs, and UniProt lookups.
 - **`routes/`** — HTTP API routes for networks, subnetworks, species names, species tree data, and UniProt records.
-- **`config/database.js`** — Opens the SQLite connection and initialises the schema (`nodes`, `edges` tables; `attribute_source` migration).
+- **`config/database.js`** — Opens the SQLite connection and initialises the schema (`nodes`, `edges`, and `network_nodes` tables).
 
 ## Development
 
@@ -262,6 +262,7 @@ backend/
 │   ├── networkEditService.js    # Edited-network save workflow
 │   └── subnetworkService.js     # Subnetwork job orchestration
 ├── utils/
+│   ├── fileReservation.js      # Filename suffix reservation helpers
 │   ├── requestValidation.js     # Shared API validation helpers
 │   └── taxon-tree-parser.js     # NCBI common tree parser
 └── entrypoint.js                # Startup mode router
@@ -276,10 +277,16 @@ backend/
 | `GET /api/networks/:filename` | Fetch nodes and edges for a network |
 | `POST /api/networks/search` | Find nodes by UniProt accession |
 | `POST /api/networks/search-species` | Find nodes by NCBI taxonomy ID |
+| `POST /api/networks/edited` | Save the current edited network as a new reusable network |
+| `POST /api/networks/group-exports` | Save grouped UniProt accession exports as `.txt` files |
+| `GET /api/networks/:filename/status` | Return readiness and node/edge counts for a network |
 | `GET /api/subnetworks/limits` | Return client-facing extraction limits and available discovered indexes |
 | `POST /api/subnetworks` | Run `tools/runtime/extract_subnetwork.py`, write a generated CSV to `data/networks`, and return a `/viewer.html?network=...` link |
 | `GET /api/species-names` | NCBI taxonomy ID → species name mappings |
-| `GET /api/uniprot/:accession` | UniProt protein data |
+| `GET /api/species-tree/status` | Check species-tree file availability and cached stats |
+| `GET /api/species-tree` | Return the annotated NCBI taxonomy tree |
+| `POST /api/species-tree/invalidate` | Clear the species-tree cache |
+| `POST /api/uniprot/availability` | Check whether UniProt accessions currently resolve to entries |
 
 ## Key Design Principles
 

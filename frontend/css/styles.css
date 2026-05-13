@@ -126,10 +126,6 @@ body {
     margin-bottom: 0.5rem;
 }
 
-#network-select-container {
-    margin-bottom: 1.5rem;
-}
-
 .control-button {
     padding: 0.4rem 0.8rem;
     background: #34495e;
@@ -183,11 +179,6 @@ body {
 
 #search-input::placeholder {
     color: #95a5a6;
-}
-
-#color-picker-trigger:hover {
-    transform: scale(1.1);
-    transition: transform 0.2s;
 }
 
 #color-palette.hidden {
@@ -529,12 +520,6 @@ input[type="range"] {
     margin-bottom: 10px;
     font-size: 1.2rem;
     color: #333;
-}
-
-/* UniProt info panel */
-#uniprot-info {
-    overflow-y: auto;
-    height: 100%;
 }
 
 /* Node styles */

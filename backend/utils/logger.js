@@ -2,7 +2,6 @@ const winston = require('winston');
 const path = require('path');
 const config = require('../config/config');
 
-// Define log format
 const logFormat = winston.format.combine(
   winston.format.timestamp(),
   winston.format.errors({ stack: true }),
@@ -41,15 +40,5 @@ const logger = winston.createLogger({
     })
   ]
 });
-
-// Add request context middleware
-logger.requestContext = (req, res, next) => {
-  logger.defaultMeta = {
-    requestId: req.id,
-    path: req.path,
-    method: req.method
-  };
-  next();
-};
 
 module.exports = logger;

@@ -33,6 +33,8 @@ frontend/coverage/
 backend/coverage/
 .nyc_output/
 .jest-cache/
+__pycache__/
+*.py[cod]
 tools/bin/
 tools/preprocessing/topN_cpp/build/
 

@@ -266,7 +266,7 @@ const ExportPanelModule = {
             selectedIds.forEach(id => {
                 const node = graph.nodes.get(id);
                 if (node) {
-                    if (node._isCluster || node.kind === 'cluster' || node.type === 'cluster') {
+                    if (node._isCluster) {
                         nhNodes.push(node);
                     } else {
                         proteinNodes.push(node);
@@ -539,7 +539,6 @@ const ExportPanelModule = {
             section = document.createElement('div');
             section.id = sectionId;
             section.className = 'export-section';
-            section.dataset.count = 0;
 
             const header = document.createElement('div');
             header.className = 'section-header';
@@ -623,7 +622,6 @@ const ExportPanelModule = {
                 lines.push(`${this.escapeHtml(row.id)},"${renderedMembers.join(', ')}"`);
             });
             codeBlock.innerHTML = `${lines.join('\n')}\n`;
-            section.dataset.count = String(data.rows.length);
             title.textContent = `Neighborhoods (${data.rows.length})`;
             return;
         }
@@ -643,7 +641,6 @@ const ExportPanelModule = {
                 lines.push(renderedChunk.join(', '));
             }
             codeBlock.innerHTML = lines.join('\n');
-            section.dataset.count = String(data.items.length);
             title.textContent = `Proteins (${data.items.length})`;
         }
     },

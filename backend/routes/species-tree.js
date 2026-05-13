@@ -60,8 +60,8 @@ async function checkFiles() {
 }
 
 /**
- * Query the active DB for every distinct NCBI_txID that has at least one
- * protein node.  These taxids receive isDbSpecies = true in the tree.
+ * Query the active DB for every distinct NCBI_txID. These taxids receive
+ * isDbSpecies = true in the tree.
  *
  * The NCBI_txID is stored as a JSON field inside attributes_json:
  *   { …, "NCBI_txID": "9606", … }
@@ -72,8 +72,7 @@ async function getDbTaxids() {
         SELECT DISTINCT
             CAST(json_extract(attributes_json, '$.NCBI_txID') AS TEXT) AS taxid
         FROM nodes
-        WHERE kind = 'protein'
-          AND attributes_json IS NOT NULL
+        WHERE attributes_json IS NOT NULL
           AND json_extract(attributes_json, '$.NCBI_txID') IS NOT NULL
     `);
     return new Set(rows.map(r => String(r.taxid).trim()));

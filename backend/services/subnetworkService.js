@@ -6,11 +6,18 @@ const config = require('../config/config');
 const db = require('../config/database');
 const logger = require('../utils/logger');
 const { ingestNetworks } = require('../scripts/ingestData');
+const {
+  DEFAULT_LOCK_STALE_MS,
+  DEFAULT_MAX_SUFFIX_ATTEMPTS,
+  makeErrorFactory,
+  normalizeCsvOutputName,
+  reserveOutputName: reserveFileOutputName,
+  suppressWatcherIngest: suppressFileWatcherIngest,
+} = require('../utils/fileReservation');
 
 // This is an in-process concurrency cap. It does not coordinate across
 // multiple Node server instances.
 let activeJobCount = 0;
-const LOCK_STALE_MS = 10 * 60 * 1000;
 const JSON_SENTINEL = '__SUBNET_JSON__ ';
 const NETWORK_READY_TIMEOUT_MS = 10000;
 const NETWORK_READY_POLL_MS = 100;
@@ -24,6 +31,8 @@ class SubnetworkError extends Error {
     this.details = details;
   }
 }
+
+const createSubnetworkError = makeErrorFactory(SubnetworkError);
 
 function splitSeedInput(seedInput) {
   if (Array.isArray(seedInput)) {
@@ -73,31 +82,10 @@ function normalizeSeeds(seedInput) {
 }
 
 function normalizeOutputName(nameInput) {
-  if (typeof nameInput !== 'string' || nameInput.trim() === '') {
-    throw new SubnetworkError('name must be a non-empty string');
-  }
-
-  const trimmed = nameInput.trim();
-  if (trimmed.length > config.subnetwork.maxNameLength) {
-    throw new SubnetworkError(
-      `name is limited to ${config.subnetwork.maxNameLength} characters`
-    );
-  }
-
-  const normalized = trimmed.toLowerCase().endsWith('.csv')
-    ? `${trimmed.slice(0, -4)}.csv`
-    : `${trimmed}.csv`;
-  if (!/^[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:csv)$/i.test(normalized)) {
-    throw new SubnetworkError(
-      'name may contain only letters, numbers, ".", "_" and "-", and must resolve to a .csv filename'
-    );
-  }
-
-  if (normalized === '.' || normalized === '..' || normalized.includes('/') || normalized.includes('\\')) {
-    throw new SubnetworkError('name must be a plain filename, not a path');
-  }
-
-  return normalized;
+  return normalizeCsvOutputName(nameInput, {
+    maxNameLength: config.subnetwork.maxNameLength,
+    errorFactory: createSubnetworkError,
+  });
 }
 
 function normalizeIndexName(indexName) {
@@ -231,94 +219,14 @@ function getSubnetworkLimits() {
   };
 }
 
-function splitOutputFilename(filename) {
-  const ext = path.extname(filename);
-  const basename = path.basename(filename, ext);
-  return { basename, ext };
-}
-
-async function hasConflictingNetworkFile(finalDir, canonicalBasename) {
-  try {
-    const existingFiles = await fs.promises.readdir(finalDir);
-    return existingFiles.some(name =>
-      !name.endsWith('.lock') && name.toLowerCase() === canonicalBasename
-    );
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      return false;
-    }
-    throw err;
-  }
-}
-
-async function clearStaleReservationLock(lockPath, finalDir, canonicalBasename) {
-  try {
-    const lockStat = await fs.promises.stat(lockPath);
-    const lockAgeMs = Date.now() - lockStat.mtimeMs;
-    if (lockAgeMs > LOCK_STALE_MS && !(await hasConflictingNetworkFile(finalDir, canonicalBasename))) {
-      await fs.promises.rm(lockPath, { force: true });
-    }
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
-      throw err;
-    }
-  }
-}
-
-async function tryReserveOutputName(finalDir, finalBasename) {
-  const canonicalBasename = finalBasename.toLowerCase();
-  const lockPath = path.join(finalDir, `.${canonicalBasename}.lock`);
-
-  await clearStaleReservationLock(lockPath, finalDir, canonicalBasename);
-
-  let handle;
-  try {
-    handle = await fs.promises.open(lockPath, 'wx');
-    try {
-      const existingFiles = await fs.promises.readdir(finalDir);
-      const conflictingFile = existingFiles.find(name =>
-        !name.endsWith('.lock') && name.toLowerCase() === canonicalBasename
-      );
-
-      if (conflictingFile) {
-        throw new SubnetworkError(
-          `A network named "${conflictingFile}" already exists`,
-          409
-        );
-      }
-    } catch (err) {
-      await handle.close().catch(() => {});
-      await fs.promises.rm(lockPath, { force: true }).catch(() => {});
-      throw err;
-    }
-    return {
-      outputFilename: finalBasename,
-      finalOutputPath: path.join(finalDir, finalBasename),
-      handle,
-      lockPath,
-    };
-  } catch (err) {
-    if (err.code === 'EEXIST') {
-      return null;
-    }
-    if (err instanceof SubnetworkError && err.status === 409) {
-      return null;
-    }
-    throw err;
-  }
-}
-
 async function reserveOutputName(requestedOutputName) {
-  const finalDir = config.dataPath;
-  const { basename, ext } = splitOutputFilename(requestedOutputName);
-
-  for (let suffix = 0; ; suffix += 1) {
-    const candidateName = suffix === 0 ? requestedOutputName : `${basename}_${suffix}${ext}`;
-    const reservation = await tryReserveOutputName(finalDir, candidateName);
-    if (reservation) {
-      return reservation;
-    }
-  }
+  return reserveFileOutputName(requestedOutputName, {
+    finalDir: config.dataPath,
+    maxAttempts: DEFAULT_MAX_SUFFIX_ATTEMPTS,
+    lockStaleMs: DEFAULT_LOCK_STALE_MS,
+    resourceLabel: 'network name',
+    errorFactory: createSubnetworkError,
+  });
 }
 
 function ensureExtractionPrerequisites(indexName) {
@@ -388,19 +296,7 @@ async function waitForNetworkReady(filename, expectedEdgeCount) {
 }
 
 function suppressWatcherIngest(filename) {
-  try {
-    const fileWatcher = require('./fileWatcher');
-    if (fileWatcher && typeof fileWatcher.suppressNetworkIngest === 'function') {
-      fileWatcher.suppressNetworkIngest(filename);
-      return;
-    }
-    throw new Error('fileWatcher.suppressNetworkIngest is unavailable');
-  } catch (err) {
-    throw new SubnetworkError(
-      `Could not suppress watcher ingest for ${filename}: ${err.message}`,
-      500
-    );
-  }
+  suppressFileWatcherIngest(filename, createSubnetworkError);
 }
 
 function runExtractionProcess({ indexPrefix, seeds, outputPath, maxNodes }) {
@@ -586,13 +482,9 @@ async function createSubnetwork({ seeds, name, index = 'eu', maxNodes } = {}) {
 }
 
 module.exports = {
-  SubnetworkError,
   createSubnetwork,
   getSubnetworkLimits,
   normalizeSeeds,
   normalizeOutputName,
-  normalizeIndexName,
-  normalizeMaxNodes,
-  parseMessages,
   getAllowedIndexPrefixes,
 };

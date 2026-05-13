@@ -14,6 +14,16 @@ class FileWatcher {
     constructor() {
         this.watcher = null;
         this.suppressedNetworkIngests = new Map();
+        // Chokidar can emit concurrent events; keep DB transactions on the shared SQLite connection serialized.
+        this.operationQueue = Promise.resolve();
+    }
+
+    enqueueWatcherTask(task) {
+        const queuedTask = this.operationQueue.then(task, task);
+        this.operationQueue = queuedTask.catch(error => {
+            logger.error('FileWatcher queued operation failed:', error);
+        });
+        return queuedTask;
     }
 
     pruneExpiredSuppressions(now = Date.now()) {
@@ -76,9 +86,9 @@ class FileWatcher {
         });
 
         this.watcher
-            .on('add', path => this.handleFileChange(path, 'added'))
-            .on('change', path => this.handleFileChange(path, 'changed'))
-            .on('unlink', path => this.handleFileRemove(path))
+            .on('add', filePath => this.enqueueWatcherTask(() => this.handleFileChange(filePath, 'added')))
+            .on('change', filePath => this.enqueueWatcherTask(() => this.handleFileChange(filePath, 'changed')))
+            .on('unlink', filePath => this.enqueueWatcherTask(() => this.handleFileRemove(filePath)))
             .on('error', error => logger.error(`FileWatcher Error: ${error}`));
 
         logger.info(`FileWatcher initialized.`);

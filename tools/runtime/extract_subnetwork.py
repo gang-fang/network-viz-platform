@@ -372,8 +372,7 @@ def _stitch_components(graph, selected, seed_membership, budget):
     If the selected subnetwork has multiple connected components,
     attempt to connect them via shortest paths in the full graph.
     Note: this is an UNWEIGHTED hop-count BFS; edge weights are ignored when
-    choosing the bridge. (TODO: switch to Dijkstra on a distance derived from
-    the SJI weight if that matters for downstream analysis.)
+    choosing the bridge.
     """
     # Find connected components within selected
     adj_local = defaultdict(set)
@@ -533,7 +532,6 @@ def _finalize(graph, selected, seed_membership):
       - The binary index also contains within-list duplicates when the source
         edge file lists the same pair multiple times (eu_80.pairs has ~46%
         duplicates), so we also dedup per-node with a small local set.
-        TODO: deduplicate at preprocessing time so this set is unnecessary.
     """
     edges = []
     for node in selected:

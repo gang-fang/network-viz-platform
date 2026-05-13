@@ -184,26 +184,16 @@ async function ingestNodeAttributes(files) {
     // If any file fails, the entire operation rolls back — no partial state.
     await dbRun('BEGIN TRANSACTION');
     try {
-        // Reconcile protein rows: clear all non-empty protein attributes so every row
+        // Reconcile node rows: clear all non-empty protein attributes so every row
         // is rewritten from the current file set. This ensures:
         //   - Proteins removed from a file fall back to edge placeholders (not stale data).
         //   - Proteins moved between files are cleanly reassigned.
-        //   - Legacy null-source rows are cleared (non-empty attrs, no source tracking).
+        //   - Rows without source tracking are reset before the selected files are replayed.
         // Rows already at '{}' (edge-created placeholders) are untouched.
         await dbRun(
             `UPDATE nodes SET attributes_json = '{}', attribute_source = NULL
-             WHERE kind = 'protein' AND attributes_json != '{}'`
+             WHERE attributes_json != '{}'`
         );
-
-        // Remove unreferenced kind='nh' rows. NH nodes are derived by the frontend
-        // from protein attributes at render time — they are never read from the DB.
-        // This DELETE is a one-time migration cleanup for rows written by older code;
-        // it is a no-op on databases that have already been through this step.
-        // Rows referenced by edges (via FK) are intentionally skipped to avoid a
-        // SQLITE_CONSTRAINT failure when foreign_keys is ON; such rows are anomalous
-        // in the current schema and can be addressed separately if they appear.
-        await dbRun(`DELETE FROM nodes WHERE kind = 'nh'
-             AND id NOT IN (SELECT node1 FROM edges UNION SELECT node2 FROM edges)`);
 
         // Write each file within the outer transaction.
         // SAVEPOINTs are used inside each file for batch memory management — they do not
@@ -297,10 +287,9 @@ async function ingestSingleNodeAttributeFile(filename, filePath) {
     // ON CONFLICT(id) DO UPDATE is a true in-place upsert (unlike OR REPLACE, which
     // deletes + re-inserts and would violate FK constraints from edge rows).
     const stmt = db.prepare(
-        `INSERT INTO nodes (id, kind, attributes_json, attribute_source)
-         VALUES (?, 'protein', ?, ?)
+        `INSERT INTO nodes (id, attributes_json, attribute_source)
+         VALUES (?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
-             kind             = 'protein',
              attributes_json  = excluded.attributes_json,
              attribute_source = excluded.attribute_source`
     );
@@ -380,7 +369,7 @@ async function ingestNetworksInternal(specificFile = null) {
         let count = 0;
         const runId = ++networkIngestRunId;
         const stmt = db.prepare(`INSERT INTO edges (id, node1, node2, weight, source, attributes_json) VALUES (?, ?, ?, ?, ?, ?)`);
-        const nodeStmt = db.prepare(`INSERT OR IGNORE INTO nodes (id, kind, attributes_json) VALUES (?, ?, ?)`);
+        const nodeStmt = db.prepare(`INSERT OR IGNORE INTO nodes (id, attributes_json) VALUES (?, ?)`);
         const networkNodeStmt = db.prepare(`INSERT OR IGNORE INTO network_nodes (source, node_id) VALUES (?, ?)`);
 
         try {
@@ -413,9 +402,9 @@ async function ingestNetworksInternal(specificFile = null) {
                     // Insert placeholder nodes before the edge so FK constraints are
                     // satisfied even when foreign_keys = ON (e.g. during hot-reload).
                     // INSERT OR IGNORE leaves attr-ingested rows untouched.
-                    nodeStmt.run(u, 'protein', '{}', (err) => {
+                    nodeStmt.run(u, '{}', (err) => {
                         if (err) return reject(err);
-                        nodeStmt.run(v, 'protein', '{}', (err) => {
+                        nodeStmt.run(v, '{}', (err) => {
                             if (err) return reject(err);
                             networkNodeStmt.run(file, u, (err) => {
                                 if (err) return reject(err);
@@ -539,5 +528,4 @@ module.exports = {
     syncMissingNetworks,
     resolveSingleNodeAttributeFile,
     validateNodeAttributeFiles,
-    restoreIngestPragmas,
 };

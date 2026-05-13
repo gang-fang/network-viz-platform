@@ -24,14 +24,7 @@ jest.mock('../../utils/logger', () => ({
 
 // Mock the uniprotController to avoid axios dependency
 jest.mock('../../controllers/uniprotController', () => ({
-  getProteinData: jest.fn().mockImplementation((id) => {
-    return Promise.resolve({
-      accession: id,
-      name: 'Test Protein',
-      organism: 'Homo sapiens',
-      function: 'Test protein function'
-    });
-  })
+  getBatchProteinAvailability: jest.fn().mockResolvedValue([])
 }));
 
 jest.mock('../../controllers/subnetworkController', () => ({

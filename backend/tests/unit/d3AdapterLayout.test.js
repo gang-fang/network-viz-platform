@@ -33,11 +33,11 @@ describe('D3Adapter layout helpers', () => {
     expect(shiftCallCount).toBe(0);
   });
 
-  test('getCollisionRadius honours the legacy floor for small nodes and grows for oversized clusters', () => {
+  test('getCollisionRadius honours the minimum radius for small nodes and grows for oversized clusters', () => {
     const adapter = createAdapter();
 
     // Proteins (radius 5) and the smallest clusters (radius 7) must hit the
-    // legacy floor of 15 so cluster-only "collapse all" layouts stay tight
+    // minimum radius of 15 so cluster-only "collapse all" layouts stay tight
     // enough to fit inside the viewport at the default zoom.
     expect(adapter.getCollisionRadius({})).toBe(15);
     expect(adapter.getCollisionRadius({ _isCluster: true, size: 1 })).toBe(15);

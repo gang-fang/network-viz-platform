@@ -34,11 +34,7 @@ jest.mock('../../utils/logger', () => ({
 }));
 
 jest.mock('../../controllers/uniprotController', () => ({
-  getProteinData: jest.fn(),
-  getBatchProteinData: jest.fn(),
-  getProteinFields: jest.fn(),
   getBatchProteinAvailability: jest.fn(),
-  getProteinsBySpecies: jest.fn(),
 }));
 
 jest.mock('../../controllers/subnetworkController', () => ({

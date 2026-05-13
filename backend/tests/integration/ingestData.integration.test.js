@@ -2,10 +2,8 @@
  * Integration tests for attribute ingestion using a real in-memory SQLite database.
  *
  * These tests verify DB-level behaviour that cannot be confirmed through SQL inspection alone:
- *   - Legacy protein rows (non-empty attributes_json, attribute_source = NULL) are cleared
- *     by the reconcile step rather than causing a "conflict for unknown" error.
- *   - NH rows are not written during ingestion (the frontend derives cluster nodes from
- *     protein attributes; DB kind='nh' rows are never consumed).
+ *   - Existing protein rows without source tracking are cleared by the reconcile step
+ *     before the selected files are replayed.
  *   - Full-selection atomicity: a failure during the write phase (after the outer transaction
  *     has started) rolls back reconcile and all prior file writes.
  */
@@ -22,7 +20,6 @@ function createSchema(db) {
         db.serialize(() => {
             db.run(`CREATE TABLE IF NOT EXISTS nodes (
               id TEXT PRIMARY KEY,
-              kind TEXT NOT NULL,
               attributes_json TEXT,
               attribute_source TEXT
             )`);
@@ -96,13 +93,13 @@ describe('Attribute ingestion — integration tests (real SQLite)', () => {
         await dbRun(testDb, 'DELETE FROM nodes');
     });
 
-    // ── Legacy null-source rows ───────────────────────────────────────────────
+    // ── Null-source rows ──────────────────────────────────────────────────────
 
-    test('legacy protein rows (non-empty attrs, attribute_source = NULL) are cleared by reconcile', async () => {
-        // Simulate a pre-refactor row: has real attributes but no source tracking
+    test('protein rows without source tracking are cleared by reconcile', async () => {
+        // Simulate a row with real attributes but no source tracking
         await dbRun(testDb,
-            `INSERT INTO nodes (id, kind, attributes_json, attribute_source)
-             VALUES ('LEGACY001', 'protein', '{"NH_ID":"old.1","NCBI_txID":"9606"}', NULL)`
+            `INSERT INTO nodes (id, attributes_json, attribute_source)
+             VALUES ('LEGACY001', '{"NH_ID":"old.1","NCBI_txID":"9606"}', NULL)`
         );
 
         // Ingest test-e.nodes.attr — LEGACY001 is not in that file
@@ -114,11 +111,11 @@ describe('Attribute ingestion — integration tests (real SQLite)', () => {
         expect(rows[0].attribute_source).toBeNull();
     });
 
-    test('legacy rows in the current selection are cleared then re-written correctly', async () => {
-        // Directly insert a legacy row for node1 (which is also in test-e.nodes.attr with NH_ID=NH001)
+    test('untracked-source rows in the current selection are cleared then re-written correctly', async () => {
+        // Directly insert a row for node1 without source tracking.
         await dbRun(testDb,
-            `INSERT INTO nodes (id, kind, attributes_json, attribute_source)
-             VALUES ('node1', 'protein', '{"NH_ID":"old.legacy","NCBI_txID":"0"}', NULL)`
+            `INSERT INTO nodes (id, attributes_json, attribute_source)
+             VALUES ('node1', '{"NH_ID":"old.untracked","NCBI_txID":"0"}', NULL)`
         );
 
         // Ingest test-e.nodes.attr — node1 is in that file with NH001
@@ -128,7 +125,7 @@ describe('Attribute ingestion — integration tests (real SQLite)', () => {
         expect(rows).toHaveLength(1);
         expect(rows[0].attribute_source).toBe('test-e.nodes.attr');
         const attrs = JSON.parse(rows[0].attributes_json);
-        expect(attrs.NH_ID).toBe('NH001'); // correct data from file, not legacy value
+        expect(attrs.NH_ID).toBe('NH001'); // correct data from file, not stale value
     });
 
     // ── Reconcile stale-row behaviour ─────────────────────────────────────────
@@ -137,8 +134,8 @@ describe('Attribute ingestion — integration tests (real SQLite)', () => {
         // Seed a row that claims to be from test-e.nodes.attr but uses an ID that
         // does not appear in that file — simulating a protein removed since last ingest.
         await dbRun(testDb,
-            `INSERT INTO nodes (id, kind, attributes_json, attribute_source)
-             VALUES ('REMOVED001', 'protein', '{"NH_ID":"x.1","NCBI_txID":"9606"}', 'test-e.nodes.attr')`
+            `INSERT INTO nodes (id, attributes_json, attribute_source)
+             VALUES ('REMOVED001', '{"NH_ID":"x.1","NCBI_txID":"9606"}', 'test-e.nodes.attr')`
         );
 
         await ingestNodeAttributes(['test-e.nodes.attr']);
@@ -153,8 +150,8 @@ describe('Attribute ingestion — integration tests (real SQLite)', () => {
         // Seed node4 as if it was previously sourced from test-e.nodes.attr.
         // node4 only appears in test-p.nodes.attr — simulates it having moved between files.
         await dbRun(testDb,
-            `INSERT INTO nodes (id, kind, attributes_json, attribute_source)
-             VALUES ('node4', 'protein', '{"NH_ID":"old.e","NCBI_txID":"9606"}', 'test-e.nodes.attr')`
+            `INSERT INTO nodes (id, attributes_json, attribute_source)
+             VALUES ('node4', '{"NH_ID":"old.e","NCBI_txID":"9606"}', 'test-e.nodes.attr')`
         );
 
         await ingestNodeAttributes(['test-e.nodes.attr', 'test-p.nodes.attr']);
@@ -166,27 +163,6 @@ describe('Attribute ingestion — integration tests (real SQLite)', () => {
         expect(attrs.NH_ID).toBe('NH101'); // correct data from test-p, not stale test-e value
     });
 
-    // ── NH rows are not persisted ─────────────────────────────────────────────
-
-    test('ingestion does not write kind=nh rows (frontend derives cluster nodes from protein attrs)', async () => {
-        await ingestNodeAttributes(['test-e.nodes.attr', 'test-p.nodes.attr']);
-
-        const nhRows = await dbAll(testDb, `SELECT id FROM nodes WHERE kind = 'nh'`);
-        expect(nhRows).toHaveLength(0);
-    });
-
-    test('pre-existing kind=nh rows are removed by the reconcile step', async () => {
-        // Simulate a legacy NH row that was written by old ingestion code
-        await dbRun(testDb,
-            `INSERT INTO nodes (id, kind, attributes_json) VALUES ('NH.legacy', 'nh', '{"size":"5"}')`
-        );
-
-        await ingestNodeAttributes(['test-e.nodes.attr']);
-
-        const nhRows = await dbAll(testDb, `SELECT id FROM nodes WHERE kind = 'nh'`);
-        expect(nhRows).toHaveLength(0);
-    });
-
     // ── Full-selection atomicity (write-phase failure) ────────────────────────
 
     test('a failure during the write phase rolls back reconcile and all prior file writes', async () => {
@@ -196,8 +172,8 @@ describe('Attribute ingestion — integration tests (real SQLite)', () => {
         // Add a row from a deselected source — the reconcile will clear it,
         // but the rollback should restore it if ingest fails
         await dbRun(testDb,
-            `INSERT INTO nodes (id, kind, attributes_json, attribute_source)
-             VALUES ('CANARY', 'protein', '{"NH_ID":"x.1"}', 'other.nodes.attr')`
+            `INSERT INTO nodes (id, attributes_json, attribute_source)
+             VALUES ('CANARY', '{"NH_ID":"x.1"}', 'other.nodes.attr')`
         );
 
         // Install a TEMP TRIGGER that fires after the first row from test-p.nodes.attr is
@@ -280,7 +256,7 @@ describe('ingestNetworks — integration tests (real SQLite)', () => {
 
         // Manually add a phantom edge that is not in the CSV
         await dbRun(testDb,
-            `INSERT OR IGNORE INTO nodes (id, kind, attributes_json) VALUES ('PHANTOM_A', 'protein', '{}'), ('PHANTOM_B', 'protein', '{}')`
+            `INSERT OR IGNORE INTO nodes (id, attributes_json) VALUES ('PHANTOM_A', '{}'), ('PHANTOM_B', '{}')`
         );
         await dbRun(testDb,
             `INSERT INTO edges (id, node1, node2, weight, source, attributes_json)
@@ -319,7 +295,7 @@ describe('ingestNetworks — integration tests (real SQLite)', () => {
     test('rolls back all edges for a source on mid-write failure', async () => {
         // Canary edge from a different source — must survive the rollback
         await dbRun(testDb,
-            `INSERT OR IGNORE INTO nodes (id, kind, attributes_json) VALUES ('C1', 'protein', '{}'), ('C2', 'protein', '{}')`
+            `INSERT OR IGNORE INTO nodes (id, attributes_json) VALUES ('C1', '{}'), ('C2', '{}')`
         );
         await dbRun(testDb,
             `INSERT INTO edges (id, node1, node2, weight, source, attributes_json)

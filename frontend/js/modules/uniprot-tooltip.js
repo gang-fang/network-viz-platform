@@ -25,10 +25,17 @@ const UniprotTooltipModule = {
 
         // Listen for node hover events
         context.on('nodeHover', (event) => this.handleNodeHover(event));
+        context.on('clusterExpanded', () => this.dismissTooltip());
+        context.on('clusterCollapsed', () => this.dismissTooltip());
+        context.on('graphUpdated', () => this.dismissTooltip());
     },
 
     createTooltipElement() {
-        if (document.getElementById('uniprot-tooltip')) return;
+        const existing = document.getElementById('uniprot-tooltip');
+        if (existing) {
+            this.tooltipElement = existing;
+            return;
+        }
 
         const tooltip = document.createElement('div');
         tooltip.id = 'uniprot-tooltip';
@@ -42,9 +49,7 @@ const UniprotTooltipModule = {
         const hoverKey = `${data._isCluster ? 'cluster' : 'protein'}:${nodeId}`;
 
         if (type === 'mouseout') {
-            this.activeHoverKey = null;
-            this.hoverRequestToken += 1;
-            this.hideTooltip();
+            this.dismissTooltip();
             return;
         }
 
@@ -110,6 +115,12 @@ const UniprotTooltipModule = {
         if (this.tooltipElement) {
             this.tooltipElement.classList.add('hidden');
         }
+    },
+
+    dismissTooltip() {
+        this.activeHoverKey = null;
+        this.hoverRequestToken += 1;
+        this.hideTooltip();
     },
 
     renderLoading(acc) {

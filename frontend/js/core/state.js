@@ -180,17 +180,6 @@ class AppState {
     }
 
     /**
-     * Remove a highlight layer
-     */
-    removeHighlightLayer(layerId) {
-        if (this.highlightLayers.has(layerId)) {
-            this.highlightLayers.delete(layerId);
-            this.updateDerivedHighlights();
-            this.emit('graphVisualsUpdated', { nodes: true, edges: false });
-        }
-    }
-
-    /**
      * Clear all highlight layers
      */
     clearHighlightLayers() {
@@ -198,11 +187,6 @@ class AppState {
         this.nodeColors.clear();
         this.edgeHighlightLayers.clear();
         this.emit('graphVisualsUpdated', { nodes: true, edges: true });
-    }
-
-
-    clearHighlights() {
-        this.clearHighlightLayers();
     }
 
     addEdgeHighlightLayer(layerId, range, color) {
@@ -300,13 +284,6 @@ class AppState {
         });
         if (changed) this.applyEditChange(reason);
         return changed;
-    }
-
-    showAllNodes() {
-        if (this.hiddenNodes.size === 0) return false;
-        this.hiddenNodes.clear();
-        this.applyEditChange('showAllNodes');
-        return true;
     }
 
     hideEdgeIds(ids, reason = 'hideEdges') {
@@ -478,14 +455,6 @@ class AppState {
         return ids;
     }
 
-    setsEqual(left, right) {
-        if (left.size !== right.size) return false;
-        for (const item of left) {
-            if (!right.has(item)) return false;
-        }
-        return true;
-    }
-
     applyEditChange(reason) {
         this.editRevision += 1;
         this.topologyRevision += 1;
@@ -516,15 +485,6 @@ class AppState {
             });
         });
         return Array.from(resolved);
-    }
-
-    getVisibleProteinIds() {
-        const ids = [];
-        this.graph.nodes.forEach((node, id) => {
-            const nodeId = String(id);
-            if (!this.hiddenNodes.has(nodeId)) ids.push(nodeId);
-        });
-        return ids;
     }
 
     getHiddenProteinIds() {

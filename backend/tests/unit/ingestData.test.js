@@ -103,8 +103,8 @@ describe('validateNodeAttributeFiles', () => {
 
 describe('ingestNodeAttributes reconcile step', () => {
     // Intercept the first dbRun call to capture the reconcile UPDATE statement and verify
-    // the SQL structure and parameters. End-to-end DB write behaviour (legacy-row clearing,
-    // full kind='nh' cleanup, full atomicity) is covered by the integration tests in
+    // the SQL structure and parameters. End-to-end DB write behaviour and full atomicity
+    // are covered by the integration tests in
     // backend/tests/integration/ingestData.integration.test.js.
 
     let capturedSql;
@@ -169,7 +169,7 @@ describe('ingestNodeAttributes reconcile step', () => {
         // The reconcile UPDATE should have been the first dbRun call
         expect(capturedSql).toMatch(/UPDATE nodes/i);
         // All non-empty protein rows are cleared so every row is rewritten from the
-        // current file set (covers removed, moved, legacy null-source, and deselected rows)
+        // current file set (covers removed, moved, untracked-source, and deselected rows)
         expect(capturedSql).toMatch(/attributes_json != '{}'/i);
         // No per-file filtering in the reconcile — no params needed
         expect(capturedParams).toBeUndefined();
@@ -337,6 +337,51 @@ describe('FileWatcher event handling', () => {
 
     afterEach(() => {
         jest.resetModules();
+    });
+
+    test('serializes queued watcher operations', async () => {
+        const order = [];
+        let releaseFirst;
+
+        const first = FileWatcher.enqueueWatcherTask(async () => {
+            order.push('first-start');
+            await new Promise(resolve => {
+                releaseFirst = resolve;
+            });
+            order.push('first-end');
+        });
+        const second = FileWatcher.enqueueWatcherTask(async () => {
+            order.push('second-start');
+        });
+
+        await new Promise(resolve => setImmediate(resolve));
+        expect(order).toEqual(['first-start']);
+
+        releaseFirst();
+        await Promise.all([first, second]);
+
+        expect(order).toEqual(['first-start', 'first-end', 'second-start']);
+    });
+
+    test('continues queued watcher operations after a task rejects', async () => {
+        const order = [];
+
+        const first = FileWatcher.enqueueWatcherTask(async () => {
+            order.push('first-start');
+            throw new Error('watcher task failed');
+        });
+        const second = FileWatcher.enqueueWatcherTask(async () => {
+            order.push('second-start');
+        });
+
+        await expect(first).rejects.toThrow('watcher task failed');
+        await second;
+
+        expect(order).toEqual(['first-start', 'second-start']);
+        expect(mockLogger.error).toHaveBeenCalledWith(
+            'FileWatcher queued operation failed:',
+            expect.any(Error)
+        );
     });
 
     test('rescans and re-ingests the single discovered .nodes.attr file on attr changes', async () => {

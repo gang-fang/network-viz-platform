@@ -62,12 +62,8 @@ class GraphView {
                     // It's a Cluster (NH) node
                     visibleNodes.set(repId, {
                         id: repId,
-                        kind: 'nh',
-                        label: repId,
                         size: visibleClusterMembers.get(repId)?.length || 1,
-                        _memberIds: visibleClusterMembers.get(repId) || [],
-                        _isCluster: true,
-                        // Aggregate other attributes if needed
+                        _isCluster: true
                     });
                 }
             }
@@ -95,15 +91,11 @@ class GraphView {
                         id: viewEdgeId,
                         source: uRep,
                         target: vRep,
-                        weight: edgeWeight,
-                        count: 1,
-                        _isAggregated: (uRep !== String(edge.source) || vRep !== String(edge.target))
+                        weight: edgeWeight
                     });
                 } else {
-                    // Accumulate weight
                     const existing = visibleEdges.get(viewEdgeId);
                     existing.weight += edgeWeight;
-                    existing.count += 1;
                 }
             }
         });
@@ -117,11 +109,6 @@ class GraphView {
             if (uNode && vNode) {
                 const sizeU = uNode._isCluster ? (uNode.size || 1) : 1;
                 const sizeV = vNode._isCluster ? (vNode.size || 1) : 1;
-
-                // Store raw sum for debugging/tooltip
-                edge._rawWeight = edge.weight;
-
-                // Apply normalization
                 edge.weight = edge.weight / (sizeU * sizeV);
             }
         });
