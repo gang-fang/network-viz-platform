@@ -319,8 +319,6 @@ const SpeciesSelectorModule = {
     },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = SpeciesSelectorModule;
-} else {
+if (typeof window !== 'undefined') {
     window.SpeciesSelectorModule = SpeciesSelectorModule;
 }

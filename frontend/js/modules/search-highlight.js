@@ -269,9 +269,6 @@ const SearchHighlightModule = {
     }
 };
 
-// Export
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = SearchHighlightModule;
-} else {
+if (typeof window !== 'undefined') {
     window.SearchHighlightModule = SearchHighlightModule;
 }

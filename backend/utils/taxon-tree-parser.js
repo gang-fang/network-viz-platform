@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * taxon-tree-parser.js
  *

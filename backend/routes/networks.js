@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const networkController = require('../controllers/networkController');
+const { NetworkNotFoundError } = require('../utils/networkErrors');
 const logger = require('../utils/logger');
 const {
   validateString,
@@ -150,7 +151,7 @@ router.get('/:filename/status', async (req, res, next) => {
   } catch (err) {
     logger.error(`Error fetching network status: ${err.message}`);
 
-    if (err.message.includes('not found') || err.message.includes('ENOENT')) {
+    if (err instanceof NetworkNotFoundError || err.code === 'ENOENT') {
       return res.status(404).json({ error: 'Network not found' });
     }
 
@@ -172,7 +173,7 @@ router.get('/:filename', async (req, res, next) => {
   } catch (err) {
     logger.error(`Error fetching network data: ${err.message}`);
 
-    if (err.message.includes('not found') || err.message.includes('ENOENT')) {
+    if (err instanceof NetworkNotFoundError || err.code === 'ENOENT') {
       return res.status(404).json({ error: 'Network not found' });
     }
 

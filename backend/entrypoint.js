@@ -1,17 +1,15 @@
-require('dotenv').config();
-
 const config = require('./config/config');
+const { dbGet } = require('./config/dbMethods');
 const logger = require('./utils/logger');
 
 // Check whether the DB has any data (first-run detection)
 async function isFirstRun() {
-    const db = require('./config/database');
-    return new Promise((resolve) => {
-        db.get('SELECT COUNT(*) AS count FROM nodes', (err, row) => {
-            if (err) resolve(true); // treat schema error as first run
-            else resolve(row.count === 0);
-        });
-    });
+    try {
+        const row = await dbGet('SELECT COUNT(*) AS count FROM nodes');
+        return row.count === 0;
+    } catch (_err) {
+        return true; // treat schema error as first run
+    }
 }
 
 async function runIngest() {

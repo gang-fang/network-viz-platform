@@ -27,7 +27,7 @@ function initializeSchema() {
     db.run(`CREATE TABLE IF NOT EXISTS nodes (
       id TEXT PRIMARY KEY,
       attributes_json TEXT,
-      attribute_source TEXT -- filename that last wrote attributes for this protein node
+      attribute_source TEXT -- filename that last wrote attributes for this node
     )`);
 
     // Edges table

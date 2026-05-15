@@ -1559,7 +1559,6 @@ class D3Adapter {
     }
 }
 
-// Export
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = D3Adapter;
 } else {

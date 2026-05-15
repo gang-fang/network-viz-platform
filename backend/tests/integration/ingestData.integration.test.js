@@ -2,7 +2,7 @@
  * Integration tests for attribute ingestion using a real in-memory SQLite database.
  *
  * These tests verify DB-level behaviour that cannot be confirmed through SQL inspection alone:
- *   - Existing protein rows without source tracking are cleared by the reconcile step
+ *   - Existing rows without source tracking are cleared by the reconcile step
  *     before the selected files are replayed.
  *   - Full-selection atomicity: a failure during the write phase (after the outer transaction
  *     has started) rolls back reconcile and all prior file writes.
@@ -95,7 +95,7 @@ describe('Attribute ingestion — integration tests (real SQLite)', () => {
 
     // ── Null-source rows ──────────────────────────────────────────────────────
 
-    test('protein rows without source tracking are cleared by reconcile', async () => {
+    test('rows without source tracking are cleared by reconcile', async () => {
         // Simulate a row with real attributes but no source tracking
         await dbRun(testDb,
             `INSERT INTO nodes (id, attributes_json, attribute_source)

@@ -115,6 +115,28 @@ body {
     margin-bottom: 1rem;
 }
 
+.network-select-row {
+    display: flex;
+    gap: 5px;
+    width: 100%;
+}
+
+#network-select {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#network-select option {
+    white-space: nowrap;
+}
+
+#refresh-btn {
+    flex: 0 0 auto;
+}
+
 .control-input {
     width: 100%;
     padding: 0.5rem;

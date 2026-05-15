@@ -1,9 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const { parse } = require('csv-parse');
-const db = require('../config/database');
+const { db, dbAll, dbGet, dbRun } = require('../config/dbMethods');
 const logger = require('../utils/logger');
-const util = require('util');
 const config = require('../config/config');
 
 const NODES_ATTR_DIR = config.nodeAttributesPath;
@@ -14,11 +13,6 @@ const ATTR_COLUMNS = ['node_id', 'NCBI_txID', 'NH_ID', 'NH_Size', 'reserved1', '
 const REQUIRED_ATTR_HEADER_PREFIX = ['node_id', 'NCBI_txID', 'NH_ID', 'NH_Size'];
 let networkIngestQueue = Promise.resolve();
 let networkIngestRunId = 0;
-
-// Promisify DB run
-const dbRun = util.promisify(db.run.bind(db));
-const dbGet = util.promisify(db.get.bind(db));
-const dbAll = util.promisify(db.all.bind(db));
 
 async function getPragmaValue(name) {
     const row = await dbGet(`PRAGMA ${name}`);
@@ -63,7 +57,6 @@ async function ingestData() {
 
         logger.info('Data ingestion completed successfully.');
     } catch (error) {
-        console.error('Data ingestion failed:', error);
         logger.error('Data ingestion failed:', error);
         failed = true;
     } finally {
@@ -184,10 +177,10 @@ async function ingestNodeAttributes(files) {
     // If any file fails, the entire operation rolls back — no partial state.
     await dbRun('BEGIN TRANSACTION');
     try {
-        // Reconcile node rows: clear all non-empty protein attributes so every row
+        // Reconcile node rows: clear all non-empty attributes so every row
         // is rewritten from the current file set. This ensures:
-        //   - Proteins removed from a file fall back to edge placeholders (not stale data).
-        //   - Proteins moved between files are cleanly reassigned.
+        //   - Nodes removed from a file fall back to edge placeholders (not stale data).
+        //   - Nodes moved between files are cleanly reassigned.
         //   - Rows without source tracking are reset before the selected files are replayed.
         // Rows already at '{}' (edge-created placeholders) are untouched.
         await dbRun(
@@ -268,7 +261,7 @@ async function validateNodeAttributeFiles(resolvedFiles) {
 
 /**
  * Write one attribute file to the DB.
- * Reconcile has already cleared all non-empty protein rows, so every existing row
+ * Reconcile has already cleared all non-empty rows, so every existing row
  * encountered here is a '{}' placeholder (edge-created or reconcile-cleared).
  */
 async function ingestSingleNodeAttributeFile(filename, filePath) {
@@ -282,7 +275,7 @@ async function ingestSingleNodeAttributeFile(filename, filePath) {
     }));
 
     // Prepared upsert: one DB call per row, no read-before-write.
-    // Reconcile has already cleared all non-empty protein rows to '{}', so every
+    // Reconcile has already cleared all non-empty rows to '{}', so every
     // existing row is a placeholder — we always want to overwrite it.
     // ON CONFLICT(id) DO UPDATE is a true in-place upsert (unlike OR REPLACE, which
     // deletes + re-inserts and would violate FK constraints from edge rows).

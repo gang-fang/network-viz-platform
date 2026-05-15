@@ -1,5 +1,7 @@
 // Route handler tests for backend/routes/networks.js
 
+const { NetworkNotFoundError } = require('../../../utils/networkErrors');
+
 const mockNetworkController = {
   listNetworks: jest.fn(),
   getNetworkData: jest.fn(),
@@ -111,7 +113,7 @@ describe('Network route handlers', () => {
       const res = createRes();
       const next = jest.fn();
 
-      mockNetworkController.getNetworkData.mockRejectedValue(new Error('not found'));
+      mockNetworkController.getNetworkData.mockRejectedValue(new NetworkNotFoundError('missing.csv'));
 
       await handler(req, res, next);
 
@@ -151,7 +153,7 @@ describe('Network route handlers', () => {
       const res = createRes();
       const next = jest.fn();
 
-      mockNetworkController.getNetworkStatus.mockRejectedValue(new Error('not found'));
+      mockNetworkController.getNetworkStatus.mockRejectedValue(new NetworkNotFoundError('missing.csv'));
 
       await handler(req, res, next);
 

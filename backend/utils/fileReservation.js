@@ -72,6 +72,7 @@ async function tryReserveOutputName(finalDir, finalBasename, options) {
     existingFilenames,
     errorFactory,
     lockStaleMs = DEFAULT_LOCK_STALE_MS,
+    resourceLabel = 'network name',
   } = options;
   const canonicalBasename = finalBasename.toLowerCase();
   const lockPath = path.join(finalDir, `.${canonicalBasename}.lock`);
@@ -83,7 +84,7 @@ async function tryReserveOutputName(finalDir, finalBasename, options) {
     try {
       const conflictingFile = existingFilenames.get(canonicalBasename);
       if (conflictingFile) {
-        throw errorFactory(`A network named "${conflictingFile}" already exists`, 409);
+        throw errorFactory(`The ${resourceLabel} "${conflictingFile}" already exists`, 409);
       }
     } catch (err) {
       await handle.close().catch(() => {});
@@ -121,6 +122,7 @@ async function reserveOutputName(requestedOutputName, options) {
       existingFilenames,
       errorFactory,
       lockStaleMs,
+      resourceLabel,
     });
     if (reservation) return reservation;
   }
@@ -191,7 +193,6 @@ function suppressWatcherIngest(filename, errorFactory) {
 }
 
 module.exports = {
-  DEFAULT_LOCK_STALE_MS,
   DEFAULT_MAX_SUFFIX_ATTEMPTS,
   createUniqueFile,
   makeErrorFactory,

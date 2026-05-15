@@ -82,7 +82,7 @@ function normalizeGroups(groups) {
 }
 
 function getMaxSuffixAttempts() {
-  const configured = config.groupExport && config.groupExport.maxSuffixAttempts;
+  const configured = config.groupExport.maxSuffixAttempts;
   return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_MAX_SUFFIX_ATTEMPTS;
 }
 

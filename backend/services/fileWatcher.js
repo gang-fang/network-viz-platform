@@ -2,6 +2,7 @@ const chokidar = require('chokidar');
 const path = require('path');
 const logger = require('../utils/logger');
 const config = require('../config/config');
+const { dbRun } = require('../config/dbMethods');
 const { ingestNodeAttributes, ingestNetworks, resolveSingleNodeAttributeFile } = require('../scripts/ingestData');
 const speciesTreeRoute = require('../routes/species-tree');
 
@@ -37,8 +38,8 @@ class FileWatcher {
     suppressNetworkIngest(
         filename,
         {
-            ttlMs = config.networkEdit?.watcherSuppressMs || 300000,
-            eventCount = config.networkEdit?.watcherSuppressEvents || 3,
+            ttlMs = config.networkEdit.watcherSuppressMs,
+            eventCount = config.networkEdit.watcherSuppressEvents,
         } = {}
     ) {
         this.pruneExpiredSuppressions();
@@ -134,10 +135,6 @@ class FileWatcher {
                 speciesTreeRoute.invalidateCache();
                 logger.warn(`Species taxonomy file removed: ${filename}. Tree cache invalidated.`);
             } else if (filename.endsWith('.csv')) {
-                const db = require('../config/database');
-                const util = require('util');
-                const dbRun = util.promisify(db.run.bind(db));
-
                 try {
                     await dbRun('BEGIN TRANSACTION');
                     await dbRun('DELETE FROM network_nodes WHERE source = ?', [filename]);

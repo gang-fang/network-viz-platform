@@ -3,6 +3,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
 const config = require('./config/config');
+const { dbGet } = require('./config/dbMethods');
 const logger = require('./utils/logger');
 
 // Import routes
@@ -22,14 +23,13 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(morgan('dev'));
 
 // Health check endpoint (before API routes so it's always reachable)
-app.get('/health', (req, res) => {
-  const db = require('./config/database');
-  db.get('SELECT 1', (err) => {
-    if (err) {
-      return res.status(503).json({ status: 'error', db: 'disconnected', uptime: Math.round(process.uptime()) });
-    }
+app.get('/health', async (req, res) => {
+  try {
+    await dbGet('SELECT 1');
     res.json({ status: 'ok', db: 'connected', uptime: Math.round(process.uptime()) });
-  });
+  } catch (_err) {
+    res.status(503).json({ status: 'error', db: 'disconnected', uptime: Math.round(process.uptime()) });
+  }
 });
 
 // API routes

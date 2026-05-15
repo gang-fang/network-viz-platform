@@ -1,21 +1,20 @@
 const fs = require('fs');
 const path = require('path');
-const util = require('util');
-const db = require('../config/database');
+const { dbAll, dbRun } = require('../config/dbMethods');
 const config = require('../config/config');
 const logger = require('../utils/logger');
 const { ingestNetworks } = require('../scripts/ingestData');
 const {
-  DEFAULT_LOCK_STALE_MS,
   DEFAULT_MAX_SUFFIX_ATTEMPTS,
   makeErrorFactory,
   normalizeCsvOutputName,
   reserveOutputName: reserveFileOutputName,
   suppressWatcherIngest: suppressFileWatcherIngest,
 } = require('../utils/fileReservation');
-
-const dbAll = util.promisify(db.all.bind(db));
-const dbRun = util.promisify(db.run.bind(db));
+const {
+  SCOPED_NODE_IDS_SQL,
+  getSourceParams,
+} = require('../utils/networkQueries');
 
 const MAX_HIDDEN_NODE_IDS = 200000;
 const MAX_HIDDEN_EDGE_IDS = 20000;
@@ -23,11 +22,11 @@ const MAX_HIDDEN_EDGE_WEIGHT_RANGES = 1000;
 const MEMBERSHIP_INSERT_CHUNK_SIZE = 400;
 
 function getMaxNameLength() {
-  return config.networkEdit?.maxNameLength || 80;
+  return config.networkEdit.maxNameLength;
 }
 
 function getMaxSuffixAttempts() {
-  const configured = config.networkEdit?.maxSuffixAttempts;
+  const configured = config.networkEdit.maxSuffixAttempts;
   return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_MAX_SUFFIX_ATTEMPTS;
 }
 
@@ -124,20 +123,12 @@ async function reserveOutputName(requestedOutputName) {
   return reserveFileOutputName(requestedOutputName, {
     finalDir: config.dataPath,
     maxAttempts: getMaxSuffixAttempts(),
-    lockStaleMs: DEFAULT_LOCK_STALE_MS,
-    resourceLabel: 'network name',
     errorFactory: createNetworkEditError,
   });
 }
 
 async function getSourceNodeIds(source) {
-  const rows = await dbAll(`
-    SELECT node_id AS id FROM network_nodes WHERE source = ?
-    UNION
-    SELECT node1 AS id FROM edges WHERE source = ?
-    UNION
-    SELECT node2 AS id FROM edges WHERE source = ?
-  `, [source, source, source]);
+  const rows = await dbAll(SCOPED_NODE_IDS_SQL, getSourceParams(source));
 
   return rows.map(row => String(row.id));
 }

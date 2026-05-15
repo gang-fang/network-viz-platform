@@ -1,5 +1,5 @@
 /**
- * Main Application Entry Point (New Architecture)
+ * Main Application Entry Point
  */
 async function initApp() {
     // 1. Initialize State
@@ -68,17 +68,11 @@ async function initApp() {
             const edges = [];
 
             data.elements.nodes.forEach(n => {
-                nodes.push({ id: n.data.id, ...n.data });
+                nodes.push({ ...n.data });
             });
 
             data.elements.edges.forEach(e => {
-                edges.push({
-                    id: e.data.id,
-                    source: e.data.source,
-                    target: e.data.target,
-                    weight: e.data.weight,
-                    ...e.data
-                });
+                edges.push({ ...e.data });
             });
 
             infoDiv.textContent = `Loaded: ${nodes.length} nodes, ${edges.length} edges`;
@@ -158,8 +152,6 @@ async function initApp() {
             await loadSelectedNetwork(filename);
         });
     }
-
-
 
 }
 

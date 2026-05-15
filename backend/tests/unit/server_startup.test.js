@@ -8,6 +8,9 @@ jest.mock('../../config/config', () => ({
   port: 3002,
   dataPath: '/mock/data/path',
   nodeAttributesPath: '/mock/node/attributes',
+  uniprotApi: {
+    batchLimit: 100,
+  },
   logging: {
     level: 'error',
     file: 'logs/app.log'

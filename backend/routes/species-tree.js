@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * species-tree.js  —  GET /api/species-tree
  *
@@ -8,8 +6,7 @@
  *   • config.taxonNamesPath (NCBI_txID.csv — taxid ↔ species_name mapping)
  *
  * The parsed result is cached in memory for the lifetime of the server process.
- * POST /api/species-tree/invalidate clears the cache (useful after data
- * ingestion without a full restart).
+ * File-watcher updates clear the cache in-process via invalidateCache().
  *
  * Both file paths default to data/NCBI_txID/ and can be overridden via the
  * environment variables TAXON_TREE_PATH and TAXON_NAMES_PATH, so users who
@@ -20,13 +17,10 @@ const express            = require('express');
 const router             = express.Router();
 const fs                 = require('fs').promises;
 const path               = require('path');
-const util               = require('util');
-const db                 = require('../config/database');
+const { dbAll }          = require('../config/dbMethods');
 const config             = require('../config/config');
 const { parseTaxonTree } = require('../utils/taxon-tree-parser');
 const logger             = require('../utils/logger');
-
-const dbAll = util.promisify(db.all.bind(db));
 
 // ─── In-memory cache ──────────────────────────────────────────────────────────
 
@@ -124,39 +118,6 @@ async function getTree() {
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 /**
- * GET /api/species-tree/status
- *
- * Lightweight availability check called by the frontend before it decides
- * whether to render the tree widget or fall back to the flat species list.
- * Always responds — never 4xx/5xx — so the frontend can branch safely.
- */
-router.get('/status', async (req, res) => {
-    try {
-        const { treeExists, namesExists, treePath, namesPath } = await checkFiles();
-        const available = treeExists && namesExists;
-
-        const payload = {
-            available,
-            treeFile:       path.basename(treePath),
-            namesFile:      path.basename(namesPath),
-            treeFileFound:  treeExists,
-            namesFileFound: namesExists,
-        };
-
-        // If the cache is already warm, include its stats at no extra cost
-        if (available && _cache) {
-            payload.stats = _cache.stats;
-        }
-
-        res.json(payload);
-    } catch (err) {
-        logger.error(`species-tree /status error: ${err.message}`);
-        // Still respond 200 so the frontend can read available:false
-        res.json({ available: false, error: err.message });
-    }
-});
-
-/**
  * GET /api/species-tree
  *
  * Returns the full annotated tree as JSON.
@@ -181,18 +142,6 @@ router.get('/', async (req, res) => {
         logger.error(`species-tree / error: ${err.message}`);
         res.status(500).json({ error: err.message });
     }
-});
-
-/**
- * POST /api/species-tree/invalidate
- *
- * Clears the in-memory cache so the tree is rebuilt on the next GET request.
- * Call this after ingesting new network data without restarting the server,
- * so that newly added species immediately appear with isDbSpecies = true.
- */
-router.post('/invalidate', (req, res) => {
-    invalidateCache();
-    res.json({ ok: true, message: 'Species tree cache cleared. Tree will be rebuilt on next request.' });
 });
 
 module.exports = router;

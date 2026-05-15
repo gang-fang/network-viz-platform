@@ -1,19 +1,18 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-const util = require('util');
 const config = require('../config/config');
-const db = require('../config/database');
 const logger = require('../utils/logger');
 const { ingestNetworks } = require('../scripts/ingestData');
 const {
-  DEFAULT_LOCK_STALE_MS,
-  DEFAULT_MAX_SUFFIX_ATTEMPTS,
   makeErrorFactory,
   normalizeCsvOutputName,
   reserveOutputName: reserveFileOutputName,
   suppressWatcherIngest: suppressFileWatcherIngest,
 } = require('../utils/fileReservation');
+const {
+  fetchNetworkCounts,
+} = require('../utils/networkQueries');
 
 // This is an in-process concurrency cap. It does not coordinate across
 // multiple Node server instances.
@@ -21,7 +20,6 @@ let activeJobCount = 0;
 const JSON_SENTINEL = '__SUBNET_JSON__ ';
 const NETWORK_READY_TIMEOUT_MS = 10000;
 const NETWORK_READY_POLL_MS = 100;
-const dbGet = util.promisify(db.get.bind(db));
 
 class SubnetworkError extends Error {
   constructor(message, status = 400, details = {}) {
@@ -168,7 +166,7 @@ function parseMessages(stdout, stderr) {
   };
 }
 
-function listAvailableIndexPrefixes() {
+function getAllowedIndexPrefixes() {
   if (!fs.existsSync(config.indexesPath)) {
     return [];
   }
@@ -204,10 +202,6 @@ function listAvailableIndexPrefixes() {
     .sort();
 }
 
-function getAllowedIndexPrefixes() {
-  return listAvailableIndexPrefixes();
-}
-
 function getSubnetworkLimits() {
   return {
     allowedIndexes: getAllowedIndexPrefixes(),
@@ -222,9 +216,6 @@ function getSubnetworkLimits() {
 async function reserveOutputName(requestedOutputName) {
   return reserveFileOutputName(requestedOutputName, {
     finalDir: config.dataPath,
-    maxAttempts: DEFAULT_MAX_SUFFIX_ATTEMPTS,
-    lockStaleMs: DEFAULT_LOCK_STALE_MS,
-    resourceLabel: 'network name',
     errorFactory: createSubnetworkError,
   });
 }
@@ -254,38 +245,12 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function getNetworkStatus(filename) {
-  const edgeRow = await dbGet(
-    'SELECT COUNT(*) AS count FROM edges WHERE source = ?',
-    [filename]
-  );
-
-  const nodeRow = await dbGet(
-    `
-      SELECT COUNT(*) AS count
-      FROM (
-        SELECT node_id AS id FROM network_nodes WHERE source = ?
-        UNION
-        SELECT node1 AS id FROM edges WHERE source = ?
-        UNION
-        SELECT node2 AS id FROM edges WHERE source = ?
-      )
-    `,
-    [filename, filename, filename]
-  );
-
-  return {
-    edgeCount: edgeRow?.count || 0,
-    nodeCount: nodeRow?.count || 0,
-  };
-}
-
 async function waitForNetworkReady(filename, expectedEdgeCount) {
   const deadline = Date.now() + NETWORK_READY_TIMEOUT_MS;
   let lastStatus = { edgeCount: 0, nodeCount: 0 };
 
   while (Date.now() <= deadline) {
-    lastStatus = await getNetworkStatus(filename);
+    lastStatus = await fetchNetworkCounts(filename);
     if (lastStatus.edgeCount === expectedEdgeCount && lastStatus.nodeCount > 0) {
       return { ready: true, ...lastStatus };
     }
@@ -484,7 +449,6 @@ async function createSubnetwork({ seeds, name, index = 'eu', maxNodes } = {}) {
 module.exports = {
   createSubnetwork,
   getSubnetworkLimits,
-  normalizeSeeds,
   normalizeOutputName,
   getAllowedIndexPrefixes,
 };

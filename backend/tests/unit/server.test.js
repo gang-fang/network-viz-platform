@@ -8,6 +8,9 @@ jest.mock('../../config/config', () => ({
   indexesPath: '/mock/data/indexes',
   nodeAttributesPath: '/mock/node/attributes',
   exportsPath: '/mock/data/exports',
+  uniprotApi: {
+    batchLimit: 100,
+  },
   subnetwork: {
     pythonCommand: 'python3',
     scriptPath: '/mock/tools/runtime/extract_subnetwork.py',

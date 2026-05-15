@@ -630,7 +630,6 @@ class AppState {
     }
 }
 
-// Export
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = AppState;
 } else {

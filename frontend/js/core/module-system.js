@@ -32,7 +32,7 @@ class ModuleSystem {
             // Allow modules to listen to events
             on: (event, callback) => this.appState.on(event, callback),
 
-            // Allow modules to inspect the graph (read-only mostly, or via specific methods)
+            // Allow modules to inspect graph state.
             getGraph: () => this.appState.graph,
             getViewGraph: () => this.appState.viewGraph,
             getCurrentNetwork: () => this.appState.currentNetwork,
@@ -105,9 +105,6 @@ ModuleSystem.getSpeciesTree = function () {
     return ModuleSystem.speciesTreePromise;
 };
 
-// Export
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = ModuleSystem;
-} else {
+if (typeof window !== 'undefined') {
     window.ModuleSystem = ModuleSystem;
 }

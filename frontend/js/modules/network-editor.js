@@ -655,8 +655,6 @@ const NetworkEditorModule = {
     },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = NetworkEditorModule;
-} else {
+if (typeof window !== 'undefined') {
     window.NetworkEditorModule = NetworkEditorModule;
 }

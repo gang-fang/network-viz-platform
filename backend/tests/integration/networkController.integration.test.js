@@ -2,7 +2,7 @@
  * Integration tests for the network controller using a real in-memory SQLite database.
  *
  * These tests verify controller behaviour that cannot be confirmed through mocks alone:
- *   - Unknown network source throws "Network not found" so the route can map it to 404.
+ *   - Unknown network source throws NetworkNotFoundError so the route can map it to 404.
  *   - Known source returns the correct nodes and edges.
  *   - searchProteins scopes results to the requested network source; accessions that
  *     exist only in a different network are not returned.
@@ -49,6 +49,7 @@ function dbRun(db, sql, params = []) {
 describe('getNetworkData — integration tests (real SQLite)', () => {
     let testDb;
     let getNetworkData;
+    let NetworkNotFoundError;
 
     beforeAll(async () => {
         jest.resetModules();
@@ -64,6 +65,7 @@ describe('getNetworkData — integration tests (real SQLite)', () => {
         }));
         jest.doMock('../../config/database', () => testDb);
 
+        ({ NetworkNotFoundError } = require('../../utils/networkErrors'));
         ({ getNetworkData } = require('../../controllers/networkController'));
     });
 
@@ -78,9 +80,9 @@ describe('getNetworkData — integration tests (real SQLite)', () => {
         await dbRun(testDb, 'DELETE FROM nodes');
     });
 
-    test('throws "Network not found" for an unknown source so the route returns 404', async () => {
+    test('throws NetworkNotFoundError for an unknown source so the route returns 404', async () => {
         await expect(getNetworkData('nonexistent.csv'))
-            .rejects.toThrow('Network not found: nonexistent.csv');
+            .rejects.toBeInstanceOf(NetworkNotFoundError);
     });
 
     test('returns nodes and edges for a known source', async () => {

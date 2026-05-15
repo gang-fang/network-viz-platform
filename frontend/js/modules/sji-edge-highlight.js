@@ -221,8 +221,6 @@ const SjiEdgeHighlightModule = {
     },
 };
 
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = SjiEdgeHighlightModule;
-} else {
+if (typeof window !== 'undefined') {
     window.SjiEdgeHighlightModule = SjiEdgeHighlightModule;
 }

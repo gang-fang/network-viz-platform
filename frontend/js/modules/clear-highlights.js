@@ -22,9 +22,6 @@ const ClearHighlightsModule = {
     }
 };
 
-// Export
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = ClearHighlightsModule;
-} else {
+if (typeof window !== 'undefined') {
     window.ClearHighlightsModule = ClearHighlightsModule;
 }

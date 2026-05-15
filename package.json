@@ -1,7 +1,7 @@
 {
   "name": "network-viz-platform",
   "version": "1.0.0",
-  "description": "Advanced network visualization platform with D3.js, clustering, and zero-redundancy architecture",
+  "description": "SJI network extraction, visualization, editing, and export platform",
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/entrypoint.js",
@@ -18,8 +18,8 @@
     "d3",
     "graph"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Gang Fang <fang.fg@gmail.com>",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "axios": "^1.8.2",

@@ -120,9 +120,6 @@ class GraphView {
     }
 }
 
-// Export
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = GraphView;
-} else {
+if (typeof window !== 'undefined') {
     window.GraphView = GraphView;
 }

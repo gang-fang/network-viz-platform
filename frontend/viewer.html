@@ -5,28 +5,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Network Viewer</title>
-    <link rel="stylesheet" href="css/styles.css?v=19">
+    <link rel="stylesheet" href="css/styles.css?v=20">
     <script src="/vendor/d3.min.js"></script>
 
     <!-- Core Scripts -->
-    <script src="js/core/graph.js?v=14"></script>
-    <script src="js/core/graph-view.js?v=14"></script>
-    <script src="js/core/state.js?v=14"></script>
-    <script src="js/core/module-system.js?v=14"></script>
-    <script src="js/adapters/d3-adapter.js?v=14"></script>
+    <script src="js/core/graph.js?v=20"></script>
+    <script src="js/core/graph-view.js?v=20"></script>
+    <script src="js/core/state.js?v=20"></script>
+    <script src="js/core/module-system.js?v=20"></script>
+    <script src="js/adapters/d3-adapter.js?v=20"></script>
 
     <!-- Shared Components (must load before modules that use them) -->
-    <script src="js/components/species-tree-view.js?v=14"></script>
+    <script src="js/components/species-tree-view.js?v=20"></script>
 
     <!-- Modules -->
-    <script src="js/config/modules.js?v=14"></script>
-    <script src="js/modules/species-selector.js?v=16"></script>
-    <script src="js/modules/sji-edge-highlight.js?v=1"></script>
-    <script src="js/modules/network-editor.js?v=14"></script>
-    <script src="js/modules/search-highlight.js?v=14"></script>
-    <script src="js/modules/clear-highlights.js?v=14"></script>
-    <script src="js/modules/uniprot-tooltip.js?v=14"></script>
-    <script src="js/modules/export-panel.js?v=17"></script>
+    <script src="js/config/modules.js?v=20"></script>
+    <script src="js/modules/species-selector.js?v=20"></script>
+    <script src="js/modules/sji-edge-highlight.js?v=20"></script>
+    <script src="js/modules/network-editor.js?v=20"></script>
+    <script src="js/modules/search-highlight.js?v=20"></script>
+    <script src="js/modules/clear-highlights.js?v=20"></script>
+    <script src="js/modules/uniprot-tooltip.js?v=20"></script>
+    <script src="js/modules/export-panel.js?v=20"></script>
 </head>
 
 <body>
@@ -38,8 +38,8 @@
             <h3>Controls</h3>
             <div class="control-group">
                 <label for="network-select">Select Network:</label>
-                <div style="display: flex; gap: 5px;">
-                    <select id="network-select" style="flex-grow: 1;">
+                <div class="network-select-row">
+                    <select id="network-select">
                         <option value="">Loading...</option>
                     </select>
                     <button id="refresh-btn" title="Refresh List">↻</button>
@@ -93,7 +93,7 @@
     </div>
 
     <!-- Main App Script -->
-    <script src="js/app.js?v=14"></script>
+    <script src="js/app.js?v=20"></script>
 </body>
 
 </html>

@@ -8,7 +8,7 @@ const {
   sendValidationError,
 } = require('../utils/requestValidation');
 
-const MAX_UNIPROT_BATCH = (config.uniprotApi && config.uniprotApi.batchLimit) || 100;
+const MAX_UNIPROT_BATCH = config.uniprotApi.batchLimit;
 
 /**
  * @route   POST /api/uniprot/availability

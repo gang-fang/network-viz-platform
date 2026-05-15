@@ -1,12 +1,13 @@
-const db = require('../config/database');
+const { dbAll } = require('../config/dbMethods');
 const logger = require('../utils/logger');
-const util = require('util');
 const networkEditService = require('../services/networkEditService');
 const groupExportService = require('../services/groupExportService');
-
-// Promisify DB methods
-const dbAll = util.promisify(db.all.bind(db));
-const dbGet = util.promisify(db.get.bind(db));
+const {
+  fetchNetworkCounts,
+  getSourceParams,
+  scopedNodesCte,
+} = require('../utils/networkQueries');
+const { NetworkNotFoundError } = require('../utils/networkErrors');
 
 /**
  * List all available network files (sources)
@@ -88,7 +89,7 @@ async function getNetworkData(filename) {
     );
 
     // Fetch explicitly registered network members, then include all edge endpoints
-    // as a fallback for databases that predate the network_nodes table.
+    // so networks still load if membership rows are incomplete.
     const nodeIds = new Set();
     const networkNodeRows = await dbAll(
       "SELECT node_id FROM network_nodes WHERE source = ?",
@@ -102,7 +103,7 @@ async function getNetworkData(filename) {
     });
 
     if (nodeIds.size === 0) {
-      throw new Error(`Network not found: ${filename}`);
+      throw new NetworkNotFoundError(filename);
     }
 
     // Fetch node attributes
@@ -141,7 +142,7 @@ async function getNetworkData(filename) {
     return { elements };
   } catch (err) {
     // Re-throw not-found errors as-is so the route can map them to 404.
-    if (err.message.startsWith('Network not found:')) throw err;
+    if (err instanceof NetworkNotFoundError) throw err;
     logger.error(`Error reading network ${filename}: ${err.message}`);
     throw new Error(`Failed to read network: ${filename}`);
   }
@@ -151,30 +152,10 @@ async function getNetworkStatus(filename) {
   try {
     logger.info(`Fetching network status for source: ${filename}`);
 
-    const edgeRow = await dbGet(
-      'SELECT COUNT(*) AS count FROM edges WHERE source = ?',
-      [filename]
-    );
-
-    const nodeRow = await dbGet(
-      `
-        SELECT COUNT(*) AS count
-        FROM (
-          SELECT node_id AS id FROM network_nodes WHERE source = ?
-          UNION
-          SELECT node1 AS id FROM edges WHERE source = ?
-          UNION
-          SELECT node2 AS id FROM edges WHERE source = ?
-        )
-      `,
-      [filename, filename, filename]
-    );
-
-    const edgeCount = edgeRow?.count || 0;
-    const nodeCount = nodeRow?.count || 0;
+    const { edgeCount, nodeCount } = await fetchNetworkCounts(filename);
 
     if (edgeCount === 0 && nodeCount === 0) {
-      throw new Error(`Network not found: ${filename}`);
+      throw new NetworkNotFoundError(filename);
     }
 
     return {
@@ -183,7 +164,7 @@ async function getNetworkStatus(filename) {
       nodeCount,
     };
   } catch (err) {
-    if (err.message.startsWith('Network not found:')) throw err;
+    if (err instanceof NetworkNotFoundError) throw err;
     logger.error(`Error reading network status for ${filename}: ${err.message}`);
     throw new Error(`Failed to read network status: ${filename}`);
   }
@@ -203,20 +184,14 @@ async function searchProteins(networkName, accessions) {
     // that accessions present in a different ingested network are not returned.
     const placeholders = accessions.map(() => '?').join(',');
     const query = `
-      WITH scoped_nodes(id) AS (
-        SELECT node_id FROM network_nodes WHERE source = ?
-        UNION
-        SELECT node1 FROM edges WHERE source = ?
-        UNION
-        SELECT node2 FROM edges WHERE source = ?
-      )
+      ${scopedNodesCte()}
       SELECT id, attributes_json
       FROM nodes
       WHERE id IN (${placeholders})
         AND id IN (SELECT id FROM scoped_nodes)
     `;
 
-    const rows = await dbAll(query, [networkName, networkName, networkName, ...accessions]);
+    const rows = await dbAll(query, [...getSourceParams(networkName), ...accessions]);
 
     const matches = rows.map(row => {
       let nhId = null;
@@ -251,13 +226,7 @@ async function searchBySpecies(networkName, speciesIds) {
 
     const placeholders = speciesIds.map(() => '?').join(',');
     const query = `
-      WITH scoped_nodes(id) AS (
-        SELECT node_id FROM network_nodes WHERE source = ?
-        UNION
-        SELECT node1 FROM edges WHERE source = ?
-        UNION
-        SELECT node2 FROM edges WHERE source = ?
-      )
+      ${scopedNodesCte()}
       SELECT
         n.id,
         json_extract(n.attributes_json, '$.NH_ID') AS nh_id
@@ -266,7 +235,7 @@ async function searchBySpecies(networkName, speciesIds) {
       WHERE CAST(json_extract(n.attributes_json, '$.NCBI_txID') AS TEXT) IN (${placeholders})
     `;
 
-    const rows = await dbAll(query, [networkName, networkName, networkName, ...speciesIds.map(String)]);
+    const rows = await dbAll(query, [...getSourceParams(networkName), ...speciesIds.map(String)]);
     const matches = rows.map(row => ({
       id: row.id,
       nh_id: row.nh_id

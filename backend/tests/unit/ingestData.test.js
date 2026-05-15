@@ -115,32 +115,20 @@ describe('ingestNodeAttributes reconcile step', () => {
         capturedSql = null;
         capturedParams = null;
 
-        // Mock util.promisify so dbRun records every call.
-        // Allow BEGIN TRANSACTION and PRAGMA through (needed to reach the reconcile UPDATE),
-        // then short-circuit on the first UPDATE so we can inspect it without running the
-        // full write phase.
-        jest.mock('util', () => {
-            const real = jest.requireActual('util');
-            return {
-                ...real,
-                promisify: (fn) => {
-                    if (fn && fn._isMockFunction) return fn;
-                    return (...args) => {
-                        const sql = typeof args[0] === 'string' ? args[0].trim() : '';
-                        if (sql.startsWith('PRAGMA') || sql.startsWith('BEGIN') || sql.startsWith('ROLLBACK')) {
-                            return Promise.resolve();
-                        }
-                        // First non-preamble call is the reconcile UPDATE — capture it
-                        capturedSql = args[0];
-                        capturedParams = args[1];
-                        return Promise.reject(new Error('__short_circuit__'));
-                    };
-                },
-            };
-        });
-
         jest.mock('../../config/database', () => ({
-            run: jest.fn(),
+            run: jest.fn((sql, params, callback) => {
+                if (typeof params === 'function') callback = params;
+                const normalizedSql = typeof sql === 'string' ? sql.trim() : '';
+                if (normalizedSql.startsWith('PRAGMA') || normalizedSql.startsWith('BEGIN') || normalizedSql.startsWith('ROLLBACK')) {
+                    if (callback) callback(null);
+                    return;
+                }
+                // First non-preamble call is the reconcile UPDATE — capture it
+                // and short-circuit before the full write phase.
+                capturedSql = sql;
+                capturedParams = Array.isArray(params) ? params : undefined;
+                if (callback) callback(new Error('__short_circuit__'));
+            }),
             get: jest.fn(),
             prepare: jest.fn(() => ({ run: jest.fn(), finalize: jest.fn() })),
             all: jest.fn(),
@@ -159,7 +147,7 @@ describe('ingestNodeAttributes reconcile step', () => {
         jest.resetModules();
     });
 
-    test('reconcile UPDATE clears all non-empty protein rows unconditionally', async () => {
+    test('reconcile UPDATE clears all non-empty rows unconditionally', async () => {
         const { ingestNodeAttributes } = require('../../scripts/ingestData');
         try {
             await ingestNodeAttributes(['test-e.nodes.attr']);
@@ -168,7 +156,7 @@ describe('ingestNodeAttributes reconcile step', () => {
         }
         // The reconcile UPDATE should have been the first dbRun call
         expect(capturedSql).toMatch(/UPDATE nodes/i);
-        // All non-empty protein rows are cleared so every row is rewritten from the
+        // All non-empty rows are cleared so every row is rewritten from the
         // current file set (covers removed, moved, untracked-source, and deselected rows)
         expect(capturedSql).toMatch(/attributes_json != '{}'/i);
         // No per-file filtering in the reconcile — no params needed
