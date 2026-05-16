@@ -68,11 +68,7 @@ The pre-built networks represent proteins by UniProt accession. Queries against 
 
 ### Recommended Data Download: Zenodo
 
-The easiest setup is to download `data.tgz` from the Zenodo SJI data record:
-
-```text
-https://zenodo.org/records/20097975?preview=1
-```
+The easiest setup is to download `data.tgz` from the [Zenodo SJI data record](https://zenodo.org/records/20097975?preview=1&token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjViZjgwZDRiLWQzYTYtNDU1Yi1iNGIxLTY1MmM5ZTVkMGM0OSIsImRhdGEiOnt9LCJyYW5kb20iOiI4ZmNlYjc3OTE3NWQ4YmZkMWIwMzA2ZDhiM2Y2MjFiMiJ9.QJA7D8Mzu1V9wWKzebWBqb_BXkdQmr2Bn_ZeGL1oDlNL_Q440G_lFRpzkUAWJLRcRR0YDJdBfG-1rThd5LFStQ).
 
 Unpack it in the directory where you will run Docker:
 
@@ -123,12 +119,9 @@ Pull the Docker image:
 docker pull ghcr.io/gang-fang/sji-network-explorer:latest
 ```
 
-Download and unpack the required data bundle:
+Download `data.tgz` from the [Zenodo SJI data record](https://zenodo.org/records/20097975?preview=1&token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjViZjgwZDRiLWQzYTYtNDU1Yi1iNGIxLTY1MmM5ZTVkMGM0OSIsImRhdGEiOnt9LCJyYW5kb20iOiI4ZmNlYjc3OTE3NWQ4YmZkMWIwMzA2ZDhiM2Y2MjFiMiJ9.QJA7D8Mzu1V9wWKzebWBqb_BXkdQmr2Bn_ZeGL1oDlNL_Q440G_lFRpzkUAWJLRcRR0YDJdBfG-1rThd5LFStQ), then unpack it:
 
 ```bash
-# Download data.tgz from:
-# https://zenodo.org/records/20097975?preview=1
-
 tar -xzf data.tgz
 ls data
 ```
@@ -265,11 +258,7 @@ The quick-start Docker workflow is sufficient for extracting, viewing, editing, 
 - comparing selected communities with protein 2D plots and seed-protein signal sets
 - rebuilding or extending SJI network resources for custom datasets
 
-The Zenodo SJI data record also hosts additional data for these advanced workflows:
-
-```text
-https://zenodo.org/records/20097975?preview=1
-```
+The [Zenodo SJI data record](https://zenodo.org/records/20097975?preview=1&token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjViZjgwZDRiLWQzYTYtNDU1Yi1iNGIxLTY1MmM5ZTVkMGM0OSIsImRhdGEiOnt9LCJyYW5kb20iOiI4ZmNlYjc3OTE3NWQ4YmZkMWIwMzA2ZDhiM2Y2MjFiMiJ9.QJA7D8Mzu1V9wWKzebWBqb_BXkdQmr2Bn_ZeGL1oDlNL_Q440G_lFRpzkUAWJLRcRR0YDJdBfG-1rThd5LFStQ) also hosts additional data for these advanced workflows.
 
 In addition to `data.tgz`, the record includes separate gzip tarballs for:
 
