@@ -119,7 +119,7 @@ Pull the Docker image:
 docker pull ghcr.io/gang-fang/sji-network-explorer:latest
 ```
 
-Download `data.tgz` from the [Zenodo SJI data record](https://zenodo.org/records/20097975?preview=1&token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjViZjgwZDRiLWQzYTYtNDU1Yi1iNGIxLTY1MmM5ZTVkMGM0OSIsImRhdGEiOnt9LCJyYW5kb20iOiI4ZmNlYjc3OTE3NWQ4YmZkMWIwMzA2ZDhiM2Y2MjFiMiJ9.QJA7D8Mzu1V9wWKzebWBqb_BXkdQmr2Bn_ZeGL1oDlNL_Q440G_lFRpzkUAWJLRcRR0YDJdBfG-1rThd5LFStQ), then unpack it:
+Download `data.tgz` from the [Zenodo SJI data record](https://zenodo.org/records/20097975?preview=1&token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjViZjgwZDRiLWQzYTYtNDU1Yi1iNGIxLTY1MmM5ZTVkMGM0OSIsImRhdGEiOnt9LCJyYW5kb20iOiI4ZmNlYjc3OTE3NWQ4YmZkMWIwMzA2ZDhiM2Y2MjFiMiJ9.QJA7D8Mzu1V9wWKzebWBqb_BXkdQmr2Bn_ZeGL1oDlNL_Q440G_lFRpzkUAWJLRcRR0YDJdBfG-1rThd5LFStQ), then unpack it (skip this step if you have already downloaded the data folder): 
 
 ```bash
 tar -xzf data.tgz
