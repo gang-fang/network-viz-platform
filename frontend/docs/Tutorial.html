@@ -210,6 +210,16 @@ href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,5
   .callout.info   .callout-label { color: var(--accent2); }
   .callout.danger .callout-label { color: var(--danger); }
   .callout p { color: var(--body); margin: 0; font-size: 14px; line-height: 1.65; }
+  .callout-list {
+    margin: 8px 0;
+    padding-left: 20px;
+  }
+  .callout-list li {
+    color: var(--body);
+    font-size: 14px;
+    line-height: 1.65;
+    margin-bottom: 4px;
+  }
   .callout a {
     color: var(--accent);
     font-weight: 600;
@@ -1212,6 +1222,24 @@ npm start</code></pre>
           <div class="callout-label">Tip — Move the panel out of the way</div>
           <p>The species panel is draggable — grab its header to move it
             anywhere on screen so it doesn't cover the graph.</p>
+        </div>
+        <div class="callout tip">
+          <div class="callout-label">Tip — How to identify which species are missing from the selected nodes</div>
+          <p>Use the selection tool and species tree together to compare
+            which species are represented in a selected region of the
+            network.</p>
+          <ol class="callout-list">
+            <li>Click the blue star <span class="viewer-icon-inline"
+                aria-label="Select Nodes">★</span> button at the top
+              right of the viewer panel, then select the nodes of
+              interest.</li>
+            <li>Click <span class="ui-label">Highlight by Species</span>,
+              then click <span class="ui-label">Expand Tree</span>.</li>
+          </ol>
+          <p>The species associated with the selected protein or cluster
+            nodes are checked automatically. Checked taxa show which
+            species are present in the selected area; unchecked taxa show
+            which species are missing from that selection.</p>
         </div>
       </section>
       <section id="sji-edge-highlight" class="step">

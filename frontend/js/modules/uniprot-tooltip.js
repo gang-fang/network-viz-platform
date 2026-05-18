@@ -2,20 +2,15 @@
  * UniProt Tooltip Module
  * Displays UniProt annotation when hovering over protein and cluster nodes.
  */
-class UniProtNotFound extends Error {
-    constructor(acc) {
-        super(`Accession not found in UniProtKB: ${acc}`);
-        this.name = 'UniProtNotFound';
-    }
-}
+const TooltipUniProtAnnotation = typeof UniProtAnnotationService !== 'undefined'
+    ? UniProtAnnotationService
+    : require('../services/uniprot-annotation-service');
 
 const UniprotTooltipModule = {
     id: "uniprot-tooltip",
-    cache: new Map(), // Cache for UniProt data
     tooltipElement: null,
     activeHoverKey: null,
     hoverRequestToken: 0,
-    inflightSummaryRequests: new Map(),
 
     init(context) {
         this.context = context;
@@ -68,31 +63,24 @@ const UniprotTooltipModule = {
             return;
         }
 
-        // Check cache
-        if (this.cache.has(nodeId)) {
-            this.renderContent(this.cache.get(nodeId));
-        } else {
-            this.renderLoading(nodeId);
-            this.fetchUniProtSummary(nodeId)
-                .then(info => {
-                    this.cache.set(nodeId, info);
-                    if (this.shouldRenderHoverResult(hoverKey, requestToken)) {
-                        this.renderContent(info);
-                    }
-                })
-                .catch(err => {
-                    const isNetworkError = !(err instanceof UniProtNotFound);
-                    const errorInfo = {
-                        accession: nodeId,
-                        error: isNetworkError ? 'UniProtKB Request Failed' : null,
-                        isNetworkError: isNetworkError
-                    };
-                    this.cache.set(nodeId, errorInfo);
-                    if (this.shouldRenderHoverResult(hoverKey, requestToken)) {
-                        this.renderContent(errorInfo);
-                    }
-                });
-        }
+        this.renderLoading(nodeId);
+        TooltipUniProtAnnotation.fetchSummary(nodeId)
+            .then(info => {
+                if (this.shouldRenderHoverResult(hoverKey, requestToken)) {
+                    this.renderContent(info);
+                }
+            })
+            .catch(err => {
+                const isNetworkError = !(err instanceof TooltipUniProtAnnotation.UniProtNotFound);
+                const errorInfo = {
+                    accession: nodeId,
+                    error: isNetworkError ? 'UniProtKB Request Failed' : null,
+                    isNetworkError: isNetworkError
+                };
+                if (this.shouldRenderHoverResult(hoverKey, requestToken)) {
+                    this.renderContent(errorInfo);
+                }
+            });
     },
 
     shouldRenderHoverResult(hoverKey, requestToken) {
@@ -139,8 +127,7 @@ const UniprotTooltipModule = {
             row2 = `<div class="tooltip-row tooltip-error">${info.error}</div>`;
         } else if (!info.protein_name && !info.organism_name && !info.isNetworkError) {
             // Obsolete / No Data (No Network Error)
-            // Note: If fetchUniProtSummary returns success but nulls, it falls here too.
-            // But we also handle the caught UniProtNotFound which sets error=null.
+            // Not-found accessions render quietly with only the accession label.
             row1 = `<div class="tooltip-row tooltip-acc">${info.accession}</div>`;
             row2 = ''; // Blank
         } else {
@@ -151,70 +138,6 @@ const UniprotTooltipModule = {
         }
 
         this.tooltipElement.innerHTML = row1 + row2;
-    },
-
-    async fetchUniProtSummary(acc) {
-        if (this.inflightSummaryRequests.has(acc)) {
-            return this.inflightSummaryRequests.get(acc);
-        }
-
-        const request = this._fetchUniProt(acc, 'protein_name,organism_name')
-            .then(entry => {
-                // protein_name: recommended full name if present
-                const proteinDescription = entry.proteinDescription || {};
-                const recommendedName = proteinDescription.recommendedName || {};
-                const fullName = recommendedName.fullName || {};
-                const proteinName = fullName.value || null;
-
-                // organism_name: scientific name
-                const organism = entry.organism || {};
-                const organismName = organism.scientificName || null;
-
-                return {
-                    accession: acc,
-                    protein_name: proteinName,
-                    organism_name: organismName,
-                };
-            })
-            .finally(() => {
-                this.inflightSummaryRequests.delete(acc);
-            });
-
-        this.inflightSummaryRequests.set(acc, request);
-        return request;
-    },
-
-    async fetchUniProtClusterAnnotation(acc) {
-        const entry = await this._fetchUniProt(acc, 'protein_name,organism_name,cc_function');
-        // protein_name: recommended full name if present
-        const proteinDescription = entry.proteinDescription || {};
-        const recommendedName = proteinDescription.recommendedName || {};
-        const fullName = recommendedName.fullName || {};
-        const proteinName = fullName.value || null;
-
-        // organism_name: scientific name
-        const organism = entry.organism || {};
-        const organismName = organism.scientificName || null;
-
-        let ccFunction = null;
-        if (Array.isArray(entry.comments)) {
-            const functionTexts = entry.comments
-                .filter(comment => comment.commentType === 'FUNCTION')
-                .flatMap(comment => comment.texts || [])
-                .map(text => (text.value || '').trim())
-                .filter(Boolean);
-
-            if (functionTexts.length > 0) {
-                ccFunction = functionTexts.join(' ');
-            }
-        }
-
-        return {
-            accession: acc,
-            protein_name: proteinName,
-            organism_name: organismName,
-            cc_function: ccFunction,
-        };
     },
 
     async processClusterHover(clusterId, hoverKey, requestToken) {
@@ -239,7 +162,7 @@ const UniprotTooltipModule = {
         for (let i = 0; i < maxAttempts; i++) {
             const acc = shuffled[i];
             try {
-                const info = await this.fetchUniProtClusterAnnotation(acc);
+                const info = await TooltipUniProtAnnotation.fetchAnnotation(acc);
 
                 if (info.cc_function || info.protein_name || info.organism_name) {
                     if (this.shouldRenderHoverResult(hoverKey, requestToken)) {
@@ -249,7 +172,7 @@ const UniprotTooltipModule = {
                 }
             } catch (err) {
                 console.warn(`[UniprotTooltip] Error fetching ${acc}:`, err);
-                if (!(err instanceof UniProtNotFound)) {
+                if (!(err instanceof TooltipUniProtAnnotation.UniProtNotFound)) {
                     networkErrors++;
                 }
             }
@@ -287,30 +210,6 @@ const UniprotTooltipModule = {
 
             this.tooltipElement.innerHTML = rows.join('');
         }
-    },
-
-    async _fetchUniProt(acc, fields) {
-        const url = 'https://rest.uniprot.org/uniprotkb/search';
-        const params = new URLSearchParams({
-            query: `accession:${acc}`,
-            fields: fields,
-            format: 'json',
-            size: '1',
-        });
-
-        const res = await fetch(`${url}?${params.toString()}`);
-        if (!res.ok) {
-            throw new Error(`UniProt request failed with status ${res.status}`);
-        }
-
-        const data = await res.json();
-        const results = data.results || [];
-
-        if (results.length === 0) {
-            throw new UniProtNotFound(acc);
-        }
-
-        return results[0];
     }
 };
 

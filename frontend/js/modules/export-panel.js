@@ -2,6 +2,10 @@
  * Export Panel Module
  * Handles the "Export Mode" logic and rendering of exported data to the right panel.
  */
+const ExportUniProtAnnotation = typeof UniProtAnnotationService !== 'undefined'
+    ? UniProtAnnotationService
+    : require('../services/uniprot-annotation-service');
+
 const ExportPanelModule = {
     id: "export-panel",
     maxGroupNameLength: 16,
@@ -16,6 +20,10 @@ const ExportPanelModule = {
     batchAnalysisSaveButton: null,
     exportInFlight: false,
     protDcCache: null,
+    annotationTooltip: null,
+    activeTooltipAccession: null,
+    activeTooltipToken: null,
+    annotationRequestToken: 0,
     uniprotSectionOptions: [
         { label: 'Function', suffix: '/entry#function' },
         { label: 'Names & Taxonomy', suffix: '/entry#names_and_taxonomy' },
@@ -56,8 +64,23 @@ const ExportPanelModule = {
         }
 
         this.createBatchAnalysisPopup();
+        this.createAnnotationTooltip();
         this.createUniprotSectionButtons();
         this.setupListeners();
+    },
+
+    createAnnotationTooltip() {
+        const existing = document.getElementById('export-uniprot-tooltip');
+        if (existing) {
+            this.annotationTooltip = existing;
+            return;
+        }
+
+        const tooltip = document.createElement('div');
+        tooltip.id = 'export-uniprot-tooltip';
+        tooltip.className = 'uniprot-tooltip hidden';
+        document.body.appendChild(tooltip);
+        this.annotationTooltip = tooltip;
     },
 
     createBatchAnalysisPopup() {
@@ -218,6 +241,31 @@ const ExportPanelModule = {
             this.exportData().catch(err => {
                 console.error('Export rendering failed:', err);
             });
+        });
+
+        this.rightPanelContent.addEventListener('mouseover', event => {
+            const token = event.target.closest('.export-protein-token');
+            if (!token || !this.rightPanelContent.contains(token)) return;
+
+            const related = event.relatedTarget;
+            if (related && token.contains(related)) return;
+
+            this.showAnnotationTooltip(token);
+        });
+
+        this.rightPanelContent.addEventListener('mousemove', event => {
+            if (!this.annotationTooltip || this.annotationTooltip.classList.contains('hidden')) return;
+            this.positionAnnotationTooltip(this.activeTooltipToken || event.target.closest('.export-protein-token'));
+        });
+
+        this.rightPanelContent.addEventListener('mouseout', event => {
+            const token = event.target.closest('.export-protein-token');
+            if (!token || !this.rightPanelContent.contains(token)) return;
+
+            const related = event.relatedTarget;
+            if (related && token.contains(related)) return;
+
+            this.hideAnnotationTooltip();
         });
 
         // State Changes
@@ -430,7 +478,7 @@ const ExportPanelModule = {
         const protDc = this.getProtDCValue(accession, protDcMap);
         const protDcText = this.formatProtDC(protDc);
         const displayText = showProtDc ? `${safeAc}(${protDcText})` : safeAc;
-        const attrs = `data-accession="${safeAc}" data-protdc="${protDcText}" title="ProtDC: ${protDcText}"`;
+        const attrs = `data-accession="${safeAc}" data-protdc="${protDcText}"`;
         const isLinked = forceLinked === null ? availabilityMap.get(accession) : forceLinked;
 
         if (!isLinked) {
@@ -438,6 +486,104 @@ const ExportPanelModule = {
         }
 
         return `<a class="export-uniprot-link export-protein-token" ${attrs} href="${this.buildUniProtHref(accession)}" target="_blank" rel="noopener noreferrer">${displayText}</a>`;
+    },
+
+    showAnnotationTooltip(token) {
+        const accession = (token.dataset.accession || '').trim();
+        if (!accession || !this.annotationTooltip) return;
+
+        this.activeTooltipAccession = accession;
+        this.activeTooltipToken = token;
+        const requestToken = ++this.annotationRequestToken;
+
+        this.renderAnnotationLoading(accession);
+        this.annotationTooltip.classList.remove('hidden');
+        this.positionAnnotationTooltip(token);
+
+        ExportUniProtAnnotation.fetchAnnotation(accession)
+            .then(info => {
+                if (this.activeTooltipAccession === accession && this.annotationRequestToken === requestToken) {
+                    this.renderAnnotationTooltip(info);
+                    this.positionAnnotationTooltip(token);
+                }
+            })
+            .catch(err => {
+                console.warn(`ExportPanel: UniProt annotation lookup failed for ${accession}:`, err);
+                const info = {
+                    error: err instanceof ExportUniProtAnnotation.UniProtNotFound
+                        ? 'No UniProt annotation available.'
+                        : 'UniProtKB annotation unavailable',
+                };
+                if (this.activeTooltipAccession === accession && this.annotationRequestToken === requestToken) {
+                    this.renderAnnotationTooltip(info);
+                    this.positionAnnotationTooltip(token);
+                }
+            });
+    },
+
+    positionAnnotationTooltip(token) {
+        if (!this.annotationTooltip || !token || !token.isConnected) return;
+
+        const margin = 12;
+        const gap = 8;
+        const tokenRect = token.getBoundingClientRect();
+        const tooltipRect = this.annotationTooltip.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const scrollX = window.scrollX || window.pageXOffset;
+        const scrollY = window.scrollY || window.pageYOffset;
+
+        let left = scrollX + tokenRect.right - tooltipRect.width;
+        const minLeft = scrollX + margin;
+        const maxLeft = Math.max(minLeft, scrollX + viewportWidth - tooltipRect.width - margin);
+        left = Math.min(Math.max(left, minLeft), maxLeft);
+
+        let top = scrollY + tokenRect.bottom + gap;
+        const belowBottom = tokenRect.bottom + gap + tooltipRect.height;
+        if (belowBottom > viewportHeight - margin) {
+            top = scrollY + tokenRect.top - tooltipRect.height - gap;
+        }
+        top = Math.max(top, scrollY + margin);
+
+        this.annotationTooltip.style.left = `${left}px`;
+        this.annotationTooltip.style.top = `${top}px`;
+    },
+
+    hideAnnotationTooltip() {
+        this.activeTooltipAccession = null;
+        this.activeTooltipToken = null;
+        this.annotationRequestToken += 1;
+        if (this.annotationTooltip) {
+            this.annotationTooltip.classList.add('hidden');
+        }
+    },
+
+    renderAnnotationLoading(accession) {
+        this.annotationTooltip.innerHTML = `<div class="tooltip-loading">Loading ${this.escapeHtml(accession)}...</div>`;
+    },
+
+    renderAnnotationTooltip(info) {
+        if (!this.annotationTooltip) return;
+
+        if (info.error) {
+            this.annotationTooltip.innerHTML = `<div class="tooltip-row tooltip-error">${this.escapeHtml(info.error)}</div>`;
+            return;
+        }
+
+        const rows = [];
+        if (info.protein_name) {
+            rows.push(`<div class="tooltip-row tooltip-name">${this.escapeHtml(info.protein_name)}</div>`);
+        }
+        if (info.organism_name) {
+            rows.push(`<div class="tooltip-row tooltip-organism">${this.escapeHtml(info.organism_name)}</div>`);
+        }
+        if (info.cc_function) {
+            rows.push(`<div class="tooltip-row tooltip-function">${this.escapeHtml(info.cc_function)}</div>`);
+        }
+
+        this.annotationTooltip.innerHTML = rows.length > 0
+            ? rows.join('')
+            : '<div class="tooltip-row tooltip-error">No UniProt annotation available.</div>';
     },
 
     buildUniProtHref(accession) {

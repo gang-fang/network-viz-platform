@@ -68,7 +68,6 @@ const SpeciesSelectorModule = {
     async _loadTreeView(treeData) {
         this.useTree  = true;
         this.treeView = new SpeciesTreeView(this.checkboxContainer, {
-            maxHeight:   '280px',
             showSearch:  true,
             showToolbar: false,   // Select All / Deselect All are in the popup header
             showBadges:  true,
@@ -78,6 +77,7 @@ const SpeciesSelectorModule = {
             },
         });
         this.treeView.load(treeData);
+        this._prefillFromSelectionIfOpen();
     },
 
     /** Original flat checkbox list (fallback when tree files are absent). */
@@ -89,6 +89,7 @@ const SpeciesSelectorModule = {
                 this.speciesMap.set(String(item.ncbi_txid), item.species_name);
             });
             this._populateCheckboxes();
+            this._prefillFromSelectionIfOpen();
         } catch (err) {
             console.error('SpeciesSelector flat-list error:', err);
         }
@@ -119,9 +120,10 @@ const SpeciesSelectorModule = {
         const content = document.createElement('div');
         content.className = 'panel-content species-selector-content';
 
-        // Select All / Deselect All row
+        // Selection and tree-display controls
         const controls = document.createElement('div');
-        controls.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
+        controls.className = 'species-selector-controls';
+        controls.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;';
 
         const selAll = document.createElement('button');
         selAll.className   = 'control-button';
@@ -133,8 +135,20 @@ const SpeciesSelectorModule = {
         deselAll.textContent = 'Deselect All';
         deselAll.addEventListener('click', () => this._toggleAll(false));
 
+        const expandTree = document.createElement('button');
+        expandTree.className   = 'control-button';
+        expandTree.textContent = 'Expand Tree';
+        expandTree.addEventListener('click', () => this._setTreeExpanded(true));
+
+        const collapseTree = document.createElement('button');
+        collapseTree.className   = 'control-button';
+        collapseTree.textContent = 'Collapse Tree';
+        collapseTree.addEventListener('click', () => this._setTreeExpanded(false));
+
         controls.appendChild(selAll);
         controls.appendChild(deselAll);
+        controls.appendChild(expandTree);
+        controls.appendChild(collapseTree);
         content.appendChild(controls);
 
         // Species list container (tree or flat checkboxes land here)
@@ -230,6 +244,15 @@ const SpeciesSelectorModule = {
         }
     },
 
+    _setTreeExpanded(expanded) {
+        if (!this.useTree || !this.treeView) return;
+        if (expanded && typeof this.treeView.expandAll === 'function') {
+            this.treeView.expandAll();
+        } else if (!expanded && typeof this.treeView.collapseAll === 'function') {
+            this.treeView.collapseAll();
+        }
+    },
+
     // ─── Popup visibility ─────────────────────────────────────────────────────
 
     togglePopup() {
@@ -243,6 +266,7 @@ const SpeciesSelectorModule = {
     openDefaultPosition() {
         this.popup.style.display   = 'flex';
         this.popup.style.transform = 'none';
+        this._prefillFromCurrentSelection();
 
         const margin = this.popupMargin;
         const rect = this.popup.getBoundingClientRect();
@@ -251,6 +275,66 @@ const SpeciesSelectorModule = {
 
         this.popup.style.left = left + 'px';
         this.popup.style.top  = top + 'px';
+    },
+
+    _prefillFromSelectionIfOpen() {
+        if (this.popup && this.popup.style.display !== 'none') {
+            this._prefillFromCurrentSelection();
+        }
+    },
+
+    _prefillFromCurrentSelection() {
+        const speciesIds = this._getSpeciesIdsFromSelectedNodes();
+        if (speciesIds.size === 0) return;
+        this._setSelectedSpecies(speciesIds);
+    },
+
+    _getSpeciesIdsFromSelectedNodes() {
+        const speciesIds = new Set();
+        const selectedIds = this.context.getSelectedNodeIds();
+        if (!selectedIds || selectedIds.length === 0) return speciesIds;
+
+        const graph = this.context.getGraph();
+        const viewGraph = this.context.getViewGraph();
+
+        selectedIds.forEach(id => {
+            const nodeId = String(id);
+            const viewNode = viewGraph.nodes.get(nodeId);
+
+            if (viewNode && viewNode._isCluster) {
+                this.context.getVisibleClusterMembers(nodeId).forEach(memberId => {
+                    this._addNodeSpecies(graph.nodes.get(String(memberId)), speciesIds);
+                });
+                return;
+            }
+
+            this._addNodeSpecies(graph.nodes.get(nodeId) || viewNode, speciesIds);
+        });
+
+        return speciesIds;
+    },
+
+    _addNodeSpecies(node, speciesIds) {
+        if (!node || node.NCBI_txID === undefined || node.NCBI_txID === null) return;
+        const values = Array.isArray(node.NCBI_txID) ? node.NCBI_txID : [node.NCBI_txID];
+        values.forEach(value => {
+            const txid = String(value).trim();
+            if (txid) speciesIds.add(txid);
+        });
+    },
+
+    _setSelectedSpecies(speciesIds) {
+        if (this.useTree && this.treeView && typeof this.treeView.setSelectedTaxids === 'function') {
+            this.treeView.setSelectedTaxids(speciesIds);
+            return;
+        }
+
+        this.selectedSpecies.clear();
+        speciesIds.forEach(id => this.selectedSpecies.add(String(id)));
+
+        this.checkboxContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = this.selectedSpecies.has(cb.value);
+        });
     },
 
     // ─── Highlight action ─────────────────────────────────────────────────────

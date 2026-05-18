@@ -315,7 +315,8 @@ mark.stv-hl {
 
                 tb.appendChild(mkBtn('Select All',    () => this.selectAll()));
                 tb.appendChild(mkBtn('Deselect All',  () => this.clearSelection()));
-                tb.appendChild(mkBtn('Collapse All',  () => this._collapseAll()));
+                tb.appendChild(mkBtn('Expand All',    () => this.expandAll()));
+                tb.appendChild(mkBtn('Collapse All',  () => this.collapseAll()));
                 wrap.appendChild(tb);
             }
 
@@ -475,13 +476,20 @@ mark.stv-hl {
             }
         }
 
-        _collapseAll() {
+        _setExpanded(node, expanded) {
+            if (node.isLeaf) return;
+            node._expanded = expanded;
+            if (node._childUl) {
+                node._childUl.setAttribute('data-hidden', expanded ? 'false' : 'true');
+            }
+            if (node._caretEl) {
+                node._caretEl.textContent = expanded ? '▼' : '▶';
+            }
+        }
+
+        _setAllExpanded(expanded) {
             for (const node of this._flatList) {
-                if (!node.isLeaf && node._expanded) {
-                    node._expanded = false;
-                    if (node._childUl) node._childUl.setAttribute('data-hidden', 'true');
-                    if (node._caretEl) node._caretEl.textContent = '▶';
-                }
+                this._setExpanded(node, expanded);
             }
         }
 
@@ -603,7 +611,6 @@ mark.stv-hl {
         clearSelection() {
             if (this._root) {
                 this._setSubtree(this._root, false);
-                this._recomputeState(this._root);
             }
             this._notify();
         }
@@ -612,7 +619,30 @@ mark.stv-hl {
         selectAll() {
             if (this._root) {
                 this._setSubtree(this._root, true);
-                this._recomputeState(this._root);
+            }
+            this._notify();
+        }
+
+        /** Expand the full tree without changing species selection. */
+        expandAll() {
+            this._setAllExpanded(true);
+        }
+
+        /** Collapse the tree back to its default display state without changing species selection. */
+        collapseAll() {
+            this._setAllExpanded(false);
+        }
+
+        /** Select the DB-species taxa matching the provided taxonomy IDs. */
+        setSelectedTaxids(taxids) {
+            const selectedTaxids = new Set(Array.from(taxids || []).map(String));
+            for (const node of this._flatList) {
+                if (node.isDbSpecies) {
+                    node._selected = selectedTaxids.has(String(node.taxid));
+                }
+            }
+            for (let i = this._flatList.length - 1; i >= 0; i--) {
+                this._recomputeState(this._flatList[i]);
             }
             this._notify();
         }

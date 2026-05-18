@@ -130,4 +130,38 @@ describe('SpeciesTreeView', () => {
       { taxid: '2', name: 'Needle' },
     ]);
   });
+
+  test('setSelectedTaxids checks matching DB species and updates ancestor state', () => {
+    const view = new SpeciesTreeView(createElementStub('div'));
+    view.load(makeTree());
+
+    view.setSelectedTaxids(['2']);
+
+    expect(view.getSelectedSpecies()).toEqual([
+      { taxid: '2', name: 'Needle' },
+    ]);
+    expect(view._root._cbEl.indeterminate).toBe(true);
+    expect(view._root.children[0]._cbEl.indeterminate).toBe(true);
+    expect(view._root.children[0].children[0]._cbEl.checked).toBe(true);
+  });
+
+  test('expandAll and collapseAll only change display state', () => {
+    const view = new SpeciesTreeView(createElementStub('div'));
+    view.load(makeTree());
+    view.setSelectedTaxids(['2']);
+
+    view.expandAll();
+
+    expect(view._root._expanded).toBe(true);
+    expect(view._root._childUl.getAttribute('data-hidden')).toBe('false');
+    expect(view._root._caretEl.textContent).toBe('▼');
+    expect(view.getSelectedSpecies()).toEqual([{ taxid: '2', name: 'Needle' }]);
+
+    view.collapseAll();
+
+    expect(view._root._expanded).toBe(false);
+    expect(view._root._childUl.getAttribute('data-hidden')).toBe('true');
+    expect(view._root._caretEl.textContent).toBe('▶');
+    expect(view.getSelectedSpecies()).toEqual([{ taxid: '2', name: 'Needle' }]);
+  });
 });

@@ -443,7 +443,8 @@ input[type="range"] {
     flex-direction: column;
     width: 555px;
     max-width: min(90vw, 760px);
-    max-height: 92vh;
+    height: min(72vh, 620px);
+    min-height: 360px;
     overflow: hidden;
     color: #1f2933;
 }
@@ -458,6 +459,34 @@ input[type="range"] {
 .species-selector-content {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.species-selector-panel .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 150px;
+    max-height: none;
+}
+
+.species-selector-panel .stv-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.species-selector-panel .stv-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none !important;
+}
+
+.species-selector-controls {
+    flex-shrink: 0;
 }
 
 .sji-edge-highlight-panel {
@@ -530,6 +559,7 @@ input[type="range"] {
     align-items: center;
     justify-content: space-between;
     margin-top: 10px;
+    flex-shrink: 0;
 }
 
 /* Panel Sections */
@@ -604,6 +634,12 @@ input[type="range"] {
     font-style: italic;
     color: #bdc3c7;
     font-size: 0.85rem;
+}
+
+.tooltip-function {
+    color: #ecf0f1;
+    font-size: 0.85rem;
+    line-height: 1.35;
 }
 
 .tooltip-acc {
